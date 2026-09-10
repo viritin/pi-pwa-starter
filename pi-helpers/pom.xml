@@ -32,5 +32,18 @@
             <version>${pi4j.version}</version>
             <optional>true</optional>
         </dependency>
+        <!-- Optional: only the Bluetooth LE scanner needs BlueZ over D-Bus. -->
+        <dependency>
+            <groupId>com.github.hypfvieh</groupId>
+            <artifactId>bluez-dbus</artifactId>
+            <version>0.3.2</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.github.hypfvieh</groupId>
+            <artifactId>dbus-java-transport-native-unixsocket</artifactId>
+            <version>5.1.1</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>

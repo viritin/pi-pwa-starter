@@ -126,6 +126,15 @@ class ApplicationIT {
             assertThat(page.locator("#onewire-status")).containsText("Simulation · 2 devices");
             assertThat(page.locator(".onewire-panel .stat-value").first()).containsText("°C");
 
+            // Bluetooth LE: the simulated radio hears a few typical devices.
+            page.navigate(baseUri.resolve("ble").toString());
+            assertThat(page.locator(".page h1")).hasText("Bluetooth LE");
+            assertThat(page.locator("#ble-status")).containsText("Simulation · scanning");
+            assertThat(page.locator(".ble-device").first()).containsText("Ruuvi 229F");
+            page.locator("#ble-filter input").fill("apple");
+            assertThat(page.locator(".ble-device")).hasCount(1);
+            assertThat(page.locator(".ble-device").first()).containsText("0x004C Apple");
+
             // The System screen now also reports host interfaces.
             page.navigate(baseUri.resolve("system").toString());
             assertThat(page.getByRole(AriaRole.HEADING,
@@ -142,6 +151,21 @@ class ApplicationIT {
                 assertThat(page.locator(".page h1")).hasText(route.equals("system")
                         ? "System Monitor" : route.equals("blink-led")
                         ? "Blink a LED" : "Small device. Big possibilities.");
+            }
+
+            // Every route in a fresh browser: a reused production bundle can miss a new
+            // route's chunk, which only shows when nothing else has loaded its components.
+            for (String route : new String[]{"about", "system", "blink-led", "bme280", "gpio", "i2c", "pwm", "onewire", "ble"}) {
+                try (BrowserContext fresh = browser.newContext()) {
+                    Page direct = fresh.newPage();
+                    direct.navigate(baseUri.resolve(route).toString());
+                    assertThat(direct.locator(".page h1")).isVisible();
+                    direct.waitForTimeout(500);
+                    Object undefined = direct.evaluate("() => [...new Set([...document.querySelectorAll('*')]"
+                            + ".map(e => e.tagName.toLowerCase()).filter(t => t.startsWith('vaadin-') && !customElements.get(t)))].join(',')");
+                    org.junit.jupiter.api.Assertions.assertEquals("", undefined,
+                            "Undefined Vaadin elements on /" + route + " in a fresh browser");
+                }
             }
         }
     }

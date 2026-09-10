@@ -1,0 +1,25 @@
+.ble-panel { width: 100%; box-sizing: border-box; }
+.ble-panel .ble-toolbar { flex-wrap: wrap; }
+.ble-panel .ble-list { display: grid; gap: .5rem; width: 100%; max-width: 40rem; }
+.ble-panel .ble-device { display: grid; grid-template-columns: 1fr auto; gap: .15rem .75rem; padding: .7rem .9rem;
+  border-radius: .75rem; background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
+.ble-panel .ble-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; min-width: 0; }
+.ble-panel .ble-name { font-weight: 600; }
+.ble-panel .ble-name.ble-unnamed { font-weight: 400; opacity: .6; }
+.ble-panel .ble-address { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; opacity: .7; }
+.ble-panel .ble-badge { font-size: .7rem; font-weight: 700; letter-spacing: .04em; padding: .05rem .45rem; border-radius: 999px;
+  background: var(--aura-accent-color, var(--lumo-primary-color, #4f39f6)); color: #fff; }
+.ble-panel .ble-signal { display: flex; align-items: center; gap: .5rem; white-space: nowrap; font-variant-numeric: tabular-nums; font-size: .85rem; }
+.ble-panel .ble-bar { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.ble-panel .ble-bar::before, .ble-panel .ble-bar::after { content: ""; display: block; width: 4px; border-radius: 1px;
+  background: color-mix(in srgb, currentColor 18%, transparent); }
+.ble-panel .ble-bar::before { height: 6px; }
+.ble-panel .ble-bar::after { height: 14px; }
+.ble-panel .ble-bar { position: relative; }
+.ble-panel .ble-bar[data-level="1"]::before, .ble-panel .ble-bar[data-level="2"]::before,
+.ble-panel .ble-bar[data-level="3"]::before, .ble-panel .ble-bar[data-level="4"]::before,
+.ble-panel .ble-bar[data-level="3"]::after, .ble-panel .ble-bar[data-level="4"]::after {
+  background: var(--aura-accent-color, var(--lumo-primary-color, #4f39f6)); }
+.ble-panel .ble-details { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .25rem 1rem; font-size: .8rem; opacity: .75; }
+.ble-panel .ble-payload { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

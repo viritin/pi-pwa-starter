@@ -30,6 +30,17 @@ java -jar target/quarkus-app/quarkus-run.jar
 Copy the **whole** `target/quarkus-app` directory when moving the application.
 The Quarkus Vaadin extension builds the frontend as part of packaging.
 
+### A note on the cached production bundle
+
+Vaadin keeps a pre-compiled frontend bundle in `src/main/bundles/prod.bundle`
+(git-ignored) and reuses it when a build needs no new frontend imports. With
+Vaadin 25.3.0-beta2 that check ignores the per-route chunk keys, so a *new view
+that only uses components other views already use* gets no chunk in the reused
+bundle and renders as empty elements when opened directly. If a new view looks
+blank after a build, delete `src/main/bundles` (or build with
+`-Dvaadin.force.production.build=true`). The integration test opens every route
+in a fresh browser to catch this.
+
 ## Browser integration test
 
 From the repository root, build both modules and run the smoke test with:
@@ -74,13 +85,14 @@ application; `quarkus:dev` remains the development entry point.
   Missing Linux files or optional `iw`/`nmcli` tools produce `N/A`.
   “Uptime” is JVM uptime; “Version” is the application artifact timestamp.
   The hotspot field is only a metered-connection heuristic.
-- `GpioView`, `I2cView`, `PwmView` and `OneWireView` do the same for the
+- `GpioView`, `I2cView`, `PwmView`, `OneWireView` and `BleView` do the same for the
   prototyping panels in `pi-helpers`. They are grouped under “Proto Tools” with
   Viritin's `@MenuItem(parent = ProtoTools.class)`; `ProtoTools` is a plain
   annotated class, which the menu renders as a drawer sub-menu on desktop and a
   popover item in the mobile bottom bar. The panels offer a tappable header map for reading and
   driving GPIOs, an I²C scanner with register dump and write, a PWM/servo
-  control and live 1-Wire (DS18B20) readings. See [Pi Helpers](../pi-helpers/README.md)
+  control, live 1-Wire (DS18B20) readings and a Bluetooth LE scanner listing
+  nearby devices through BlueZ. See [Pi Helpers](../pi-helpers/README.md)
   for what each needs on the host. Delete the views you do not want.
 
 ## Blink a LED and Pi4J

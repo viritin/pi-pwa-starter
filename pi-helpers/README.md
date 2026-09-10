@@ -19,6 +19,7 @@ server push in the application's AppShell for live updates.
 | `I2cPanel` | `I2cService` | yes | `i2cdetect`-style bus scan, register hex dump, single register write with confirmation, hints for common addresses |
 | `PwmPanel` | `PwmService` | no | Hardware PWM via sysfs: servo pulse width (µs, with angle slider and calibration) or duty cycle and frequency |
 | `OneWirePanel` | `OneWireService` | no | Live readings from `/sys/bus/w1`, e.g. DS18B20 temperature probes |
+| `BlePanel` | `BleScanService` | no (BlueZ) | Live list of nearby Bluetooth LE devices: name, address, RSSI, manufacturer, advertised services and payload |
 
 ## Pi4J and the shared context
 
@@ -55,11 +56,22 @@ Pi4J API (4.0.x) only accepts whole-percent duty cycles, which is far too coarse
 for a servo; the fix (fractional duty cycles) is in Pi4J's main branch and will
 arrive with 5.0. Switch `PwmService` over then if you prefer one API.
 
+## Bluetooth LE and BlueZ
+
+`BlePanel` listens through BlueZ over the system D-Bus with the optional
+`com.github.hypfvieh:bluez-dbus` and `dbus-java-transport-native-unixsocket`
+dependencies; applications that use it add both. Scanning starts when a panel is
+attached and stops when the last one leaves. The host needs `bluetooth.service`
+running and the application user in the `bluetooth` group; a nameless device is
+shown with its address and manufacturer id, which is often enough to recognise
+it (Ruuvi is 0x0499, Apple 0x004C, Nordic 0x0059).
+
 ## Configuration
 
 ```properties
 # Simulate all hardware: in-memory GPIO, a fake I²C bus with a few devices,
-# a fake PWM chip and two 1-Wire probes. For development machines and tests.
+# a fake PWM chip, two 1-Wire probes and a handful of Bluetooth LE devices.
+# For development machines and tests.
 starter.hardware.simulated=false
 
 # Hide and disable the reboot/shutdown buttons.
