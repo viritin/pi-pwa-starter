@@ -1,0 +1,8 @@
+.system-panel { width: 100%; box-sizing: border-box; }
+.system-panel > .panel { box-sizing: border-box; width: 100%; padding: 1rem;
+  border-radius: 1rem; border: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
+.system-panel .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: .75rem; margin-bottom: 1rem; }
+.system-panel .stat { min-width: 0; display: grid; gap: .5rem; padding: 1rem; border-radius: .75rem;
+  background: color-mix(in srgb, currentColor 4%, transparent); }
+.system-panel .stat-label { font-size: .8rem; opacity: .7; }
+.system-panel .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }

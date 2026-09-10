@@ -1,0 +1,6 @@
+target/
+.DS_Store
+# Local reference material; not part of the starter distribution.
+/related-projects-and-examples/
+.idea/
+*.iml
