@@ -1,0 +1,256 @@
+package in.virit.iot.pihelpers;
+
+import jakarta.annotation.PreDestroy;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Hardware PWM through the Linux sysfs interface ({@code /sys/class/pwm}),
+ * with nanosecond resolution so a hobby servo can be positioned precisely.
+ * This is the same interface Pi4J's FFM provider uses; it is driven directly
+ * here because the released Pi4J API only accepts whole-percent duty cycles.
+ * <p>
+ * Hardware PWM must be enabled with a device tree overlay, for example
+ * {@code dtoverlay=pwm-2chan} in {@code /boot/firmware/config.txt}. On a
+ * Pi 4 and older that gives {@code pwmchip0} channels 0 and 1 on GPIO 18 and
+ * 19; a Pi 5 exposes {@code pwmchip2} with GPIO 12, 13, 18 and 19 as channels
+ * 0 to 3.
+ */
+@ApplicationScoped
+public class PwmService {
+
+    private static final Logger LOG = Logger.getLogger(PwmService.class);
+    private static final Path SYSFS = Path.of("/sys/class/pwm");
+    private static final long NANOS_PER_SECOND = 1_000_000_000L;
+
+    public record Channel(int chip, int channel, String hint) {
+        public String key() {
+            return "pwmchip" + chip + "/pwm" + channel;
+        }
+
+        public String label() {
+            return key() + (hint == null ? "" : " · " + hint);
+        }
+    }
+
+    public record State(boolean enabled, long periodNanos, long dutyNanos) {
+        public static final State OFF = new State(false, 0, 0);
+
+        public int frequencyHz() {
+            return periodNanos <= 0 ? 0 : (int) Math.round((double) NANOS_PER_SECOND / periodNanos);
+        }
+
+        public double dutyPercent() {
+            return periodNanos <= 0 ? 0 : 100.0 * dutyNanos / periodNanos;
+        }
+
+        public int pulseMicros() {
+            return (int) Math.round(dutyNanos / 1000.0);
+        }
+    }
+
+    @ConfigProperty(name = "starter.hardware.simulated", defaultValue = "false")
+    boolean simulated;
+
+    private final Map<String, State> states = new HashMap<>();
+
+    public boolean isSimulated() {
+        return simulated;
+    }
+
+    /** Channels of every PWM chip on the host. The simulation offers a Pi 4 style chip 0. */
+    public List<Channel> channels() {
+        var channels = new ArrayList<Channel>();
+        if (simulated) {
+            channels.add(new Channel(0, 0, "GPIO18 (or 12)"));
+            channels.add(new Channel(0, 1, "GPIO19 (or 13)"));
+            return channels;
+        }
+        boolean pi5 = model().contains("Raspberry Pi 5");
+        for (String name : InterfaceStatus.list(SYSFS, "pwmchip")) {
+            int chip;
+            int count;
+            try {
+                chip = Integer.parseInt(name.substring("pwmchip".length()));
+                count = Integer.parseInt(Files.readString(SYSFS.resolve(name).resolve("npwm")).trim());
+            } catch (IOException | NumberFormatException e) {
+                continue;
+            }
+            for (int channel = 0; channel < count; channel++) {
+                channels.add(new Channel(chip, channel, hint(pi5, chip, channel)));
+            }
+        }
+        return channels;
+    }
+
+    private static String hint(boolean pi5, int chip, int channel) {
+        if (pi5 && chip == 2) {
+            return switch (channel) {
+                case 0 -> "GPIO12";
+                case 1 -> "GPIO13";
+                case 2 -> "GPIO18";
+                case 3 -> "GPIO19";
+                default -> null;
+            };
+        }
+        if (!pi5 && chip == 0) {
+            return channel == 0 ? "GPIO18 (or 12)" : channel == 1 ? "GPIO19 (or 13)" : null;
+        }
+        return null;
+    }
+
+    public synchronized State state(Channel channel) {
+        var remembered = states.get(channel.key());
+        if (remembered != null) {
+            return remembered;
+        }
+        if (simulated) {
+            return State.OFF;
+        }
+        Path dir = channelDir(channel);
+        if (!Files.isDirectory(dir)) {
+            return State.OFF;
+        }
+        try {
+            return new State("1".equals(readTrimmed(dir.resolve("enable"))),
+                    Long.parseLong(readTrimmed(dir.resolve("period"))),
+                    Long.parseLong(readTrimmed(dir.resolve("duty_cycle"))));
+        } catch (IOException | NumberFormatException e) {
+            return State.OFF;
+        }
+    }
+
+    /** Sets frequency and pulse width and enables the output. */
+    public synchronized State apply(Channel channel, int frequencyHz, long dutyNanos) {
+        if (frequencyHz < 1 || frequencyHz > 10_000_000) {
+            throw new IllegalArgumentException("Frequency must be 1 Hz to 10 MHz.");
+        }
+        long periodNanos = NANOS_PER_SECOND / frequencyHz;
+        if (dutyNanos < 0 || dutyNanos > periodNanos) {
+            throw new IllegalArgumentException("Pulse width must be between 0 and the period ("
+                    + periodNanos / 1000 + " µs at " + frequencyHz + " Hz).");
+        }
+        var state = new State(true, periodNanos, dutyNanos);
+        if (!simulated) {
+            Path dir = export(channel);
+            try {
+                // The kernel rejects a duty cycle longer than the period, so shrink first, grow after.
+                long currentDuty = parseLong(readTrimmed(dir.resolve("duty_cycle")));
+                if (currentDuty > periodNanos) {
+                    write(dir.resolve("duty_cycle"), "0");
+                }
+                write(dir.resolve("period"), Long.toString(periodNanos));
+                write(dir.resolve("duty_cycle"), Long.toString(dutyNanos));
+                write(dir.resolve("enable"), "1");
+            } catch (IOException e) {
+                throw new IllegalStateException("Could not program " + channel.key() + ": " + e.getMessage()
+                        + ". Check that the user may write to /sys/class/pwm (gpio group / udev rule).", e);
+            }
+        }
+        states.put(channel.key(), state);
+        LOG.debugf("PWM %s: %d Hz, %d ns high%s", channel.key(), frequencyHz, dutyNanos, simulated ? " (simulated)" : "");
+        return state;
+    }
+
+    /** Stops the output; the channel stays exported so it can be re-enabled quickly. */
+    public synchronized State disable(Channel channel) {
+        var previous = state(channel);
+        var state = new State(false, previous.periodNanos(), previous.dutyNanos());
+        if (!simulated) {
+            Path dir = channelDir(channel);
+            if (Files.isDirectory(dir)) {
+                try {
+                    write(dir.resolve("enable"), "0");
+                } catch (IOException e) {
+                    throw new IllegalStateException("Could not disable " + channel.key() + ": " + e.getMessage(), e);
+                }
+            }
+        }
+        states.put(channel.key(), state);
+        return state;
+    }
+
+    private Path export(Channel channel) {
+        Path chipDir = SYSFS.resolve("pwmchip" + channel.chip());
+        Path dir = channelDir(channel);
+        if (!Files.isDirectory(chipDir)) {
+            throw new IllegalStateException(chipDir + " does not exist. Enable hardware PWM with dtoverlay=pwm-2chan and reboot.");
+        }
+        if (!Files.isDirectory(dir)) {
+            try {
+                write(chipDir.resolve("export"), Integer.toString(channel.channel()));
+            } catch (IOException e) {
+                throw new IllegalStateException("Could not export " + channel.key() + ": " + e.getMessage(), e);
+            }
+        }
+        // udev applies group permissions a moment after the channel appears
+        Path enable = dir.resolve("enable");
+        long deadline = System.currentTimeMillis() + 2000;
+        while (!Files.isWritable(enable) && System.currentTimeMillis() < deadline) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        if (!Files.isWritable(enable)) {
+            throw new IllegalStateException(enable + " is not writable. Add the user to the gpio group or a udev rule for pwm.");
+        }
+        return dir;
+    }
+
+    private static Path channelDir(Channel channel) {
+        return SYSFS.resolve("pwmchip" + channel.chip()).resolve("pwm" + channel.channel());
+    }
+
+    private static String model() {
+        try {
+            return Files.readString(Path.of("/proc/device-tree/model")).replace("\0", "");
+        } catch (IOException | RuntimeException e) {
+            return "";
+        }
+    }
+
+    private static String readTrimmed(Path path) throws IOException {
+        return Files.readString(path).trim();
+    }
+
+    private static long parseLong(String text) {
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private static void write(Path path, String value) throws IOException {
+        Files.writeString(path, value);
+    }
+
+    @PreDestroy
+    synchronized void shutdown() {
+        if (simulated) {
+            return;
+        }
+        for (var channel : channels()) {
+            var state = states.get(channel.key());
+            if (state != null && state.enabled()) {
+                try {
+                    disable(channel);
+                } catch (RuntimeException e) {
+                    LOG.warnf("Disabling %s on shutdown failed: %s", channel.key(), e.getMessage());
+                }
+            }
+        }
+    }
+}

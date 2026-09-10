@@ -8,6 +8,7 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -30,14 +31,17 @@ import java.util.concurrent.TimeUnit;
 public class SystemPanel extends VerticalLayout {
 
     private final SystemStats stats = new SystemStats();
+    private final InterfaceCard interfaces = new InterfaceCard();
     private ScheduledExecutorService executor;
     private volatile WifiInfo.Link wifiDetails = WifiInfo.Link.UNAVAILABLE;
+    private volatile InterfaceStatus.Status interfaceStatus = InterfaceStatus.Status.UNAVAILABLE;
     private long lastWifiRead;
 
     public SystemPanel(SystemControl systemControl) {
         addClassName("system-panel");
         add(new H1("System Monitor"));
         add(stats);
+        add(interfaces);
         add(new SystemActions(systemControl));
     }
 
@@ -54,15 +58,18 @@ public class SystemPanel extends VerticalLayout {
         executor.scheduleAtFixedRate(() -> {
             try {
                 // Link details change rarely and involve spawning iw/nmcli,
-                // so refresh them off the UI lock and less often
+                // so refresh them (and the interface nodes) off the UI lock and less often
                 if (System.currentTimeMillis() - lastWifiRead > 15000) {
                     lastWifiRead = System.currentTimeMillis();
                     wifiDetails = WifiInfo.read();
+                    interfaceStatus = InterfaceStatus.read();
                 }
                 var wifi = wifiDetails;
+                var status = interfaceStatus;
                 ui.access(() -> {
                     if (isAttached() && getUI().orElse(null) == ui) {
                         stats.update(wifi);
+                        interfaces.update(status);
                     }
                 });
             } catch (Exception ignored) {
@@ -258,6 +265,40 @@ public class SystemPanel extends VerticalLayout {
             } catch (Exception ignored) {
             }
             return -1;
+        }
+    }
+
+    /**
+     * Which buses the host exposes, as seen from /dev and /sys. Prototyping usually
+     * starts with "is I2C even enabled?", so the answer sits next to the metrics.
+     */
+    static class InterfaceCard extends Div {
+
+        private final StatBadge gpio = new StatBadge("GPIO");
+        private final StatBadge i2c = new StatBadge("I²C");
+        private final StatBadge spi = new StatBadge("SPI");
+        private final StatBadge uart = new StatBadge("UART");
+        private final StatBadge oneWire = new StatBadge("1-Wire");
+        private final StatBadge pwm = new StatBadge("PWM");
+
+        InterfaceCard() {
+            addClassName("panel");
+            add(new H4("Interfaces"));
+            add(new StatGrid(gpio, i2c, spi, uart, oneWire, pwm));
+            var hint = new Paragraph("Enable interfaces with sudo raspi-config → Interface Options, "
+                    + "or with dtparam/dtoverlay lines in /boot/firmware/config.txt, then reboot. "
+                    + "Hardware PWM needs dtoverlay=pwm-2chan; 1-Wire needs dtoverlay=w1-gpio.");
+            hint.addClassName("hint");
+            add(hint);
+        }
+
+        void update(InterfaceStatus.Status status) {
+            gpio.setValue(status.gpio());
+            i2c.setValue(status.i2c());
+            spi.setValue(status.spi());
+            uart.setValue(status.uart());
+            oneWire.setValue(status.oneWire());
+            pwm.setValue(status.pwm());
         }
     }
 

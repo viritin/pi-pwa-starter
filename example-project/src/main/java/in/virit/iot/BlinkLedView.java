@@ -16,6 +16,16 @@ import in.virit.iot.led.LedService;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
+/**
+ * An example view to build your own application on. It shows the pieces a
+ * typical Pi feature needs: a route with a menu entry, a small CDI service
+ * ({@link LedService}) that owns the hardware through the shared
+ * {@code Pi4JContext}, form fields bound to that service, a simulated mode for
+ * development without a Pi, and error handling that restores the last known
+ * good state. Copy it, rename it and replace the LED with your sensor or
+ * actuator. The generic screens under "Proto Tools" are for checking wiring
+ * and are not meant as a starting point for application code.
+ */
 @Route(value = "blink-led", layout = TopLayout.class)
 @Menu(title = "Blink a LED", icon = "vaadin:lightbulb", order = 3)
 @PageTitle("Blink a LED | Pi Starter")

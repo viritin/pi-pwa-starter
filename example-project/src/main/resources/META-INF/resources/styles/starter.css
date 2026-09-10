@@ -44,3 +44,18 @@ body::before {
     background: transparent !important;
   }
 }
+
+/* Climate (BME280) example: the card lifts off the page like pi-reader's sensor cards,
+   the gauge sits centred in a 2:1 media slot and the sparklines follow the theme. */
+.climate-card { --aura-surface-level: 4; flex: 1 1 20rem; max-width: 30rem; min-width: 0; }
+.climate-card > svg { margin-top: .5rem; }
+.climate-gauge-card::part(media) { aspect-ratio: 2 / 1; display: flex; align-items: center; justify-content: center;
+  box-sizing: border-box; padding: 1px 1px 0; background-clip: content-box; }
+.climate-card react-gauge { max-width: min(20rem, 84%); margin: 0 auto; padding-bottom: .5rem; }
+.climate-card svg path { stroke: var(--aura-accent-color, #4f39f6); stroke-width: 1.25; }
+.climate-card svg line { stroke: currentColor; opacity: .25; }
+.climate-card svg text { fill: currentColor; opacity: .65; }
+.climate-line { display: block; color: var(--vaadin-text-color-secondary); }
+.climate-cards { display: flex; flex-wrap: wrap; gap: 1rem; width: 100%; align-items: flex-start; }
+.wiring ul { margin: .25rem 0 .75rem; padding-inline-start: 1.25rem; }
+.wiring li { margin: .15rem 0; }

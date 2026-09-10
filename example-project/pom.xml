@@ -36,6 +36,23 @@
             <artifactId>pi4j-plugin-ffm</artifactId>
             <version>${pi4j.version}</version>
         </dependency>
+        <!-- The BME280 example: the sensor driver plus the gauge and sparkline the
+             climate card is drawn with (the same ones ScrewCloud's pi-reader uses). -->
+        <dependency>
+            <groupId>com.pi4j</groupId>
+            <artifactId>pi4j-drivers</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>in.virit</groupId>
+            <artifactId>gauge</artifactId>
+            <version>1.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>in.virit</groupId>
+            <artifactId>svg-visualizations</artifactId>
+            <version>1.1.0</version>
+        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-validator</artifactId>

@@ -74,6 +74,63 @@ class ApplicationIT {
             assertThat(gpio).isEnabled();
             assertThat(page.locator("#led-status")).hasText("Simulation · GPIO 18 · LED off");
 
+            // Climate: the simulated BME280 has history from the start, so the curve is there at once.
+            page.navigate(baseUri.resolve("bme280").toString());
+            assertThat(page.locator(".page h1")).hasText("Climate");
+            assertThat(page.locator("#bme280-status")).hasText("Simulation · BME280");
+            assertThat(page.locator(".climate-card").first()).containsText("Humidity");
+            assertThat(page.locator(".climate-card svg").first()).isVisible();
+            page.getByRole(AriaRole.RADIO, new Page.GetByRoleOptions().setName("24 h").setExact(true)).click();
+            assertThat(page.locator(".climate-card svg").first()).isVisible();
+
+            // The prototyping screens sit under one navigation group.
+            assertThat(page.getByText("Proto Tools").first()).isVisible();
+
+            // GPIO: make header pin 11 (GPIO17) an output and drive it high.
+            page.navigate(baseUri.resolve("gpio").toString());
+            assertThat(page.locator(".page h1")).hasText("GPIO");
+            assertThat(page.locator("#gpio-status")).hasText("Simulation · 0 pins configured");
+            page.locator("#pin-11").click();
+            page.getByRole(AriaRole.RADIO, new Page.GetByRoleOptions().setName("Output").setExact(true)).click();
+            assertThat(page.locator("#pin-level")).hasText("Level: LOW");
+            page.getByRole(AriaRole.SWITCH,
+                    new Page.GetByRoleOptions().setName("Drive HIGH (3.3 V)").setExact(true)).click();
+            assertThat(page.locator("#pin-level")).hasText("Level: HIGH");
+            page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Close").setExact(true)).click();
+            assertThat(page.locator("#pin-11 .pin-state")).hasText("OUT · H");
+            assertThat(page.locator("#gpio-status")).hasText("Simulation · 1 pin configured");
+
+            // I2C: the simulated bus answers at 0x76 with a BME280 chip id in register 0xD0.
+            page.navigate(baseUri.resolve("i2c").toString());
+            assertThat(page.locator(".page h1")).hasText("I²C");
+            page.locator("#i2c-scan").click();
+            assertThat(page.locator("#i2c-status")).hasText("Simulation · 4 devices on i2c-1");
+            page.locator("#i2c-0x76").click();
+            page.getByRole(AriaRole.TEXTBOX,
+                    new Page.GetByRoleOptions().setName("Start register (hex)").setExact(true)).fill("D0");
+            page.locator("#i2c-read").click();
+            assertThat(page.locator("#i2c-dump")).containsText("D0: 60");
+
+            // PWM: the simulated chip accepts a servo pulse.
+            page.navigate(baseUri.resolve("pwm").toString());
+            assertThat(page.locator(".page h1")).hasText("PWM & servo");
+            page.getByRole(AriaRole.SWITCH,
+                    new Page.GetByRoleOptions().setName("Output enabled").setExact(true)).click();
+            assertThat(page.locator("#pwm-status")).hasText("Simulation · pwmchip0/pwm0 · on · 50 Hz · 1500 µs high (7.5 %)");
+            page.locator("#servo-0").click();
+            assertThat(page.locator("#pwm-status")).hasText("Simulation · pwmchip0/pwm0 · on · 50 Hz · 500 µs high (2.5 %)");
+
+            // 1-Wire: two simulated probes report temperatures.
+            page.navigate(baseUri.resolve("onewire").toString());
+            assertThat(page.locator(".page h1")).hasText("1-Wire sensors");
+            assertThat(page.locator("#onewire-status")).containsText("Simulation · 2 devices");
+            assertThat(page.locator(".onewire-panel .stat-value").first()).containsText("°C");
+
+            // The System screen now also reports host interfaces.
+            page.navigate(baseUri.resolve("system").toString());
+            assertThat(page.getByRole(AriaRole.HEADING,
+                    new Page.GetByRoleOptions().setName("Interfaces").setExact(true))).isVisible();
+
             about.click();
             assertThat(page.getByRole(AriaRole.HEADING,
                     new Page.GetByRoleOptions().setName("Small device. Big possibilities.").setExact(true)))

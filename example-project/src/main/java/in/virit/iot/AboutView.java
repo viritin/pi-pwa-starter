@@ -26,7 +26,8 @@ public class AboutView extends VerticalLayout {
         var intro = new Div(new H2("Make yourself at home"),
                 new Paragraph("Connect a sensor, automate a light or keep an eye on your home. "
                         + "This application gives your project a home on your phone and desktop."),
-                new Paragraph("Open System to see how this device is doing."));
+                new Paragraph("Open System to see how this device is doing. GPIO, I2C, PWM and 1-Wire "
+                        + "help you check the wiring before writing a line of code."));
         intro.addClassName("panel");
         var install = new Div(new H2("Keep it close"),
                 new Paragraph("Add this app to your home screen using your browser’s install or share menu. "

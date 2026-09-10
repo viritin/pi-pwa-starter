@@ -18,5 +18,19 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
         </dependency>
+        <!-- Optional: only the GPIO and I2C helpers need Pi4J. Applications that use
+             them add the same two artifacts; the other panels work without Pi4J. -->
+        <dependency>
+            <groupId>com.pi4j</groupId>
+            <artifactId>pi4j-core</artifactId>
+            <version>${pi4j.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.pi4j</groupId>
+            <artifactId>pi4j-plugin-ffm</artifactId>
+            <version>${pi4j.version}</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>

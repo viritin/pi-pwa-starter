@@ -1,20 +1,23 @@
 package in.virit.iot.led;
 
-import com.pi4j.Pi4J;
-import com.pi4j.context.Context;
 import com.pi4j.io.gpio.digital.DigitalOutput;
 import com.pi4j.io.gpio.digital.DigitalState;
+import in.virit.iot.pihelpers.Pi4JContext;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import jakarta.inject.Inject;
 
-/** One shared LED output for the application, initialized on first use. */
+/**
+ * One shared LED output for the application, initialized on first use.
+ * Uses the Pi4J context shared with the pi-helpers panels, so the GPIO screen
+ * shows the LED pin as taken instead of fighting over it.
+ */
 @ApplicationScoped
 public class LedService {
-    @ConfigProperty(name = "starter.gpio.simulated", defaultValue = "false")
-    boolean simulated;
 
-    private Context context;
+    @Inject
+    Pi4JContext pi4j;
+
     private DigitalOutput output;
     private int pin = 17;
     private boolean on;
@@ -22,7 +25,7 @@ public class LedService {
     public record State(int pin, boolean on, boolean simulated) {}
 
     public synchronized State state() {
-        return new State(pin, on, simulated);
+        return new State(pin, on, pi4j.isSimulated());
     }
 
     public synchronized void selectPin(int pin) {
@@ -44,18 +47,16 @@ public class LedService {
         if (expectedPin != pin) {
             throw new IllegalStateException("GPIO selection changed. Please try again.");
         }
-        if (!simulated) {
+        if (!pi4j.isSimulated()) {
             if (output == null) {
-                try {
-                    context = Pi4J.newAutoContext();
-                    output = context.create(DigitalOutput.newConfigBuilder(context)
-                            .id("starter-led").name("Blink a LED")
-                            .bcm(pin).provider("ffm-digital-output")
-                            .initial(DigitalState.LOW).shutdown(DigitalState.LOW).build());
-                } catch (RuntimeException failure) {
-                    release();
-                    throw failure;
+                if (pi4j.isGpioInUse(pin)) {
+                    throw new IllegalStateException("GPIO " + pin + " is in use elsewhere, e.g. on the GPIO screen.");
                 }
+                var context = pi4j.context();
+                output = context.create(DigitalOutput.newConfigBuilder(context)
+                        .id("starter-led").name("Blink a LED")
+                        .bcm(pin).provider("ffm-digital-output")
+                        .initial(DigitalState.LOW).shutdown(DigitalState.LOW).build());
             }
             output.state(on ? DigitalState.HIGH : DigitalState.LOW);
         }
@@ -65,9 +66,12 @@ public class LedService {
 
     @PreDestroy
     synchronized void release() {
-        if (context != null) {
-            context.shutdown();
-            context = null;
+        if (output != null) {
+            try {
+                output.close();
+            } catch (RuntimeException ignored) {
+                // context may already be shutting down
+            }
             output = null;
         }
         on = false;

@@ -1,0 +1,20 @@
+.gpio-panel { width: 100%; box-sizing: border-box; }
+.gpio-header { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; width: 100%; max-width: 34rem; }
+.gpio-header .pin { display: flex; align-items: center; gap: .5rem; min-width: 0;
+  padding: .45rem .6rem; border-radius: .6rem; font-size: .85rem;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
+.gpio-header .pin:nth-child(even) { flex-direction: row-reverse; text-align: right; }
+.gpio-header .pin-gpio { cursor: pointer; }
+.gpio-header .pin-gpio:hover, .gpio-header .pin-gpio:focus-visible { border-color: currentColor; outline: none; }
+.gpio-header .pin-number { flex: none; width: 1.7em; text-align: center; opacity: .55; font-variant-numeric: tabular-nums; }
+.gpio-header .pin-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.gpio-header .pin-state { flex: none; font-size: .68rem; font-weight: 700; letter-spacing: .04em; white-space: nowrap;
+  padding: .1rem .45rem; border-radius: 999px; background: color-mix(in srgb, currentColor 10%, transparent); }
+.gpio-header .pin-power-3v3 .pin-label { color: light-dark(#b45309, #fbbf24); }
+.gpio-header .pin-power-5v .pin-label { color: light-dark(#b91c1c, #f87171); }
+.gpio-header .pin-ground .pin-label { opacity: .6; font-weight: 500; }
+.gpio-header .pin-in { border-color: color-mix(in srgb, #2563eb 45%, transparent); }
+.gpio-header .pin-out { border-color: color-mix(in srgb, #16a34a 45%, transparent); }
+.gpio-header .pin-high .pin-state { background: var(--aura-accent-color, var(--lumo-primary-color, #4f39f6)); color: #fff; }
+.gpio-header .pin-external { opacity: .75; border-style: dashed; }

@@ -1,0 +1,257 @@
+package in.virit.iot.pihelpers;
+
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.dependency.StyleSheet;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Pre;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.component.textfield.TextField;
+import org.jboss.logging.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
+/**
+ * i2cdetect in the browser, plus a register dump and a single register write
+ * for the selected device. No route or menu entry; the application adds those.
+ */
+@StyleSheet("styles/pi-helpers-i2c.css")
+public class I2cPanel extends VerticalLayout {
+
+    private static final Logger LOG = Logger.getLogger(I2cPanel.class);
+
+    private final I2cService service;
+    private final Select<Integer> bus = new Select<>();
+    private final AddressGrid grid = new AddressGrid();
+    private final DeviceTools tools = new DeviceTools();
+    private final Paragraph status = new Paragraph();
+    private Set<Integer> found = Set.of();
+
+    public I2cPanel(I2cService service) {
+        this.service = service;
+        addClassName("i2c-panel");
+        status.setId("i2c-status");
+        bus.setLabel("Bus");
+        bus.setItemLabelGenerator(n -> "i2c-" + n);
+        var buses = service.buses();
+        bus.setItems(buses);
+        if (!buses.isEmpty()) {
+            bus.setValue(buses.get(0));
+        }
+        var scan = new Button("Scan bus", e -> scan());
+        scan.setId("i2c-scan");
+        scan.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        scan.setEnabled(!buses.isEmpty());
+        var toolbar = new HorizontalLayout(bus, scan);
+        toolbar.setAlignItems(Alignment.BASELINE);
+
+        add(new H1("I²C"),
+                new Paragraph("Find what answers on the bus, then read its registers to check the wiring "
+                        + "and the datasheet before writing any driver code. "
+                        + "Typical wiring: SDA to GPIO2 (pin 3), SCL to GPIO3 (pin 5), 3V3 and GND."),
+                toolbar, grid, status, tools);
+        tools.setVisible(false);
+        if (buses.isEmpty()) {
+            status.setText("No /dev/i2c-* device found. Enable I²C with raspi-config or dtparam=i2c_arm=on and reboot.");
+        } else {
+            status.setText((service.isSimulated() ? "Simulation · " : "") + "Not scanned yet");
+        }
+    }
+
+    private void scan() {
+        Integer selected = bus.getValue();
+        if (selected == null) {
+            return;
+        }
+        try {
+            found = new TreeSet<>(service.scan(selected));
+            grid.update(found);
+            status.setText((service.isSimulated() ? "Simulation · " : "")
+                    + found.size() + (found.size() == 1 ? " device" : " devices") + " on i2c-" + selected);
+        } catch (RuntimeException failure) {
+            LOG.warn("I2C scan failed", failure);
+            Notification.show("Scan failed: " + failure.getMessage(), 5000, Notification.Position.MIDDLE);
+        }
+    }
+
+    private void select(int address) {
+        tools.show(bus.getValue(), address);
+    }
+
+    class AddressGrid extends Div {
+        private final Map<Integer, Span> cells = new HashMap<>();
+
+        AddressGrid() {
+            addClassName("i2c-grid");
+            for (int row = 0; row < 8; row++) {
+                var label = new Span("%02X".formatted(row * 16));
+                label.addClassName("i2c-row");
+                add(label);
+                for (int col = 0; col < 16; col++) {
+                    int address = row * 16 + col;
+                    var cell = new Span(address < I2cService.FIRST_ADDRESS || address > I2cService.LAST_ADDRESS
+                            ? "" : "%02X".formatted(address));
+                    cell.addClassName("i2c-cell");
+                    cell.setId("i2c-" + I2cService.hex(address));
+                    cell.addClickListener(e -> {
+                        if (found.contains(address)) {
+                            select(address);
+                        }
+                    });
+                    cells.put(address, cell);
+                    add(cell);
+                }
+            }
+        }
+
+        void update(Set<Integer> found) {
+            cells.forEach((address, cell) -> {
+                boolean present = found.contains(address);
+                cell.setClassName("found", present);
+                cell.getElement().setAttribute("role", present ? "button" : "cell");
+            });
+        }
+    }
+
+    class DeviceTools extends Div {
+        private final H4 title = new H4();
+        private final TextField startRegister = new TextField("Start register (hex)", "00", "");
+        private final IntegerField count = new IntegerField("Bytes");
+        private final Pre dump = new Pre();
+        private final TextField writeRegister = new TextField("Register (hex)", "00", "");
+        private final TextField writeValue = new TextField("Value (hex)", "00", "");
+        private Integer bus;
+        private int address;
+
+        DeviceTools() {
+            addClassName("panel");
+            count.setValue(16);
+            count.setMin(1);
+            count.setMax(256);
+            count.setStepButtonsVisible(true);
+            startRegister.setWidth("9em");
+            count.setWidth("7em");
+            writeRegister.setWidth("9em");
+            writeValue.setWidth("9em");
+            var read = new Button("Read registers", e -> read(true));
+            read.setId("i2c-read");
+            read.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+            var raw = new Button("Read without register", e -> read(false));
+            raw.addThemeVariants(ButtonVariant.LUMO_SMALL);
+            var write = new Button("Write", e -> confirmWrite());
+            write.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ERROR);
+            dump.addClassName("hexdump");
+            dump.setId("i2c-dump");
+            var readRow = new FlexLayout(startRegister, count, read, raw);
+            readRow.addClassName("i2c-row-fields");
+            var writeRow = new FlexLayout(writeRegister, writeValue, write);
+            writeRow.addClassName("i2c-row-fields");
+            add(title,
+                    new Paragraph("Register dumps assume the device auto-increments its register pointer, "
+                            + "as most sensors do. Writes change the device state; keep the datasheet open."),
+                    readRow, dump, new H4("Write one register"), writeRow);
+        }
+
+        void show(Integer bus, int address) {
+            this.bus = bus;
+            this.address = address;
+            var hint = I2cService.hint(address);
+            title.setText(I2cService.hex(address) + (hint != null ? " · " + hint + "?" : ""));
+            dump.setText("");
+            setVisible(true);
+        }
+
+        private void read(boolean withRegister) {
+            try {
+                int register = parseHex(startRegister.getValue(), 0xFF, "Start register");
+                int n = count.getValue() == null ? 16 : count.getValue();
+                byte[] data = withRegister
+                        ? service.readRegisters(bus, address, register, n)
+                        : service.read(bus, address, n);
+                dump.setText(format(withRegister ? register : 0, data));
+            } catch (RuntimeException failure) {
+                LOG.warn("I2C read failed", failure);
+                Notification.show("Read failed: " + failure.getMessage(), 5000, Notification.Position.MIDDLE);
+            }
+        }
+
+        private void confirmWrite() {
+            try {
+                int register = parseHex(writeRegister.getValue(), 0xFF, "Register");
+                int value = parseHex(writeValue.getValue(), 0xFF, "Value");
+                var dialog = new ConfirmDialog("Write to " + I2cService.hex(address) + "?",
+                        "Register " + I2cService.hex(register) + " ← " + I2cService.hex(value)
+                                + ". A wrong value can misconfigure or reset the device.",
+                        "Write", confirm -> {
+                    try {
+                        service.writeRegister(bus, address, register, value);
+                        Notification.show("Wrote " + I2cService.hex(value) + " to register " + I2cService.hex(register));
+                    } catch (RuntimeException failure) {
+                        LOG.warn("I2C write failed", failure);
+                        Notification.show("Write failed: " + failure.getMessage(), 5000, Notification.Position.MIDDLE);
+                    }
+                });
+                dialog.setCancelable(true);
+                dialog.setConfirmButtonTheme("error primary");
+                dialog.open();
+            } catch (IllegalArgumentException invalid) {
+                Notification.show(invalid.getMessage(), 4000, Notification.Position.MIDDLE);
+            }
+        }
+    }
+
+    static int parseHex(String text, int max, String what) {
+        String value = text == null ? "" : text.trim().toLowerCase();
+        if (value.startsWith("0x")) {
+            value = value.substring(2);
+        }
+        try {
+            int parsed = Integer.parseInt(value, 16);
+            if (parsed < 0 || parsed > max) {
+                throw new NumberFormatException();
+            }
+            return parsed;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(what + " must be hex between 00 and %02X.".formatted(max));
+        }
+    }
+
+    /** Classic hex dump: offset, 16 bytes in hex, then the printable ASCII. */
+    static String format(int startRegister, byte[] data) {
+        if (data.length == 0) {
+            return "(no data)";
+        }
+        var out = new StringBuilder();
+        for (int row = 0; row < data.length; row += 16) {
+            out.append("%02X:".formatted((startRegister + row) & 0xFF));
+            var ascii = new StringBuilder();
+            for (int i = row; i < row + 16; i++) {
+                if (i < data.length) {
+                    int b = data[i] & 0xFF;
+                    out.append(" %02X".formatted(b));
+                    ascii.append(b >= 0x20 && b < 0x7F ? (char) b : '.');
+                } else {
+                    out.append("   ");
+                }
+                if (i == row + 7) {
+                    out.append(' ');
+                }
+            }
+            out.append("  |").append(ascii).append("|\n");
+        }
+        return out.toString();
+    }
+}
