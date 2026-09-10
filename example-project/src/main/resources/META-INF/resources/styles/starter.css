@@ -9,6 +9,19 @@ html {
   --aura-content-color-scheme: light dark;
   --aura-surface-level: 2;
   color-scheme: light dark;
+  /* Aura paints its gradient on <html> with background-attachment: fixed and
+     background-size: 100vw 100vh. iOS Safari ignores fixed attachment, so the
+     gradient tiles every viewport height and shows a hard seam while scrolling.
+     Paint a plain color here and move the gradient to a fixed pseudo-element. */
+  background: var(--aura-background-color);
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--aura-app-background);
+  pointer-events: none;
 }
 .page { max-width: 68rem; margin-inline: auto; padding: clamp(1rem, 4vw, 3rem); gap: 1.25rem; }
 .page h1 { font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1.15; margin: 0; }
@@ -19,3 +32,15 @@ html {
 .brand { display: grid; gap: .4rem; padding: 2rem 1rem; text-align: center; }
 .brand-title { font-size: 1.5rem; font-weight: 700; }
 .eyebrow { font-size: .75rem; letter-spacing: .12em; font-weight: 700; }
+
+/* MobileMainLayout flattens these surfaces on small/short screens.
+   Keep Aura's root gradient visible instead, including behind long views.
+   The content override needs !important to match the addon's part rule. */
+@media (max-width: 800px), (max-height: 600px) {
+  vaadin-app-layout.starter-layout {
+    background: transparent;
+  }
+  vaadin-app-layout.starter-layout::part(content) {
+    background: transparent !important;
+  }
+}

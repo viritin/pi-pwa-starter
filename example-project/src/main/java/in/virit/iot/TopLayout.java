@@ -10,6 +10,10 @@ import org.vaadin.firitin.appframework.MobileMainLayout;
 @StyleSheet("styles/starter.css")
 public class TopLayout extends MobileMainLayout {
 
+    public TopLayout() {
+        addClassName("starter-layout");
+    }
+
     @Override
     protected Object getDrawerHeader() {
         setBodyScrolling(true);
