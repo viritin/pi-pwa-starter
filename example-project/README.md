@@ -38,33 +38,40 @@ Vaadin 25.3.0-beta2 that check ignores the per-route chunk keys, so a *new view
 that only uses components other views already use* gets no chunk in the reused
 bundle and renders as empty elements when opened directly. If a new view looks
 blank after a build, delete `src/main/bundles` (or build with
-`-Dvaadin.force.production.build=true`). The integration test opens every route
-in a fresh browser to catch this.
+`-Dvaadin.force.production.build=true`). The Playwright smoke test opens every
+route in a fresh browser to catch this.
 
-## Browser integration test
+## Testing
 
-From the repository root, build both modules and run the smoke test with:
+Two layers, deliberately unequal in size.
 
-```sh
-./mvnw verify
-```
+**Browserless view tests** are the primary UI tests: `./mvnw test`. They use
+Vaadin's [browserless testing](https://vaadin.com/docs/latest/testing/browserless)
+(`browserless-test-quarkus`) inside the Quarkus test container, so the real
+views run with the real CDI services in simulated hardware mode, in a mocked
+Vaadin environment with no browser and no frontend build. A test navigates to
+a view, finds components with locators, interacts through testers and asserts
+on the component tree, in milliseconds. `ViewTest` is the shared base: it scans
+this package for routes, registers the custom `SwitchTester`, and offers
+`awaitPush` for panels that update from their own threads through `ui.access`.
+Add a test per view; `GpioViewTest` and `I2cViewTest` show the pattern.
 
-Failsafe runs `ApplicationIT`: Quarkus starts the packaged server on its test
-port (8081 by default) and stops it after the test. Headless Chromium opens the
-application, checks all three navigation links and opens
-every view URL directly. It also selects a GPIO and toggles the LED Switch in
-the explicitly configured `it` simulation profile. No manually started server is needed. A missing view
-or failed Vaadin initialization fails the test.
+**One Playwright smoke test**, `PwaSmokeIT`, runs with `./mvnw verify`: Failsafe
+starts the packaged application under the `it` profile, headless Chromium
+fetches the PWA manifest and service worker, renders the front page, navigates
+once over the live connection and opens every route directly in a fresh
+browser to catch a bundle that lacks a route's chunk (see the note above).
+It checks that the server delivers a working PWA to a browser, nothing more;
+what the views do is the browserless tests' job.
 
-Playwright downloads its browsers on first use. On Linux CI images missing
+Playwright downloads its browser on first use. On Linux CI images missing
 browser system libraries, install Chromium's prerequisites first:
 
 ```sh
 ./mvnw test-compile exec:java -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install --with-deps chromium"
 ```
 
-Reports are written to `target/failsafe-reports`. This tests the packaged
-application; `quarkus:dev` remains the development entry point.
+Reports land in `target/surefire-reports` and `target/failsafe-reports`.
 
 ## Make it yours
 

@@ -73,6 +73,14 @@
             <artifactId>quarkus-junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Browserless UI tests: real views in a mocked Vaadin environment inside the
+             Quarkus test container, no browser and no frontend build. -->
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>browserless-test-quarkus</artifactId>
+            <version>1.1.2</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
@@ -96,6 +104,19 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.4</version>
+                <configuration>
+                    <!-- Surefire enables Java assertions; Vaadin's element state provider asserts
+                         lower-case attribute names, which the SVG sparkline (viewBox) violates
+                         on purpose. Production never runs with assertions. -->
+                    <enableAssertions>false</enableAssertions>
+                    <systemPropertyVariables>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>

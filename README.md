@@ -2,11 +2,11 @@
 
 A Maven reactor for a small Quarkus + Vaadin IoT application:
 
-- **example-project**: runnable PWA, theme, navigation and browser integration test.
+- **example-project**: runnable PWA, theme, navigation, browserless view tests and a browser smoke test.
 - **pi-helpers**: reusable prototyping panels: System (host diagnostics, interfaces,
   power), GPIO, I²C, PWM/servo and 1-Wire, plus the shared Pi4J context.
 
-Requires JDK 25. Build both modules and run the Playwright integration test:
+Requires JDK 25. Build both modules, run the browserless view tests and the Playwright smoke test:
 
 ```sh
 ./mvnw verify
