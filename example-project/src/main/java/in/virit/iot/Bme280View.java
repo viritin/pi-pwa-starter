@@ -20,7 +20,9 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.shared.Registration;
 import in.virit.TemperatureGauge;
+import in.virit.iot.pihelpers.HomeAssistantFinder;
 import in.virit.iot.bme280.Bme280Service;
+import in.virit.iot.bme280.ClimatePublisher;
 import in.virit.iot.bme280.Bme280Service.Reading;
 import jakarta.inject.Inject;
 import org.vaadin.svgvis.SvgSparkLine;
@@ -40,8 +42,9 @@ import java.util.function.Function;
  * way ScrewCloud's pi-reader shows its tags. A gauge for the headline value, the
  * other readings as secondary lines, and the recent history as a curve, with the
  * period selectable. Everything is pushed from {@link Bme280Service}; the view
- * only draws. Wiring instructions sit below the card so the screen is useful
- * before the sensor is connected.
+ * only draws. Below the cards, {@link ClimateSharingCard} publishes the same
+ * readings to Home Assistant over MQTT, and wiring instructions make the screen
+ * useful before the sensor is connected.
  */
 @Route(value = "bme280", layout = TopLayout.class)
 @Menu(title = "Climate", icon = "vaadin:cloud-o", order = 4)
@@ -71,7 +74,7 @@ public class Bme280View extends VerticalLayout {
     private Registration listener;
 
     @Inject
-    public Bme280View(Bme280Service service) {
+    public Bme280View(Bme280Service service, ClimatePublisher publisher, HomeAssistantFinder finder) {
         this.service = service;
         addClassName("page");
         status.setId("bme280-status");
@@ -83,7 +86,7 @@ public class Bme280View extends VerticalLayout {
         add(new H1("Climate"),
                 new Paragraph("Temperature, humidity and air pressure from a BME280 on the I²C bus, "
                         + "sampled every few seconds since the application started."),
-                range, cards, status, new WiringPanel());
+                range, cards, status, new ClimateSharingCard(publisher, finder), new WiringPanel());
         refresh();
     }
 

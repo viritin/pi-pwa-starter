@@ -59,3 +59,6 @@ body::before {
 .climate-cards { display: flex; flex-wrap: wrap; gap: 1rem; width: 100%; align-items: flex-start; }
 .wiring ul { margin: .25rem 0 .75rem; padding-inline-start: 1.25rem; }
 .wiring li { margin: .15rem 0; }
+.climate-sharing { max-width: 44rem; }
+.climate-actions { flex-wrap: wrap; }
+.climate-fields { flex-wrap: wrap; gap: .75rem; align-items: baseline; }

@@ -7,3 +7,10 @@ target/
 
 # Local bug report drafts for upstream projects; not part of the starter.
 /bugreports/
+
+# Runtime settings written by the application (broker credentials etc.)
+/example-project/data/
+
+# Home Assistant test instance data created by the docker commands in HOME-ASSISTANT.md
+/ha-config/
+/mosquitto.conf

@@ -16,9 +16,10 @@ class BleViewTest extends ViewTest {
     void listsAndFiltersNearbyDevices() {
         navigate(BleView.class);
         awaitPush(() -> paragraph("ble-status").contains("in range"), "the first scan result");
-        assertEquals("Simulation · scanning · 5 in range", paragraph("ble-status"));
+        // One simulated device comes and goes on purpose, so four or five are in range.
+        assertTrue(paragraph("ble-status").matches("Simulation · scanning · [45] in range"), paragraph("ble-status"));
         var rows = find(Div.class).withClassName("ble-device").all();
-        assertEquals(5, rows.size());
+        assertTrue(rows.size() == 4 || rows.size() == 5, "rows: " + rows.size());
         assertTrue(textOf(rows.get(0)).contains("Ruuvi 229F"), "strongest signal first");
 
         test(findTextField().withId("ble-filter").component()).setValue("apple");

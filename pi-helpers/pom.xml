@@ -45,5 +45,18 @@
             <version>5.1.1</version>
             <optional>true</optional>
         </dependency>
+        <!-- Optional: only the MQTT publisher and the Home Assistant finder need these. -->
+        <dependency>
+            <groupId>com.hivemq</groupId>
+            <artifactId>hivemq-mqtt-client</artifactId>
+            <version>1.4.0</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jmdns</groupId>
+            <artifactId>jmdns</artifactId>
+            <version>3.6.3</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>

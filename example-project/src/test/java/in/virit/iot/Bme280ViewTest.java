@@ -18,8 +18,9 @@ class Bme280ViewTest extends ViewTest {
         navigate(Bme280View.class);
         assertEquals("Simulation · BME280", paragraph("bme280-status"));
         var cards = find(Card.class).all();
-        assertEquals(2, cards.size());
+        assertEquals(3, cards.size(), "sensor, details and sharing cards");
         assertEquals("BME280", cards.get(0).getTitleAsText());
+        assertEquals("Humidity and pressure", cards.get(1).getTitleAsText());
         assertTrue(findSpan().withTextContaining("Humidity ").exists());
         assertTrue(findSpan().withTextContaining("Pressure ").exists());
         assertEquals(3, find(SvgSparkLine.class).all().stream().filter(SvgSparkLine::isVisible).count(),
@@ -27,5 +28,17 @@ class Bme280ViewTest extends ViewTest {
 
         test(find(RadioButtonGroup.class).withLabel("History").first()).selectItem("24 h");
         assertEquals(3, find(SvgSparkLine.class).all().stream().filter(SvgSparkLine::isVisible).count());
+    }
+
+    /** The sharing card starts idle; with lookup off in tests, it points at the manual form. */
+    @Test
+    void offersToShareWithHomeAssistant() {
+        navigate(Bme280View.class);
+        assertEquals("Not sharing", paragraph("ha-status"));
+        assertEquals("Automatic lookup is switched off; enter the broker below.", paragraph("ha-found"));
+        assertTrue(findTextField().withLabel("Broker host").exists());
+        assertTrue(findTextField().withLabel("Device id").component().getValue().length() > 0,
+                "a device id is generated from the host");
+        assertEquals(1883, findIntegerField().withLabel("Port").component().getValue());
     }
 }

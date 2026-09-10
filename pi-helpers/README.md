@@ -21,6 +21,18 @@ server push in the application's AppShell for live updates.
 | `OneWirePanel` | `OneWireService` | no | Live readings from `/sys/bus/w1`, e.g. DS18B20 temperature probes |
 | `BlePanel` | `BleScanService` | no (BlueZ) | Live list of nearby Bluetooth LE devices: name, address, RSSI, manufacturer, advertised services and payload |
 
+Publishing helpers without a panel of their own (the example's Climate view
+builds its Home Assistant card on them):
+
+| Class | Needs | What it does |
+|---|---|---|
+| `MqttPublisher` | HiveMQ MQTT client (optional) | One MQTT connection with automatic reconnect, background connect, state and status for the UI, last will |
+| `HomeAssistantDiscovery` | nothing | Pure builders for Home Assistant MQTT discovery config, state and availability topics and payloads |
+| `HomeAssistantFinder` | JmDNS (optional) | Finds Home Assistant (`_home-assistant._tcp`) and MQTT brokers on the local network, checks whether port 1883 answers |
+| `MqttSettings`, `SettingsStore` | nothing | Broker settings as a record, persisted as a properties file under `starter.data-dir` |
+| `MqttConfig` | nothing | The same settings from `application.properties` (`starter.mqtt.*`); when a host is set there, configuration overrides the UI |
+| `Json` | nothing | Minimal JSON writer for payloads, so none of the above needs a JSON library |
+
 ## Pi4J and the shared context
 
 Pi4J is an **optional** dependency of this module. `Pi4JContext` owns the one
@@ -65,6 +77,10 @@ attached and stops when the last one leaves. The host needs `bluetooth.service`
 running and the application user in the `bluetooth` group; a nameless device is
 shown with its address and manufacturer id, which is often enough to recognise
 it (Ruuvi is 0x0499, Apple 0x004C, Nordic 0x0059).
+
+Applications using `MqttPublisher` add `com.hivemq:hivemq-mqtt-client`, and
+those using `HomeAssistantFinder` add `org.jmdns:jmdns`. mDNS only reaches the
+local subnet; `starter.mdns.enabled=false` turns the lookup off (tests do this).
 
 ## Configuration
 

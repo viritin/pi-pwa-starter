@@ -164,6 +164,15 @@ sits at 0x77. Nothing is sampled on a host without `/dev/i2c-1`; the status line
 says so. In simulated mode the service fabricates three hours of history at
 startup so the curves are visible immediately.
 
+## Sharing readings with Home Assistant (optional)
+
+The Climate view can publish its readings over MQTT so that Home Assistant
+picks them up through MQTT discovery. `bme280/ClimatePublisher` and the
+reusable `MqttPublisher`, `HomeAssistantDiscovery` and `HomeAssistantFinder` in
+pi-helpers are the example of pushing data to another system. How it works, how
+to configure it and how to run a Home Assistant in Docker to test against are in
+[HOME-ASSISTANT.md](HOME-ASSISTANT.md). Nothing else depends on it.
+
 ## Device and PWA notes
 
 PWA installation/service workers require HTTPS, except on localhost.
@@ -171,8 +180,9 @@ Accessing a Pi through plain HTTP on the LAN is sufficient for the web UI,
 but not PWA installation. Flow's live views require the server connection;
 the offline fallback does not operate hardware or provide live readings.
 
-The GPIO, I²C and PWM screens can drive pins and write to devices; like the
-power actions below, they are meant for a trusted network.
+The GPIO, I²C and PWM screens can drive pins and write to devices, and the
+Home Assistant card stores a broker password in plain text; like the power
+actions below, they are meant for a trusted network.
 
 Host reboot/shutdown are enabled by default. The explicit setting
 `starter.power-actions.enabled=true` is in `application.properties`; set it to
