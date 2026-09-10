@@ -4,3 +4,6 @@ target/
 /related-projects-and-examples/
 .idea/
 *.iml
+
+# Local bug report drafts for upstream projects; not part of the starter.
+/bugreports/
