@@ -6,4 +6,3 @@
   background: color-mix(in srgb, currentColor 4%, transparent); }
 .system-panel .stat-label { font-size: .8rem; opacity: .7; }
 .system-panel .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.system-panel .hint { font-size: .85rem; opacity: .75; margin: 0; }

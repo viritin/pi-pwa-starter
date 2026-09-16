@@ -27,6 +27,9 @@ public class OneWirePanel extends VerticalLayout {
     private final OneWireService service;
     private final SensorCard card = new SensorCard();
     private final Paragraph status = new Paragraph();
+    private final SetupHint setup = PiSetup.oneWire();
+    private final SimulationBanner simulation = new SimulationBanner(
+            "These two probes are invented and their readings drift on their own.");
     private ScheduledExecutorService executor;
 
     public OneWirePanel(OneWireService service) {
@@ -36,9 +39,11 @@ public class OneWirePanel extends VerticalLayout {
         add(new H1("1-Wire sensors"),
                 new Paragraph("DS18B20 probes and other 1-Wire devices the kernel has found. Data goes to GPIO4 "
                         + "(pin 7) with a 4.7 kΩ resistor between data and 3V3; several probes share the same wire."),
-                card, status);
+                simulation, card, status, setup);
+        simulation.setVisible(service.isSimulated());
         if (!service.isBusPresent()) {
-            status.setText("No 1-Wire bus. Add dtoverlay=w1-gpio to /boot/firmware/config.txt and reboot.");
+            status.setText("No 1-Wire bus. The driver is not enabled on this host; the steps below fix that.");
+            setup.setOpened(true);
         }
     }
 

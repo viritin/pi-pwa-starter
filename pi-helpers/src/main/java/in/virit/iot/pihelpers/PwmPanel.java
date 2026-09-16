@@ -41,6 +41,9 @@ public class PwmPanel extends VerticalLayout {
     private final DutyControls duty = new DutyControls();
     private final Switch enabled = new Switch("Output enabled");
     private final Paragraph status = new Paragraph();
+    private final SetupHint setup = PiSetup.pwm();
+    private final SimulationBanner simulation = new SimulationBanner(
+            "This PWM chip is a fake: the numbers below are what a real one would be told, but no pin moves.");
     private boolean updating;
 
     public PwmPanel(PwmService service) {
@@ -81,11 +84,13 @@ public class PwmPanel extends VerticalLayout {
                 new Paragraph("Position a hobby servo or dim an LED with a hardware PWM channel. "
                         + "Servos take the signal wire from the PWM pin, red to 5 V and brown or black to GND; "
                         + "one small servo can run from the 5 V pin, anything bigger wants its own supply."),
-                controls);
+                simulation, controls, setup);
+        simulation.setVisible(service.isSimulated());
         if (channels.isEmpty()) {
             enabled.setEnabled(false);
-            status.setText("No PWM chip found under /sys/class/pwm. Add dtoverlay=pwm-2chan to "
-                    + "/boot/firmware/config.txt and reboot.");
+            status.setText("No PWM chip found under /sys/class/pwm. Hardware PWM is not enabled on this host; "
+                    + "the steps below fix that.");
+            setup.setOpened(true);
         } else {
             showState();
         }

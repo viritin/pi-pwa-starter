@@ -1,6 +1,7 @@
 package in.virit.iot;
 
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.details.Details;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +19,17 @@ class SystemViewTest extends ViewTest {
         assertTrue(findH4().withText("Interfaces").exists());
         assertTrue(findSpan().withText("I²C").exists(), "the interface badges are labelled");
         findButton().withText("Run GC").click();
+    }
+
+    @Test
+    void offersSetupStepsForInterfacesAndPowerActions() {
+        navigate(SystemView.class);
+        var interfaces = find(Details.class)
+                .withCondition(d -> "Enabling interfaces on the Pi".equals(d.getSummaryText())).first();
+        assertTrue(textOf(interfaces).contains("dtoverlay=pwm-2chan"), "config.txt lines are spelled out");
+        var power = find(Details.class)
+                .withCondition(d -> d.getSummaryText().startsWith("Allowing reboot and shutdown")).first();
+        assertTrue(textOf(power).contains("/etc/sudoers.d/"), "the sudoers rule is given as a command");
     }
 
     @Test

@@ -9,6 +9,11 @@ import com.vaadin.flow.shared.Registration;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.freedesktop.dbus.errors.AccessDenied;
+import org.freedesktop.dbus.errors.NoReply;
+import org.freedesktop.dbus.errors.ServiceUnknown;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.types.Variant;
 import org.jboss.logging.Logger;
 
@@ -45,6 +50,8 @@ public class BleScanService {
 
     private static final Logger LOG = Logger.getLogger(BleScanService.class);
     static final Duration POLL = Duration.ofSeconds(2);
+    /** After a failure the next attempt waits longer each time, up to this. */
+    static final Duration MAX_RETRY = Duration.ofSeconds(30);
     /** A device not heard for this long drops off the list. */
     static final Duration FORGET_AFTER = Duration.ofSeconds(60);
 
@@ -90,8 +97,10 @@ public class BleScanService {
     private BluetoothAdapter adapter;
     private volatile String status = "Not scanning";
     private volatile boolean scanning;
+    private volatile boolean problem;
     private int watchers;
     private int failures;
+    private String lastProblem;
 
     public boolean isSimulated() {
         return simulated;
@@ -104,6 +113,11 @@ public class BleScanService {
     /** One line about the radio, in words a person can act on. */
     public String status() {
         return status;
+    }
+
+    /** True while the last attempt failed for a reason on the host: BlueZ, the adapter, permissions. */
+    public boolean hasProblem() {
+        return problem;
     }
 
     /** Devices heard recently, strongest signal first. */
@@ -141,8 +155,21 @@ public class BleScanService {
             return;
         }
         scanning = true;
+        failures = 0;
         status = simulated ? "Simulation · scanning" : "Starting";
-        poller = executor.scheduleWithFixedDelay(this::poll, 0, POLL.toMillis(), TimeUnit.MILLISECONDS);
+        schedule(Duration.ZERO);
+    }
+
+    /** Polls are chained rather than fixed-rate so a failing host is asked less and less often. */
+    private synchronized void schedule(Duration delay) {
+        if (scanning) {
+            poller = executor.schedule(this::poll, delay.toMillis(), TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private Duration retryDelay() {
+        long millis = POLL.toMillis() << Math.min(failures, 6);
+        return Duration.ofMillis(Math.min(millis, MAX_RETRY.toMillis()));
     }
 
     public synchronized void stop() {
@@ -164,62 +191,143 @@ public class BleScanService {
             if (simulated) {
                 simulate();
             } else {
-                if (adapter == null && !connect()) {
-                    return;
+                if (adapter == null) {
+                    connect();
                 }
                 collect();
             }
             failures = 0;
+            problem = false;
+            lastProblem = null;
         } catch (Exception e) {
-            if (failures++ == 0) {
-                LOG.warnf(e, "Reading Bluetooth devices failed; will keep trying");
+            String message = e instanceof BluetoothProblem ? e.getMessage() : "Bluetooth scan failed: " + e;
+            if (!message.equals(lastProblem)) {
+                LOG.warnf(e, "%s", message);
+                lastProblem = message;
             } else {
-                LOG.debugf(e, "Reading Bluetooth devices failed again (%d)", failures);
+                LOG.debugf(e, "Still failing (%d): %s", failures, message);
             }
-            status = "Bluetooth error: " + e.getMessage();
+            failures++;
+            status = message;
+            problem = true;
             disconnect();
+        } finally {
+            fire();
+            schedule(failures == 0 ? POLL : retryDelay());
         }
-        fire();
     }
 
-    private boolean connect() throws Exception {
+    /** A host-side failure explained in words a person can act on; the panel opens the setup steps for it. */
+    public static class BluetoothProblem extends RuntimeException {
+        BluetoothProblem(String message) {
+            super(message);
+        }
+
+        BluetoothProblem(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    private interface Call<T> {
+        T run() throws Exception;
+    }
+
+    /** Runs one D-Bus call and turns its failure into a message that names the step and what to do. */
+    private static <T> T step(String what, Call<T> call) {
+        try {
+            return call.run();
+        } catch (BluetoothProblem e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BluetoothProblem(explain(what, e), e);
+        }
+    }
+
+    /** The D-Bus error name when there is one ("org.bluez.Error.NotReady"), else the exception's short name. */
+    static String errorName(Throwable e) {
+        if (e instanceof DBusExecutionException dbus && dbus.getType() != null && !dbus.getType().isBlank()) {
+            return dbus.getType();
+        }
+        String name = e.getClass().getSimpleName();
+        if (name.startsWith("Bluez") && name.endsWith("Exception")) {
+            name = "org.bluez.Error." + name.substring(5, name.length() - "Exception".length());
+        }
+        return name;
+    }
+
+    static String explain(String what, Throwable e) {
+        String name = errorName(e);
+        String user = System.getProperty("user.name");
+        if (e instanceof AccessDenied || name.endsWith("AccessDenied")) {
+            return "D-Bus refused " + user + " access to BlueZ. Add the user to the bluetooth group and restart "
+                    + "the application: sudo usermod -aG bluetooth " + user;
+        }
+        if (e instanceof ServiceUnknown || e instanceof NoReply || e instanceof DBusException
+                || name.endsWith("ServiceUnknown") || name.endsWith("NoReply")) {
+            return "BlueZ is not answering on D-Bus (" + name + "). Start it with: sudo systemctl enable --now bluetooth";
+        }
+        if (name.endsWith("NotReady") || name.endsWith("Blocked") || what.startsWith("Powering")) {
+            return "The Bluetooth adapter is powered off or blocked by rfkill (" + name + " while " + lower(what)
+                    + "). Run: sudo rfkill unblock bluetooth && bluetoothctl power on";
+        }
+        if (name.endsWith("InProgress") || name.endsWith("Busy")) {
+            return "Another program is already scanning on this adapter; stop it or wait (check with: bluetoothctl show)";
+        }
+        String detail = e.getMessage() == null || e.getMessage().isBlank() || e.getMessage().equals(name)
+                ? "" : ": " + e.getMessage();
+        return what + " failed with " + name + detail;
+    }
+
+    private static String lower(String what) {
+        return Character.toLowerCase(what.charAt(0)) + what.substring(1);
+    }
+
+    private void connect() {
         try {
             manager = DeviceManager.createInstance(false);
         } catch (Exception e) {
-            status = "BlueZ is not reachable over D-Bus (" + e.getMessage() + "). Is bluetooth.service running?";
-            throw e;
+            throw new BluetoothProblem("BlueZ is not reachable over D-Bus (" + e.getMessage()
+                    + "). Is bluetooth.service running? sudo systemctl enable --now bluetooth", e);
         }
-        adapter = manager.getAdapter();
+        adapter = step("Looking for a Bluetooth adapter", manager::getAdapter);
         if (adapter == null) {
-            status = "No Bluetooth adapter found. Check with: bluetoothctl list";
             disconnect();
-            return false;
+            throw new BluetoothProblem("No Bluetooth adapter found. Check with: bluetoothctl list");
         }
-        if (!adapter.isPowered()) {
-            adapter.setPowered(true);
+        if (!step("Reading the adapter's power state", adapter::isPowered)) {
+            step("Powering the adapter on", () -> {
+                adapter.setPowered(true);
+                return null;
+            });
         }
         // Low energy only; DuplicateData makes BlueZ keep reporting devices it already knows
-        manager.setScanFilter(Map.of(
-                DiscoveryFilter.Transport, DiscoveryTransport.LE,
-                DiscoveryFilter.DuplicateData, true));
-        if (!adapter.isDiscovering() && !adapter.startDiscovery()) {
-            status = "BlueZ refused to start a discovery on " + adapter.getAddress()
-                    + ". Another program may be scanning, or this user may lack permission (bluetooth group).";
-            return false;
+        step("Setting the LE scan filter", () -> {
+            manager.setScanFilter(Map.of(
+                    DiscoveryFilter.Transport, DiscoveryTransport.LE,
+                    DiscoveryFilter.DuplicateData, true));
+            return null;
+        });
+        if (!Boolean.TRUE.equals(step("Reading the discovery state", adapter::isDiscovering))) {
+            // The wrapper's startDiscovery() swallows the reason; the raw interface keeps it
+            step("Starting the discovery", () -> {
+                adapter.getRawAdapter().StartDiscovery();
+                return null;
+            });
         }
         status = "Scanning on " + adapter.getName() + " (" + adapter.getAddress() + ")";
         LOG.infof("BLE scan started on %s", adapter.getAddress());
-        return true;
     }
 
     private void collect() {
-        if (!adapter.isDiscovering() && !adapter.startDiscovery()) {
-            status = "Not scanning: BlueZ will not start a discovery";
-            return;
+        if (!Boolean.TRUE.equals(step("Reading the discovery state", adapter::isDiscovering))) {
+            step("Restarting the discovery", () -> {
+                adapter.getRawAdapter().StartDiscovery();
+                return null;
+            });
         }
         Instant now = Instant.now();
         // true: use what BlueZ already has, do not run a discovery of its own
-        for (BluetoothDevice device : manager.getDevices(true)) {
+        for (BluetoothDevice device : step("Listing devices", () -> manager.getDevices(true))) {
             Short rssi = device.getRssi();
             if (rssi == null) {
                 continue; // remembered by BlueZ but not currently heard

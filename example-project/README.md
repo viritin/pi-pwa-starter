@@ -99,8 +99,11 @@ Reports land in `target/surefire-reports` and `target/failsafe-reports`.
   popover item in the mobile bottom bar. The panels offer a tappable header map for reading and
   driving GPIOs, an I²C scanner with register dump and write, a PWM/servo
   control, live 1-Wire (DS18B20) readings and a Bluetooth LE scanner listing
-  nearby devices through BlueZ. See [Pi Helpers](../pi-helpers/README.md)
-  for what each needs on the host. Delete the views you do not want.
+  nearby devices through BlueZ. Each panel ends with a folded setup hint that
+  gives the commands to enable its bus on the Pi, with copy buttons and links
+  to the documentation; it opens by itself when the hardware is missing. See
+  [Pi Helpers](../pi-helpers/README.md) for the same steps in one place.
+  Delete the views you do not want.
 
 ## Logo and PWA icon
 

@@ -38,6 +38,9 @@ public class I2cPanel extends VerticalLayout {
     private final AddressGrid grid = new AddressGrid();
     private final DeviceTools tools = new DeviceTools();
     private final Paragraph status = new Paragraph();
+    private final SetupHint setup = PiSetup.i2c();
+    private final SimulationBanner simulation = new SimulationBanner(
+            "This bus and the four devices on it are made up; register reads and writes go to an in-memory copy.");
     private Set<Integer> found = Set.of();
 
     public I2cPanel(I2cService service) {
@@ -62,10 +65,12 @@ public class I2cPanel extends VerticalLayout {
                 new Paragraph("Find what answers on the bus, then read its registers to check the wiring "
                         + "and the datasheet before writing any driver code. "
                         + "Typical wiring: SDA to GPIO2 (pin 3), SCL to GPIO3 (pin 5), 3V3 and GND."),
-                toolbar, grid, status, tools);
+                simulation, toolbar, grid, status, tools, setup);
+        simulation.setVisible(service.isSimulated());
         tools.setVisible(false);
         if (buses.isEmpty()) {
-            status.setText("No /dev/i2c-* device found. Enable I²C with raspi-config or dtparam=i2c_arm=on and reboot.");
+            status.setText("No /dev/i2c-* device found. The bus is not enabled on this host; the steps below fix that.");
+            setup.setOpened(true);
         } else {
             status.setText((service.isSimulated() ? "Simulation · " : "") + "Not scanned yet");
         }

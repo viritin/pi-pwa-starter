@@ -1,0 +1,16 @@
+/* The hint spans its container like the content above it and keeps one even
+   inset all round (the component sets Aura's no-padding variant so these win).
+   Flow wraps the content in a div; that wrapper spaces the blocks evenly. */
+.setup-hint { width: 100%; box-sizing: border-box; padding: .25rem .25rem .35rem; }
+.setup-hint::part(content) { padding: .25rem .75rem .75rem; }
+.setup-hint > div { display: grid; gap: .75rem; }
+.setup-hint p { margin: 0; font-size: .9rem; line-height: 1.5; }
+.setup-hint .setup-commands { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .15rem .5rem; align-items: start; }
+.setup-hint .setup-caption { grid-column: 1 / -1; font-size: .8rem; opacity: .75; }
+.setup-hint pre { margin: 0; padding: .6rem .8rem; border-radius: .5rem; min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; line-height: 1.5;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
+.setup-hint .setup-links { display: flex; flex-wrap: wrap; gap: .25rem .75rem; font-size: .85rem; }
+.setup-hint .setup-links span { opacity: .75; }

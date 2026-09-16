@@ -285,11 +285,7 @@ public class SystemPanel extends VerticalLayout {
             addClassName("panel");
             add(new H4("Interfaces"));
             add(new StatGrid(gpio, i2c, spi, uart, oneWire, pwm));
-            var hint = new Paragraph("Enable interfaces with sudo raspi-config → Interface Options, "
-                    + "or with dtparam/dtoverlay lines in /boot/firmware/config.txt, then reboot. "
-                    + "Hardware PWM needs dtoverlay=pwm-2chan; 1-Wire needs dtoverlay=w1-gpio.");
-            hint.addClassName("hint");
-            add(hint);
+            add(PiSetup.interfaces());
         }
 
         void update(InterfaceStatus.Status status) {
@@ -347,8 +343,10 @@ public class SystemPanel extends VerticalLayout {
             rebootButton.setEnabled(systemControl.isEnabled());
             shutdownButton.setEnabled(systemControl.isEnabled());
             add(new HorizontalLayout(rebootButton, shutdownButton));
-            if (!systemControl.isEnabled()) {
-                add(new com.vaadin.flow.component.html.Paragraph("Host power actions are disabled."));
+            if (systemControl.isEnabled()) {
+                add(PiSetup.powerActions());
+            } else {
+                add(new Paragraph("Host power actions are disabled."));
             }
         }
     }

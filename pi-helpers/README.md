@@ -21,6 +21,21 @@ server push in the application's AppShell for live updates.
 | `OneWirePanel` | `OneWireService` | no | Live readings from `/sys/bus/w1`, e.g. DS18B20 temperature probes |
 | `BlePanel` | `BleScanService` | no (BlueZ) | Live list of nearby Bluetooth LE devices: name, address, RSSI, manufacturer, advertised services and payload |
 
+When the services simulate (`starter.hardware.simulated=true`), each Proto Tools
+panel shows an orange `SimulationBanner` above its data saying what on that
+screen is made up, in addition to the "Simulation" prefix in its status line.
+
+Each panel ends with a folded *setup hint*: the commands that enable its bus on
+Raspberry Pi OS, the matching `config.txt` lines, the group and sudo rules the
+application needs, a check to run and links to the documentation. The commands
+name the account the application is running as (read from the JVM), so they can
+be pasted as they are, and every command block has a copy button. The hint opens
+by itself when the hardware is missing. The recipes
+are static factories on `PiSetup` (`PiSetup.i2c()`, `oneWire()`, `pwm()`,
+`bluetooth()`, `interfaces()`, `powerActions()`) and the component is
+`SetupHint`, so an application can add its own with
+`new SetupHint("…").text(…).commands(caption, lines…).link(text, url)`.
+
 Publishing helpers without a panel of their own (the example's Climate view
 builds its Home Assistant card on them):
 
@@ -74,9 +89,27 @@ arrive with 5.0. Switch `PwmService` over then if you prefer one API.
 `com.github.hypfvieh:bluez-dbus` and `dbus-java-transport-native-unixsocket`
 dependencies; applications that use it add both. Scanning starts when a panel is
 attached and stops when the last one leaves. The host needs `bluetooth.service`
-running and the application user in the `bluetooth` group; a nameless device is
-shown with its address and manufacturer id, which is often enough to recognise
-it (Ruuvi is 0x0499, Apple 0x004C, Nordic 0x0059).
+running and the application user in the `bluetooth` group (BlueZ's D-Bus policy
+checks it):
+
+```sh
+sudo apt install -y bluez
+sudo systemctl enable --now bluetooth
+sudo usermod -aG bluetooth $USER   # log in again or restart the service
+bluetoothctl --timeout 10 scan le  # should list devices without the app
+```
+
+A nameless device is shown with its address and manufacturer id, which is often
+enough to recognise it (Ruuvi is 0x0499, Apple 0x004C, Nordic 0x0059).
+
+Rows keep their position while their signal and payload update, so the list can
+be read while it is live; *Sort by signal* reorders it once, strongest first. A
+fresh list starts in signal order. When a D-Bus call fails, the status line names
+the step and the fix: a soft-blocked radio (`org.bluez.Error.NotReady` while
+powering the adapter on) says `sudo rfkill unblock bluetooth`, `AccessDenied` says
+which user to add to the `bluetooth` group, and an unreachable BlueZ points at
+`bluetooth.service`. Retries back off from two seconds to thirty, and the log
+carries one WARN per distinct problem rather than one per attempt.
 
 Applications using `MqttPublisher` add `com.hivemq:hivemq-mqtt-client`, and
 those using `HomeAssistantFinder` add `org.jmdns:jmdns`. mDNS only reaches the
@@ -95,19 +128,45 @@ starter.power-actions.enabled=true
 ```
 
 Executing power actions requires a Linux host with passwordless sudo for
-`reboot` and `shutdown`. Both buttons ask for confirmation before executing.
+`reboot` and `shutdown`, and nothing else. As the application user:
+
+```sh
+echo "$USER ALL=(root) NOPASSWD: /usr/sbin/reboot, /usr/sbin/shutdown" | sudo tee /etc/sudoers.d/010-pi-starter-power
+sudo chmod 440 /etc/sudoers.d/010-pi-starter-power
+sudo visudo -cf /etc/sudoers.d/010-pi-starter-power
+sudo -n -l reboot   # prints the command when the rule works
+```
+
+Both buttons ask for confirmation before executing.
 
 ## Enabling interfaces on the Pi
 
-The System panel's Interfaces card tells you what the host currently exposes.
-Enable more with `sudo raspi-config` → Interface Options, or in
-`/boot/firmware/config.txt`, then reboot:
+The System panel's Interfaces card tells you what the host currently exposes,
+and its setup hint has the same steps as below with copy buttons. From the shell:
+
+```sh
+sudo raspi-config nonint do_i2c 0        # I²C bus 1 on GPIO2/3
+sudo raspi-config nonint do_spi 0        # SPI0 on GPIO7–11
+sudo raspi-config nonint do_serial_hw 0  # UART on GPIO14/15 (older images: do_serial 2)
+sudo raspi-config nonint do_onewire 0    # 1-Wire on GPIO4
+sudo reboot
+```
+
+Or the equivalent lines in `/boot/firmware/config.txt` (the only way for PWM):
 
 ```ini
 dtparam=i2c_arm=on        # I²C bus 1 on GPIO2/3
 dtparam=spi=on            # SPI0 on GPIO7–11
+enable_uart=1             # UART on GPIO14/15
 dtoverlay=pwm-2chan       # hardware PWM on GPIO18 and GPIO19
 dtoverlay=w1-gpio         # 1-Wire on GPIO4
+```
+
+The application user needs the matching groups; they apply after logging in
+again or restarting the service:
+
+```sh
+sudo usermod -aG gpio,i2c,spi,dialout,bluetooth $USER
 ```
 
 There is no authentication in these panels. Add access control before exposing

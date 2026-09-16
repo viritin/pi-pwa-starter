@@ -21,6 +21,7 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.shared.Registration;
 import in.virit.TemperatureGauge;
 import in.virit.iot.pihelpers.HomeAssistantFinder;
+import in.virit.iot.pihelpers.PiSetup;
 import in.virit.iot.bme280.Bme280Service;
 import in.virit.iot.bme280.ClimatePublisher;
 import in.virit.iot.bme280.Bme280Service.Reading;
@@ -238,6 +239,7 @@ public class Bme280View extends VerticalLayout {
             addClassNames("panel", "wiring");
             add(new H2("Connecting the sensor"),
                     intro(),
+                    PiSetup.i2c(),
                     new H4("BME280 or BMP280 breakout board"),
                     new UnorderedList(
                             new ListItem("VIN or VCC → 3V3, header pin 1 (never 5 V on a 3.3 V board)"),
@@ -257,9 +259,8 @@ public class Bme280View extends VerticalLayout {
 
         private Paragraph intro() {
             var link = new RouterLink("I²C tool under Proto Tools", I2cView.class);
-            return new Paragraph(new Span("The sensor speaks I²C. Enable the bus first with sudo raspi-config → "
-                    + "Interface Options → I2C (or dtparam=i2c_arm=on in /boot/firmware/config.txt) and reboot. "
-                    + "A scan with the "), link, new Span(" should then list the sensor at 0x76 or 0x77."));
+            return new Paragraph(new Span("The sensor speaks I²C, which is off on a fresh Pi; the steps below turn it "
+                    + "on. A scan with the "), link, new Span(" should then list the sensor at 0x76 or 0x77."));
         }
     }
 }

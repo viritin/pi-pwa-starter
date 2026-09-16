@@ -2,6 +2,8 @@ package in.virit.iot.pihelpers;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
@@ -19,13 +21,16 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Map;
 
 /**
  * Nearby Bluetooth LE devices as a live list: name, address, signal, who made
- * it and what it advertises. Scanning runs while the panel is on screen. No
- * route or menu entry; the application adds those.
+ * it and what it advertises. Scanning runs while the panel is on screen. Rows
+ * keep their place while their numbers update; a button re-sorts by signal on
+ * demand, so the list can be read while it is live. No route or menu entry; the
+ * application adds those.
  */
 @StyleSheet("styles/pi-helpers-ble.css")
 public class BlePanel extends VerticalLayout {
@@ -35,6 +40,9 @@ public class BlePanel extends VerticalLayout {
     private final TextField filter = new TextField();
     private final DeviceList list = new DeviceList();
     private final Paragraph status = new Paragraph();
+    private final SetupHint setup = PiSetup.bluetooth();
+    private final SimulationBanner simulation = new SimulationBanner(
+            "These devices are invented; no radio is listening.");
     private Registration listener;
     private boolean updating;
 
@@ -58,16 +66,19 @@ public class BlePanel extends VerticalLayout {
                 refresh();
             }
         });
-        var toolbar = new HorizontalLayout(scanning, filter);
+        var sort = new Button("Sort by signal", e -> list.sortBySignal());
+        sort.setId("ble-sort");
+        sort.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        var toolbar = new HorizontalLayout(scanning, filter, sort);
         toolbar.setAlignItems(Alignment.BASELINE);
         toolbar.addClassName("ble-toolbar");
         add(new H1("Bluetooth LE"),
-                new Paragraph("Everything advertising nearby, strongest signal first. Nothing is connected to; "
-                        + "this only listens, so a tag or a phone shows up as soon as it is switched on. "
-                        + "Devices that fall silent drop off the list after a minute."),
-                toolbar, status, list,
-                new Paragraph("Needs BlueZ (bluetooth.service) and a user in the bluetooth group. "
-                        + "If nothing appears, try: bluetoothctl --timeout 10 scan le"));
+                new Paragraph("Everything advertising nearby. Nothing is connected to; this only listens, so a tag "
+                        + "or a phone shows up as soon as it is switched on. Rows keep their place while their "
+                        + "signal updates; Sort by signal puts the strongest first. Devices that fall silent drop "
+                        + "off the list after a minute."),
+                simulation, toolbar, status, list, setup);
+        simulation.setVisible(service.isSimulated());
     }
 
     @Override
@@ -103,6 +114,9 @@ public class BlePanel extends VerticalLayout {
         var devices = service.devices().stream().filter(this::matches).toList();
         list.update(devices);
         status.setText(service.status());
+        if (service.hasProblem()) {
+            setup.setOpened(true);
+        }
     }
 
     private boolean matches(Device device) {
@@ -115,7 +129,11 @@ public class BlePanel extends VerticalLayout {
                 || device.companies().stream().anyMatch(c -> c.toLowerCase(Locale.ROOT).contains(needle));
     }
 
-    /** One row per device, kept in place and updated so the list does not flicker. */
+    /**
+     * One row per device. Rows are updated in place and keep their position: a
+     * new device joins at the end, and the order only changes on request. The
+     * first fill arrives strongest first, so a fresh list starts in signal order.
+     */
     class DeviceList extends Div {
         private final Map<String, DeviceRow> rows = new HashMap<>();
         private final Paragraph empty = new Paragraph("Nothing heard yet.");
@@ -127,17 +145,13 @@ public class BlePanel extends VerticalLayout {
 
         void update(List<Device> devices) {
             var seen = new java.util.HashSet<String>();
-            int index = 0;
             for (var device : devices) {
                 seen.add(device.address());
-                var row = rows.computeIfAbsent(device.address(), address -> {
+                rows.computeIfAbsent(device.address(), address -> {
                     var created = new DeviceRow();
                     add(created);
                     return created;
-                });
-                row.update(device);
-                // Keep the DOM in signal order without rebuilding rows
-                getElement().insertChild(index++, row.getElement());
+                }).update(device);
             }
             rows.keySet().removeIf(address -> {
                 if (!seen.contains(address)) {
@@ -148,9 +162,22 @@ public class BlePanel extends VerticalLayout {
             });
             empty.setVisible(devices.isEmpty());
         }
+
+        /** Puts the rows in signal order once, strongest first; they then stay put again. */
+        void sortBySignal() {
+            var ordered = rows.values().stream()
+                    .sorted(Comparator.comparing((DeviceRow row) -> row.last.rssi() == null ? Integer.MIN_VALUE : row.last.rssi())
+                            .reversed().thenComparing(row -> row.last.address()))
+                    .toList();
+            int index = 1; // the "Nothing heard yet" paragraph stays first
+            for (var row : ordered) {
+                getElement().insertChild(index++, row.getElement());
+            }
+        }
     }
 
     static class DeviceRow extends Div {
+        private Device last;
         private final Span name = new Span();
         private final Span address = new Span();
         private final Span rssi = new Span();
@@ -182,6 +209,7 @@ public class BlePanel extends VerticalLayout {
         }
 
         void update(Device device) {
+            last = device;
             name.setText(device.displayName());
             name.setClassName("ble-unnamed", device.name() == null || device.name().isBlank());
             address.setText(device.address());
