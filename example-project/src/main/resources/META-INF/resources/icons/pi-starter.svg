@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"
+     role="img" aria-labelledby="title description">
+  <title id="title">Pi Starter — a spark of possibility</title>
+  <desc id="description">A mint pi symbol with circuit terminals and a peach spark on an indigo background.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#29205e"/>
+      <stop offset="1" stop-color="#4f39f6"/>
+    </linearGradient>
+  </defs>
+  <!-- Full-bleed background; the central mark fits within a maskable safe circle. -->
+  <path fill="url(#background)" d="M0 0h512v512H0z"/>
+  <circle cx="256" cy="256" r="222" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2"/>
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2"/>
+  <!-- The pi crossbar doubles as a signal trace, with rounded GPIO terminals. -->
+  <g fill="none" stroke="#a5f7df" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M146 222q14-28 46-28h134"/>
+    <path d="M207 196v74q0 37-29 59"/>
+    <path d="M285 196v106q0 32 34 32h15"/>
+  </g>
+  <g fill="#72efcf">
+    <circle cx="174" cy="332" r="23"/>
+    <circle cx="337" cy="334" r="23"/>
+  </g>
+  <g fill="#322577">
+    <circle cx="174" cy="332" r="8"/>
+    <circle cx="337" cy="334" r="8"/>
+  </g>
+  <!-- A rising spark: the first idea, LED, or connected device coming alive. -->
+  <path fill="#ffc69f" d="M349 117q5 30 31 37-26 7-31 37-5-30-31-37 26-7 31-37z"/>
+</svg>

@@ -9,6 +9,9 @@
     </parent>
     <artifactId>pi-starter</artifactId>
     <name>Pi Starter</name>
+    <properties>
+        <jairosvg.version>1.0.14</jairosvg.version>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>in.virit.iot</groupId>
@@ -100,6 +103,14 @@
         </dependency>
     </dependencies>
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${project.build.directory}/generated-resources/pwa</directory>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>io.quarkus.platform</groupId>
@@ -151,6 +162,39 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.6.3</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.brunoborges</groupId>
+                        <artifactId>jairosvg</artifactId>
+                        <version>${jairosvg.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>generate-pwa-icon</id>
+                        <phase>generate-resources</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>${java.home}/bin/java</executable>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <addOutputToClasspath>false</addOutputToClasspath>
+                            <arguments>
+                                <argument>-Djava.awt.headless=true</argument>
+                                <argument>--class-path</argument>
+                                <classpath>
+                                    <dependency>io.brunoborges:jairosvg</dependency>
+                                    <dependency>in.virit:color</dependency>
+                                </classpath>
+                                <argument>${project.basedir}/src/build/GeneratePwaIcon.java</argument>
+                                <argument>${project.basedir}/src/main/resources/META-INF/resources/icons/pi-starter.svg</argument>
+                                <argument>${project.build.directory}/generated-resources/pwa/META-INF/resources/icons/icon.png</argument>
+                                <argument>${project.build.directory}/pwa-icon.sha256</argument>
+                                <argument>${project.basedir}/src/build/GeneratePwaIcon.java</argument>
+                                <argument>${jairosvg.version}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
                 <configuration>
                     <classpathScope>test</classpathScope>
                 </configuration>

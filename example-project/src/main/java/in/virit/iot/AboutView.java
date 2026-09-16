@@ -3,6 +3,7 @@ package in.virit.iot;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.dom.Style;
@@ -22,8 +23,15 @@ public class AboutView extends VerticalLayout {
         addClassName("page");
         var eyebrow = new Span("YOUR NEXT WEEKEND PROJECT");
         eyebrow.addClassName("eyebrow");
-        add(eyebrow, new H1("Small device. Big possibilities."),
+        var logo = new Image("icons/pi-starter.svg", "Pi Starter logo");
+        logo.addClassName("about-logo");
+        logo.getElement().setAttribute("width", "128").setAttribute("height", "128");
+        var heading = new Div(eyebrow, new H1("Small device. Big possibilities."),
                 new Paragraph("A starting point for the things you want to measure, automate and make your own."));
+        heading.addClassName("about-heading");
+        var hero = new Div(logo, heading);
+        hero.addClassName("about-hero");
+        add(hero);
         var intro = new Div(new H2("Make yourself at home"),
                 new Paragraph("Connect a sensor, automate a light or keep an eye on your home. "
                         + "This application gives your project a home on your phone and desktop."));

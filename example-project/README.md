@@ -82,8 +82,8 @@ Reports land in `target/surefire-reports` and `target/failsafe-reports`.
 - `styles/starter.css` configures Aura with a palette inspired by Screwcloud's
   Sunset Glass. It follows the device's light/dark preference and uses local
   system fonts. Metric cards wrap down to a single column on small screens.
-- `AppShell` enables server push and PWA installation. Replace the default
-  Vaadin icon with your own PNG using `@PWA(iconPath = "icons/icon.png")`.
+- `AppShell` enables server push and PWA installation with the Pi Starter icon.
+  Edit `src/main/resources/META-INF/resources/icons/pi-starter.svg` to rebrand it.
 - `SystemView` adds the route and navigation to `pi-helpers`’ reusable
   `SystemPanel`. That module also contains `WifiInfo` and `SystemControl`,
   adapted from Heisala Jetty’s System screen. Metrics refresh every two seconds while attached; WiFi link details
@@ -101,6 +101,33 @@ Reports land in `target/surefire-reports` and `target/failsafe-reports`.
   control, live 1-Wire (DS18B20) readings and a Bluetooth LE scanner listing
   nearby devices through BlueZ. See [Pi Helpers](../pi-helpers/README.md)
   for what each needs on the host. Delete the views you do not want.
+
+## Logo and PWA icon
+
+The logo combines a pi symbol, circuit terminals and a small peach spark:
+small hardware, big possibilities. Its indigo and mint palette matches the UI.
+The SVG uses paths and gradients, with no fonts or external assets. The solid
+square background and generous padding leave room for launcher icon masks.
+
+During `generate-resources`, Maven Exec runs `src/build/GeneratePwaIcon.java`
+with [JairoSVG](https://github.com/brunoborges/jairosvg) as a build-only dependency.
+It renders a 512 × 512 PNG into
+`target/generated-resources/pwa/META-INF/resources/icons/icon.png`, which Maven
+copies into the application resources. `AppShell` selects `icons/icon.png`;
+[Vaadin generates the other PWA icon sizes](https://vaadin.com/docs/latest/flow/configuration/pwa).
+No image tools beyond the project's JDK 25 are needed.
+
+The generator skips rendering if the PNG exists and the SVG, generator source
+and JairoSVG version have not changed (SHA-256 fingerprint). A missing PNG or
+`clean` rebuild generates it again. Generated PNGs are not committed.
+To refresh the icon without packaging, from the repository root run:
+
+```sh
+./mvnw -pl example-project -am process-resources
+```
+
+After editing the SVG during a running dev session, run that command again
+and reload. Installed PWAs may retain a cached icon until reinstalled.
 
 ## Blink a LED and Pi4J
 
