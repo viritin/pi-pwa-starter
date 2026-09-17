@@ -205,10 +205,31 @@ to configure it and how to run a Home Assistant in Docker to test against are in
 
 ## Device and PWA notes
 
-PWA installation/service workers require HTTPS, except on localhost.
-Accessing a Pi through plain HTTP on the LAN is sufficient for the web UI,
-but not PWA installation. Flow's live views require the server connection;
-the offline fallback does not operate hardware or provide live readings.
+### Plain HTTP on the LAN: what still works
+
+Service workers need a secure context on every browser, and only `localhost`,
+`*.localhost` and loopback addresses count as one without HTTPS; an mDNS name
+such as `http://pwatest.local:8080` does not. What that costs depends on the
+phone:
+
+- **iPhone and iPad.** Safari's *Add to Home Screen* works for any page, HTTPS
+  or not, and honours `display: standalone` from the manifest, so the app opens
+  full screen without browser chrome. Only the service worker is missing: no
+  offline fallback and no web push. For an app used at home with the Pi on the
+  same network, that is often all you need.
+- **Android.** Chrome only installs a web app over HTTPS; over HTTP the menu
+  offers a home-screen shortcut that opens as an ordinary browser tab. For a
+  development phone, `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
+  with the app's `http://` origin lifts the restriction on that device only.
+
+Push notifications, offline caching and access from outside the LAN all need
+HTTPS on both platforms; see [HTTPS.md](HTTPS.md). Flow's live views require
+the server connection in any case; the offline fallback does not operate
+hardware or provide live readings.
+
+References: MDN's [Making PWAs installable](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable)
+and [Secure contexts](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts),
+Chrome's [installability criteria](https://web.dev/articles/install-criteria).
 
 The GPIO, I²C and PWM screens can drive pins and write to devices, and the
 Home Assistant card stores a broker password in plain text; like the power
