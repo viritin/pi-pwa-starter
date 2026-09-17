@@ -1,6 +1,7 @@
 package in.virit.iot.bme280;
 
 import com.vaadin.flow.shared.Registration;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import in.virit.iot.pihelpers.HomeAssistantDiscovery;
 import in.virit.iot.pihelpers.HomeAssistantDiscovery.Device;
 import in.virit.iot.pihelpers.HomeAssistantDiscovery.Sensor;
@@ -22,13 +23,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import static in.virit.iot.pihelpers.HomeAssistantDiscovery.OFFLINE;
+import static in.virit.iot.pihelpers.HomeAssistantDiscovery.ONLINE;
+import static in.virit.iot.pihelpers.HomeAssistantDiscovery.availabilityTopic;
+import static in.virit.iot.pihelpers.HomeAssistantDiscovery.configTopic;
+import static in.virit.iot.pihelpers.HomeAssistantDiscovery.stateTopic;
 
 /**
  * Shares the climate readings with Home Assistant over MQTT. On connect it
@@ -51,6 +57,15 @@ public class ClimatePublisher {
     private static final Sensor TEMPERATURE = new Sensor("temperature", "Temperature", "°C", "temperature", "temperature");
     private static final Sensor HUMIDITY = new Sensor("humidity", "Humidity", "%", "humidity", "humidity");
     private static final Sensor PRESSURE = new Sensor("pressure", "Pressure", "hPa", "atmospheric_pressure", "pressure");
+    private static final List<Sensor> SENSORS = List.of(TEMPERATURE, HUMIDITY, PRESSURE);
+
+    /** The state message; the field names are what the sensors' {@code jsonField}s read. Humidity is absent on a BMP280. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    record ClimateState(double temperature, Double humidity, double pressure, Instant at) {
+        static ClimateState of(Bme280Service.Reading reading) {
+            return new ClimateState(reading.temperature(), reading.humidity(), reading.pressure(), reading.at());
+        }
+    }
 
     @Inject
     Bme280Service sensor;
@@ -72,7 +87,10 @@ public class ClimatePublisher {
 
     void onStart(@Observes StartupEvent event) {
         // application.properties wins over what was saved from the UI
-        settings = config.settings(defaultDeviceId()).orElseGet(() -> MqttSettings.from(store.load(SETTINGS), defaultDeviceId()));
+        String deviceId = defaultDeviceId();
+        settings = config.settings(deviceId)
+                .or(() -> store.load(SETTINGS, MqttSettings.class))
+                .orElseGet(() -> MqttSettings.defaults(deviceId));
         mqtt.addListener(this::onMqttState);
         executor = Executors.newSingleThreadScheduledExecutor(runnable -> {
             var thread = new Thread(runnable, "climate-publisher");
@@ -81,7 +99,7 @@ public class ClimatePublisher {
         });
         executor.scheduleWithFixedDelay(this::tick, 5, 5, TimeUnit.SECONDS);
         if (settings.enabled() && settings.hasBroker()) {
-            mqtt.connect(settings, HomeAssistantDiscovery.availabilityTopic(settings), "offline");
+            connect();
         }
     }
 
@@ -90,10 +108,20 @@ public class ClimatePublisher {
         if (executor != null) {
             executor.shutdownNow();
         }
+        sayGoodbye();
+    }
+
+    /** Connects with "offline" as the last will, so the broker marks the device unavailable if we vanish. */
+    private void connect() {
+        mqtt.connect(settings, availabilityTopic(settings), OFFLINE);
+    }
+
+    private void sayGoodbye() {
         if (mqtt.isConnected()) {
             try {
-                mqtt.publish(HomeAssistantDiscovery.availabilityTopic(settings), "offline", true);
-            } catch (RuntimeException ignored) {
+                mqtt.publish(availabilityTopic(settings), OFFLINE, true);
+            } catch (RuntimeException e) {
+                LOG.debug("Could not publish offline", e);
             }
         }
     }
@@ -124,7 +152,7 @@ public class ClimatePublisher {
             return "Not sharing";
         }
         if (mqtt.state() == MqttPublisher.State.CONNECTED) {
-            String base = "Publishing to " + settings.host() + " every " + settings.intervalSeconds() + " s";
+            String base = "Publishing to " + settings.host() + " every " + settings.interval().toSeconds() + " s";
             if (lastError != null) {
                 return base + " · last attempt failed: " + lastError;
             }
@@ -143,25 +171,19 @@ public class ClimatePublisher {
     public synchronized void start(MqttSettings newSettings) {
         requireEditable();
         settings = newSettings.withEnabled(true);
-        store.save(SETTINGS, settings.toProperties());
+        store.save(SETTINGS, settings);
         lastError = null;
-        mqtt.connect(settings, HomeAssistantDiscovery.availabilityTopic(settings), "offline");
+        connect();
         fire();
     }
 
     /** Says goodbye and disconnects; the entities stay in Home Assistant as unavailable. */
     public synchronized void stopSharing() {
         requireEditable();
-        if (mqtt.isConnected()) {
-            try {
-                mqtt.publish(HomeAssistantDiscovery.availabilityTopic(settings), "offline", true);
-            } catch (RuntimeException e) {
-                LOG.debug("Could not publish offline", e);
-            }
-        }
+        sayGoodbye();
         mqtt.disconnect();
         settings = settings.withEnabled(false);
-        store.save(SETTINGS, settings.toProperties());
+        store.save(SETTINGS, settings);
         fire();
     }
 
@@ -181,14 +203,14 @@ public class ClimatePublisher {
             return;
         }
         removeOnConnect = true;
-        mqtt.connect(settings, HomeAssistantDiscovery.availabilityTopic(settings), "offline");
+        connect();
         fire();
     }
 
     private void clearDiscovery() {
-        for (Sensor s : List.of(TEMPERATURE, HUMIDITY, PRESSURE)) {
+        for (Sensor s : SENSORS) {
             try {
-                mqtt.publish(HomeAssistantDiscovery.configTopic(settings, s), "", true);
+                mqtt.clear(configTopic(settings, s));
             } catch (RuntimeException e) {
                 LOG.warnf("Could not clear discovery for %s: %s", s.objectId(), e.getMessage());
             }
@@ -221,7 +243,7 @@ public class ClimatePublisher {
     private void tick() {
         if (settings.enabled() && mqtt.isConnected()) {
             Instant last = lastPublished;
-            if (last == null || Duration.between(last, Instant.now()).toSeconds() >= settings.intervalSeconds()) {
+            if (last == null || Duration.between(last, Instant.now()).compareTo(settings.interval()) >= 0) {
                 publishState();
                 fire();
             }
@@ -230,16 +252,19 @@ public class ClimatePublisher {
 
     private void announce() {
         var device = new Device(settings.deviceId(), "Pi Starter " + hostname(), "Raspberry Pi", model(), version);
-        String stateTopic = HomeAssistantDiscovery.stateTopic(settings, COMPONENT);
-        int expire = Math.max(60, settings.intervalSeconds() * 3);
+        String stateTopic = stateTopic(settings, COMPONENT);
+        int expire = (int) Math.max(60, settings.interval().toSeconds() * 3);
         boolean humidity = sensor.latest().map(r -> r.humidity() != null).orElse(true);
         try {
-            for (Sensor s : List.of(TEMPERATURE, HUMIDITY, PRESSURE)) {
-                boolean present = s != HUMIDITY || humidity;
-                mqtt.publish(HomeAssistantDiscovery.configTopic(settings, s),
-                        present ? HomeAssistantDiscovery.configPayload(settings, device, s, stateTopic, expire) : "", true);
+            for (Sensor s : SENSORS) {
+                if (s == HUMIDITY && !humidity) {
+                    mqtt.clear(configTopic(settings, s)); // a BMP280 has no humidity; withdraw the entity
+                } else {
+                    mqtt.publishJson(configTopic(settings, s),
+                            HomeAssistantDiscovery.config(settings, device, s, stateTopic, expire), true);
+                }
             }
-            mqtt.publish(HomeAssistantDiscovery.availabilityTopic(settings), "online", true);
+            mqtt.publish(availabilityTopic(settings), ONLINE, true);
             lastError = null;
         } catch (RuntimeException e) {
             lastError = e.getMessage();
@@ -252,14 +277,8 @@ public class ClimatePublisher {
         if (latest.isEmpty()) {
             return;
         }
-        var reading = latest.get();
-        var values = new LinkedHashMap<String, Object>();
-        values.put("temperature", reading.temperature());
-        values.put("humidity", reading.humidity());
-        values.put("pressure", reading.pressure());
-        values.put("at", reading.at().toString());
         try {
-            mqtt.publish(HomeAssistantDiscovery.stateTopic(settings, COMPONENT), HomeAssistantDiscovery.statePayload(values), true);
+            mqtt.publishJson(stateTopic(settings, COMPONENT), ClimateState.of(latest.get()), true);
             lastPublished = Instant.now();
             lastError = null;
         } catch (RuntimeException e) {

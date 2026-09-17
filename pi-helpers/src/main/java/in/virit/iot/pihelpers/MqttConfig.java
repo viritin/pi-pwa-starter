@@ -1,15 +1,16 @@
 package in.virit.iot.pihelpers;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 
+import java.time.Duration;
 import java.util.Optional;
 
 /**
- * MQTT settings from {@code application.properties} ({@code starter.mqtt.*}).
- * A finished application usually configures its broker this way rather than
- * from a web page; when {@code starter.mqtt.host} is set, these settings win
- * and the UI only shows what is going on.
+ * MQTT settings from {@code application.properties} ({@code starter.mqtt.*}),
+ * typed by SmallRye Config. A finished application usually configures its
+ * broker this way rather than from a web page; when {@code starter.mqtt.host}
+ * is set, these settings win and the UI only shows what is going on.
  *
  * <pre>
  * starter.mqtt.host=homeassistant.local
@@ -19,44 +20,46 @@ import java.util.Optional;
  * starter.mqtt.device-id=pi-kitchen
  * starter.mqtt.topic-prefix=pi-starter
  * starter.mqtt.discovery-prefix=homeassistant
- * starter.mqtt.interval=30
+ * starter.mqtt.interval=30          # seconds, or a duration such as 2m
  * starter.mqtt.enabled=true
  * </pre>
  */
-@ApplicationScoped
-public class MqttConfig {
+@ConfigMapping(prefix = "starter.mqtt")
+public interface MqttConfig {
 
-    @ConfigProperty(name = "starter.mqtt.host")
-    Optional<String> host;
-    @ConfigProperty(name = "starter.mqtt.port", defaultValue = "1883")
-    int port;
-    @ConfigProperty(name = "starter.mqtt.username")
-    Optional<String> username;
-    @ConfigProperty(name = "starter.mqtt.password")
-    Optional<String> password;
-    @ConfigProperty(name = "starter.mqtt.device-id")
-    Optional<String> deviceId;
-    @ConfigProperty(name = "starter.mqtt.topic-prefix", defaultValue = "pi-starter")
-    String topicPrefix;
-    @ConfigProperty(name = "starter.mqtt.discovery-prefix", defaultValue = "homeassistant")
-    String discoveryPrefix;
-    @ConfigProperty(name = "starter.mqtt.interval", defaultValue = "30")
-    int intervalSeconds;
-    @ConfigProperty(name = "starter.mqtt.enabled", defaultValue = "true")
-    boolean enabled;
+    Optional<String> host();
+
+    @WithDefault("1883")
+    int port();
+
+    Optional<String> username();
+
+    Optional<String> password();
+
+    Optional<String> deviceId();
+
+    @WithDefault("pi-starter")
+    String topicPrefix();
+
+    @WithDefault("homeassistant")
+    String discoveryPrefix();
+
+    @WithDefault("30")
+    Duration interval();
+
+    @WithDefault("true")
+    boolean enabled();
 
     /** True when a broker host is configured, i.e. configuration overrides the UI. */
-    public boolean isPresent() {
-        return host.isPresent() && !host.get().isBlank();
+    default boolean isPresent() {
+        return host().filter(h -> !h.isBlank()).isPresent();
     }
 
     /** The configured settings, or empty when no host is set. */
-    public Optional<MqttSettings> settings(String defaultDeviceId) {
-        if (!isPresent()) {
-            return Optional.empty();
-        }
-        return Optional.of(new MqttSettings(enabled, host.get().trim(), port, username.orElse(""), password.orElse(""),
-                deviceId.filter(id -> !id.isBlank()).orElse(defaultDeviceId), topicPrefix, discoveryPrefix,
-                Math.max(5, intervalSeconds)));
+    default Optional<MqttSettings> settings(String defaultDeviceId) {
+        return host().filter(h -> !h.isBlank()).map(h -> new MqttSettings(enabled(), h.trim(), port(),
+                username().orElse(""), password().orElse(""),
+                deviceId().filter(id -> !id.isBlank()).orElse(defaultDeviceId), topicPrefix(), discoveryPrefix(),
+                interval().compareTo(MqttSettings.MIN_INTERVAL) < 0 ? MqttSettings.MIN_INTERVAL : interval()));
     }
 }

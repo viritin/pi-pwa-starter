@@ -44,9 +44,10 @@ builds its Home Assistant card on them):
 | `MqttPublisher` | HiveMQ MQTT client (optional) | One MQTT connection with automatic reconnect, background connect, state and status for the UI, last will |
 | `HomeAssistantDiscovery` | nothing | Pure builders for Home Assistant MQTT discovery config, state and availability topics and payloads |
 | `HomeAssistantFinder` | JmDNS (optional) | Finds Home Assistant (`_home-assistant._tcp`) and MQTT brokers on the local network, checks whether port 1883 answers |
-| `MqttSettings`, `SettingsStore` | nothing | Broker settings as a record, persisted as a properties file under `starter.data-dir` |
+| `MqttSettings`, `SettingsStore` | nothing | Broker settings as a record, persisted as a JSON file under `starter.data-dir` |
+| `MqttConfig` | nothing | The same settings from `starter.mqtt.*` as a typed SmallRye `@ConfigMapping`; when a host is set there, it wins over the UI |
 | `MqttConfig` | nothing | The same settings from `application.properties` (`starter.mqtt.*`); when a host is set there, configuration overrides the UI |
-| `Json` | nothing | Minimal JSON writer for payloads, so none of the above needs a JSON library |
+| `Json` | nothing | The shared Jackson 3 mapper (Vaadin 25 brings Jackson 3); payloads and settings are annotated records |
 
 ## Pi4J and the shared context
 

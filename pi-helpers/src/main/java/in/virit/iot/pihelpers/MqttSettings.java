@@ -1,79 +1,56 @@
 package in.virit.iot.pihelpers;
 
-import java.util.Properties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.time.Duration;
 
 /**
- * Where and how to publish over MQTT. Plain values, stored through
- * {@link SettingsStore}; the password is kept as is, which suits a home
- * network and is said so in the README.
+ * Where and how to publish over MQTT. A plain record that {@link SettingsStore}
+ * keeps as JSON; the password is stored as is, which suits a home network and
+ * is said so in the README.
  *
  * @param enabled         whether publishing should be running
  * @param topicPrefix     first topic segment, e.g. "pi-starter"
  * @param discoveryPrefix Home Assistant's discovery prefix, normally "homeassistant"
- * @param intervalSeconds how often a state message goes out
+ * @param interval        how often a state message goes out
  */
 public record MqttSettings(boolean enabled, String host, int port, String username, String password,
-                           String deviceId, String topicPrefix, String discoveryPrefix, int intervalSeconds) {
+                           String deviceId, String topicPrefix, String discoveryPrefix, Duration interval) {
 
-    public static final int DEFAULT_INTERVAL = 30;
+    public static final Duration DEFAULT_INTERVAL = Duration.ofSeconds(30);
+    /** Home Assistant marks an entity unavailable this soon after the last state, so faster makes no sense. */
+    public static final Duration MIN_INTERVAL = Duration.ofSeconds(5);
 
     public static MqttSettings defaults(String deviceId) {
-        return new MqttSettings(false, "", HomeAssistantFinder.MQTT_PORT, "", "", deviceId, "pi-starter", "homeassistant", DEFAULT_INTERVAL);
+        return new MqttSettings(false, "", HomeAssistantFinder.MQTT_PORT, "", "", deviceId,
+                "pi-starter", "homeassistant", DEFAULT_INTERVAL);
     }
 
     public MqttSettings withBroker(String host, int port) {
-        return new MqttSettings(enabled, host, port, username, password, deviceId, topicPrefix, discoveryPrefix, intervalSeconds);
+        return new MqttSettings(enabled, host, port, username, password, deviceId, topicPrefix, discoveryPrefix, interval);
     }
 
     public MqttSettings withCredentials(String username, String password) {
-        return new MqttSettings(enabled, host, port, username, password, deviceId, topicPrefix, discoveryPrefix, intervalSeconds);
+        return new MqttSettings(enabled, host, port, username, password, deviceId, topicPrefix, discoveryPrefix, interval);
     }
 
     public MqttSettings withEnabled(boolean enabled) {
-        return new MqttSettings(enabled, host, port, username, password, deviceId, topicPrefix, discoveryPrefix, intervalSeconds);
+        return new MqttSettings(enabled, host, port, username, password, deviceId, topicPrefix, discoveryPrefix, interval);
     }
 
+    @JsonIgnore
     public boolean hasCredentials() {
         return username != null && !username.isBlank();
     }
 
+    @JsonIgnore
     public boolean hasBroker() {
         return host != null && !host.isBlank();
     }
 
-    public Properties toProperties() {
-        var p = new Properties();
-        p.setProperty("enabled", String.valueOf(enabled));
-        p.setProperty("host", host == null ? "" : host);
-        p.setProperty("port", String.valueOf(port));
-        p.setProperty("username", username == null ? "" : username);
-        p.setProperty("password", password == null ? "" : password);
-        p.setProperty("deviceId", deviceId == null ? "" : deviceId);
-        p.setProperty("topicPrefix", topicPrefix);
-        p.setProperty("discoveryPrefix", discoveryPrefix);
-        p.setProperty("intervalSeconds", String.valueOf(intervalSeconds));
-        return p;
-    }
-
-    public static MqttSettings from(Properties p, String defaultDeviceId) {
-        var defaults = defaults(defaultDeviceId);
-        return new MqttSettings(
-                Boolean.parseBoolean(p.getProperty("enabled", "false")),
-                p.getProperty("host", defaults.host()),
-                parseInt(p.getProperty("port"), defaults.port()),
-                p.getProperty("username", ""),
-                p.getProperty("password", ""),
-                p.getProperty("deviceId", defaultDeviceId),
-                p.getProperty("topicPrefix", defaults.topicPrefix()),
-                p.getProperty("discoveryPrefix", defaults.discoveryPrefix()),
-                parseInt(p.getProperty("intervalSeconds"), defaults.intervalSeconds()));
-    }
-
-    private static int parseInt(String value, int fallback) {
-        try {
-            return value == null ? fallback : Integer.parseInt(value.trim());
-        } catch (NumberFormatException e) {
-            return fallback;
-        }
+    /** The client id on the broker and the device id in Home Assistant, unique per prefix and device. */
+    @JsonIgnore
+    public String clientId() {
+        return topicPrefix + "-" + deviceId;
     }
 }

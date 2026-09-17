@@ -247,7 +247,7 @@ public class ClimateSharingCard extends Card {
                     deviceId.getValue().isBlank() ? current.deviceId() : deviceId.getValue().trim(),
                     topicPrefix.getValue().isBlank() ? current.topicPrefix() : topicPrefix.getValue().trim(),
                     current.discoveryPrefix(),
-                    interval.getValue() == null ? MqttSettings.DEFAULT_INTERVAL : interval.getValue());
+                    interval.getValue() == null ? MqttSettings.DEFAULT_INTERVAL : Duration.ofSeconds(interval.getValue()));
         }
 
         void show(MqttSettings settings) {
@@ -260,7 +260,7 @@ public class ClimateSharingCard extends Card {
             password.setValue(settings.password() == null ? "" : settings.password());
             deviceId.setValue(settings.deviceId() == null ? "" : settings.deviceId());
             topicPrefix.setValue(settings.topicPrefix());
-            interval.setValue(settings.intervalSeconds());
+            interval.setValue((int) settings.interval().toSeconds());
         }
     }
 }

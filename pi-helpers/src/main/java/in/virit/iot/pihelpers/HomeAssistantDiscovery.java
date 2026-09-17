@@ -1,20 +1,23 @@
 package in.virit.iot.pihelpers;
 
-import java.util.LinkedHashMap;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
-import java.util.Map;
 
 /**
- * Builds the messages Home Assistant's MQTT discovery understands. A device
- * publishes one retained config message per entity under the discovery prefix
- * and Home Assistant creates the entities itself; a shared {@code device} block
- * groups them into one device. State goes to one JSON topic that every entity
- * reads with its own {@code value_template}; availability is a separate topic
- * whose "offline" value is also the client's last will.
- * <p>
- * Pure functions, so the payloads are easy to test without a broker.
+ * The messages Home Assistant's MQTT discovery understands, as records that
+ * serialize to exactly the JSON its documentation shows. A device publishes one
+ * retained config message per entity under the discovery prefix and Home
+ * Assistant creates the entities itself; a shared {@code device} block groups
+ * them into one device. State goes to one JSON topic that every entity reads
+ * with its own {@code value_template}; availability is a separate topic whose
+ * "offline" value is also the client's last will.
  */
 public final class HomeAssistantDiscovery {
+
+    public static final String ONLINE = "online";
+    public static final String OFFLINE = "offline";
 
     private HomeAssistantDiscovery() {
     }
@@ -22,14 +25,37 @@ public final class HomeAssistantDiscovery {
     /**
      * One entity.
      *
-     * @param objectId     stable id within the device, e.g. "temperature"
-     * @param deviceClass  Home Assistant device class, e.g. "temperature"; may be null
-     * @param jsonField    the key in the state JSON this entity reads
+     * @param objectId    stable id within the device, e.g. "temperature"
+     * @param deviceClass Home Assistant device class, e.g. "temperature"; may be null
+     * @param jsonField   the key in the state JSON this entity reads
      */
     public record Sensor(String objectId, String name, String unit, String deviceClass, String jsonField) {
     }
 
     public record Device(String id, String name, String manufacturer, String model, String swVersion) {
+    }
+
+    /** The {@code device} block shared by every entity of one device. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record DeviceInfo(List<String> identifiers, String name, String manufacturer, String model,
+                             @JsonProperty("sw_version") String swVersion) {
+    }
+
+    /** The retained config message of one sensor entity, field names as in Home Assistant's documentation. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SensorConfig(String name,
+                               @JsonProperty("unique_id") String uniqueId,
+                               @JsonProperty("object_id") String objectId,
+                               @JsonProperty("state_topic") String stateTopic,
+                               @JsonProperty("value_template") String valueTemplate,
+                               @JsonProperty("unit_of_measurement") String unitOfMeasurement,
+                               @JsonProperty("device_class") String deviceClass,
+                               @JsonProperty("state_class") String stateClass,
+                               @JsonProperty("availability_topic") String availabilityTopic,
+                               @JsonProperty("payload_available") String payloadAvailable,
+                               @JsonProperty("payload_not_available") String payloadNotAvailable,
+                               @JsonProperty("expire_after") int expireAfter,
+                               DeviceInfo device) {
     }
 
     public static String stateTopic(MqttSettings settings, String component) {
@@ -41,54 +67,24 @@ public final class HomeAssistantDiscovery {
     }
 
     public static String configTopic(MqttSettings settings, Sensor sensor) {
-        return settings.discoveryPrefix() + "/sensor/" + settings.topicPrefix() + "-" + settings.deviceId()
-                + "/" + sensor.objectId() + "/config";
+        return settings.discoveryPrefix() + "/sensor/" + settings.clientId() + "/" + sensor.objectId() + "/config";
     }
 
     /**
-     * The retained config message for one sensor entity.
+     * The config message for one sensor entity.
      *
      * @param expireAfterSeconds after this long without a state message the entity becomes unavailable
      */
-    public static String configPayload(MqttSettings settings, Device device, Sensor sensor, String stateTopic,
-                                       int expireAfterSeconds) {
-        var config = new LinkedHashMap<String, Object>();
-        config.put("name", sensor.name());
-        config.put("unique_id", settings.topicPrefix() + "-" + settings.deviceId() + "-" + sensor.objectId());
-        config.put("object_id", settings.deviceId() + "_" + sensor.objectId());
-        config.put("state_topic", stateTopic);
-        config.put("value_template", "{{ value_json." + sensor.jsonField() + " }}");
-        if (sensor.unit() != null) {
-            config.put("unit_of_measurement", sensor.unit());
-        }
-        if (sensor.deviceClass() != null) {
-            config.put("device_class", sensor.deviceClass());
-        }
-        config.put("state_class", "measurement");
-        config.put("availability_topic", availabilityTopic(settings));
-        config.put("payload_available", "online");
-        config.put("payload_not_available", "offline");
-        config.put("expire_after", expireAfterSeconds);
-        var dev = new LinkedHashMap<String, Object>();
-        dev.put("identifiers", List.of(settings.topicPrefix() + "-" + settings.deviceId()));
-        dev.put("name", device.name());
-        dev.put("manufacturer", device.manufacturer());
-        dev.put("model", device.model());
-        if (device.swVersion() != null) {
-            dev.put("sw_version", device.swVersion());
-        }
-        config.put("device", dev);
-        return Json.write(config);
-    }
-
-    /** A state message from field name to value; nulls are left out. */
-    public static String statePayload(Map<String, ?> values) {
-        var state = new LinkedHashMap<String, Object>();
-        values.forEach((key, value) -> {
-            if (value != null) {
-                state.put(key, value);
-            }
-        });
-        return Json.write(state);
+    public static SensorConfig config(MqttSettings settings, Device device, Sensor sensor, String stateTopic,
+                                      int expireAfterSeconds) {
+        return new SensorConfig(sensor.name(),
+                settings.clientId() + "-" + sensor.objectId(),
+                settings.deviceId() + "_" + sensor.objectId(),
+                stateTopic,
+                "{{ value_json." + sensor.jsonField() + " }}",
+                sensor.unit(), sensor.deviceClass(), "measurement",
+                availabilityTopic(settings), ONLINE, OFFLINE, expireAfterSeconds,
+                new DeviceInfo(List.of(settings.clientId()), device.name(), device.manufacturer(), device.model(),
+                        device.swVersion()));
     }
 }

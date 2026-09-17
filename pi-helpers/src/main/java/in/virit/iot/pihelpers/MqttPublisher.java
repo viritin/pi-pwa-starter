@@ -78,7 +78,7 @@ public class MqttPublisher {
         var stop = new AtomicBoolean();
         stopping = stop;
         var built = Mqtt3Client.builder()
-                .identifier(settings.topicPrefix() + "-" + settings.deviceId())
+                .identifier(settings.clientId())
                 .serverHost(settings.host())
                 .serverPort(settings.port())
                 .automaticReconnectWithDefaultConfig()
@@ -133,7 +133,7 @@ public class MqttPublisher {
         set(State.DISCONNECTED, "Not connected");
     }
 
-    /** Publishes with QoS 1; an empty payload on a retained topic clears it. */
+    /** Publishes text with QoS 1; an empty payload on a retained topic clears it. */
     public void publish(String topic, String payload, boolean retain) {
         var current = client;
         if (current == null || state != State.CONNECTED) {
@@ -141,6 +141,16 @@ public class MqttPublisher {
         }
         current.publishWith().topic(topic).payload(bytes(payload)).qos(MqttQos.AT_LEAST_ONCE).retain(retain).send();
         LOG.debugf("MQTT %s%s: %s", topic, retain ? " (retained)" : "", payload);
+    }
+
+    /** Publishes a record or other object as JSON, see {@link #publish(String, String, boolean)}. */
+    public void publishJson(String topic, Object payload, boolean retain) {
+        publish(topic, Json.write(payload), retain);
+    }
+
+    /** Clears a retained topic, which is how a discovery message is withdrawn. */
+    public void clear(String topic) {
+        publish(topic, "", true);
     }
 
     private void disconnectQuietly() {
