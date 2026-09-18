@@ -123,10 +123,11 @@ public class I2cService {
         String firstFailure = null;
         for (int address = FIRST_ADDRESS; address <= LAST_ADDRESS; address++) {
             try {
-                int value = withDevice(bus, address, I2C::read);
-                if (value >= 0) {
-                    found.add(address);
-                }
+                // A device that acknowledges answers with a byte; one that does not makes the read throw.
+                // The value itself is not checked: Pi4J 4.0.2's direct I2C read() returns the byte
+                // sign-extended, so a PCF8574 with all pins high (0xFF) would come back as -1.
+                withDevice(bus, address, I2C::read);
+                found.add(address);
             } catch (DeviceHeldException held) {
                 found.add(address);
                 inUse.add(address);
