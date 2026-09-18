@@ -81,7 +81,12 @@ loads *no* provider at all; the symptom is `ProviderNotFoundException:
 ffm-digital-output` (or `ffm-i2c`) on the first pin operation, with the real
 complaint earlier in the log. `Pi4JContext` turns that into an
 `IllegalStateException` that names the user and the `usermod` line, and the
-GPIO, I²C and LED screens open their setup hint on it. Running the module without Pi4J on the classpath
+GPIO, I²C and LED screens open their setup hint on it.
+
+Release Pi4J IOs with `Pi4JContext.release(io)`, never `io.close()`: in Pi4J
+4.0.2 `I2CBase.close()` does not unregister the device, so the next create at
+that address fails with `IOAlreadyExistsException`. `release` goes through
+`Context.shutdown(id)`, which unregisters and closes. Running the module without Pi4J on the classpath
 while its Pi4J-backed beans are present has not been verified; if Quarkus'
 build-time bean processing complains, add the two artifacts anyway.
 

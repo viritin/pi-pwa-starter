@@ -180,11 +180,7 @@ public class GpioService {
     private void release(int bcm) {
         var entry = entries.remove(bcm);
         if (entry != null && entry.io != null) {
-            try {
-                entry.io.close();
-            } catch (RuntimeException e) {
-                LOG.warnf(e, "Releasing GPIO %d failed", bcm);
-            }
+            pi4j.release(entry.io);
         }
     }
 

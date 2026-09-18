@@ -185,12 +185,7 @@ public class Bme280Service {
                 return true;
             } catch (RuntimeException notHere) {
                 LOG.debugf(notHere, "No BMx280 at 0x%02X", address);
-                if (candidate != null) {
-                    try {
-                        candidate.close();
-                    } catch (RuntimeException ignored) {
-                    }
-                }
+                pi4j.release(candidate);
             }
         }
         status = "No BME280/BMP280 found at 0x76 or 0x77 on i2c-" + bus + ". Retrying every " + INTERVAL.toSeconds() + " s.";
@@ -198,12 +193,7 @@ public class Bme280Service {
     }
 
     private synchronized void closeDriver() {
-        if (i2c != null) {
-            try {
-                i2c.close();
-            } catch (RuntimeException ignored) {
-            }
-        }
+        pi4j.release(i2c);
         driver = null;
         i2c = null;
     }

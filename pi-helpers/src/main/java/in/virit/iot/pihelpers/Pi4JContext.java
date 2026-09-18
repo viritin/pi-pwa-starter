@@ -2,6 +2,7 @@ package in.virit.iot.pihelpers;
 
 import com.pi4j.Pi4J;
 import com.pi4j.context.Context;
+import com.pi4j.io.IO;
 import com.pi4j.io.IOType;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -60,6 +61,34 @@ public class Pi4JContext {
             + System.getProperty("user.name") + " is in the gpio group (the log above has its exact complaint). "
             + "Run: sudo usermod -aG gpio,i2c,spi " + System.getProperty("user.name")
             + " and restart the application.";
+
+    /**
+     * Closes an IO and takes it out of Pi4J's registry, so the same pin or I²C
+     * address can be created again later. Always use this instead of
+     * {@code io.close()}: in Pi4J 4.0.2 {@code I2CBase.close()} only flips a flag
+     * and never unregisters, so the next create at that address fails with
+     * "IO instance already exists". {@code Context.shutdown(id)} unregisters and
+     * closes in one go; when the IO is unknown to the registry, plain close is
+     * all that is left.
+     */
+    public synchronized void release(IO<?, ?, ?> io) {
+        if (io == null) {
+            return;
+        }
+        try {
+            if (context != null && context.registry().exists(io.id())) {
+                context.shutdown(io.id());
+                return;
+            }
+        } catch (RuntimeException e) {
+            LOG.debugf(e, "Pi4J shutdown of %s failed; closing it directly", io.id());
+        }
+        try {
+            io.close();
+        } catch (RuntimeException e) {
+            LOG.debugf(e, "Closing %s failed", io.id());
+        }
+    }
 
     /** True when some IO in the shared context already uses the given BCM GPIO. */
     public synchronized boolean isGpioInUse(int bcm) {

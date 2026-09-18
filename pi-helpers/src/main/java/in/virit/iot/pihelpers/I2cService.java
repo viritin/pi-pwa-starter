@@ -61,6 +61,13 @@ public class I2cService {
         simulated.put(0x20, filled((byte) 0xFF)); // PCF8574: one byte of pins, all high after reset
     }
 
+    /** The address is already open elsewhere in this application; Pi4J allows one handle per device. */
+    public static class DeviceHeldException extends IllegalStateException {
+        DeviceHeldException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     /** True for the addresses a PCF8574 (0x20–0x27) or PCF8574A (0x38–0x3F) can have. */
     public static boolean isPortExpander(int address) {
         return (address >= 0x20 && address <= 0x27) || (address >= 0x38 && address <= 0x3F);
@@ -120,7 +127,7 @@ public class I2cService {
                 if (value >= 0) {
                     found.add(address);
                 }
-            } catch (IOAlreadyExistsException held) {
+            } catch (DeviceHeldException held) {
                 found.add(address);
                 inUse.add(address);
             } catch (RuntimeException e) {
@@ -233,17 +240,13 @@ public class I2cService {
                     .id("pi-helpers-i2c-" + bus + "-" + address).name("I2C " + hex(address))
                     .bus(bus).device(address).provider("ffm-i2c").build());
         } catch (IOAlreadyExistsException held) {
-            throw new IllegalStateException(hex(address) + " on i2c-" + bus + " is already open in this application, "
+            throw new DeviceHeldException(hex(address) + " on i2c-" + bus + " is already open in this application, "
                     + "for example as the Climate view's sensor; Pi4J allows one handle per device.", held);
         }
         try {
             return action.apply(device);
         } finally {
-            try {
-                device.close();
-            } catch (RuntimeException e) {
-                LOG.debugf(e, "Closing I2C device %s failed", hex(address));
-            }
+            pi4j.release(device); // not device.close(): that would leave the address registered (Pi4J 4.0.2)
         }
     }
 

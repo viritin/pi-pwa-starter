@@ -66,14 +66,8 @@ public class LedService {
 
     @PreDestroy
     synchronized void release() {
-        if (output != null) {
-            try {
-                output.close();
-            } catch (RuntimeException ignored) {
-                // context may already be shutting down
-            }
-            output = null;
-        }
+        pi4j.release(output);
+        output = null;
         on = false;
     }
 }
