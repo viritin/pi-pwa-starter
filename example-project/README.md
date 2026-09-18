@@ -141,8 +141,8 @@ pin as taken by the application while the LED is on. Pi4J core and the FFM
 provider are dependencies of this example; `pi-helpers` declares them as
 optional.
 
-Select a **BCM GPIO number**, not a physical header pin (for example BCM 17
-is header pin 11). Connect the GPIO through a suitable current-limiting resistor
+Select a **BCM GPIO number**, not a physical header pin (the default, BCM 26,
+is header pin 37). Connect the GPIO through a suitable current-limiting resistor
 to the LED anode and connect its cathode to GND. The Switch selects HIGH
 (3.3 V) or LOW (0 V); it does not provide PWM or timed blinking.
 

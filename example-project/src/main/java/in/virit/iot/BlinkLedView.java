@@ -51,7 +51,7 @@ public class BlinkLedView extends VerticalLayout {
         gpio.setMin(0);
         gpio.setMax(27);
         gpio.setStepButtonsVisible(true);
-        gpio.setHelperText("BCM number, not the physical header pin. GPIO 17 = header pin 11.");
+        gpio.setHelperText("BCM number, not the physical header pin. GPIO 26 = header pin 37.");
         gpio.setErrorMessage("Enter a whole BCM GPIO number from 0 to 27.");
         status.setId("led-status");
 

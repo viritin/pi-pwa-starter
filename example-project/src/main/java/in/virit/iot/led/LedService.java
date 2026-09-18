@@ -19,7 +19,7 @@ public class LedService {
     Pi4JContext pi4j;
 
     private DigitalOutput output;
-    private int pin = 17;
+    private int pin = 26;
     private boolean on;
 
     public record State(int pin, boolean on, boolean simulated) {}
