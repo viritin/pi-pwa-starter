@@ -18,7 +18,7 @@ class I2cViewTest extends ViewTest {
     void scansReadsAndWrites() {
         navigate(I2cView.class);
         findButton().withText("Scan bus").click();
-        assertEquals("Simulation · 4 devices on i2c-1", paragraph("i2c-status"));
+        assertEquals("Simulation · 5 devices on i2c-1", paragraph("i2c-status"));
 
         findSpan().withId("i2c-0x76").click();
         assertTrue(findH4().withTextContaining("0x76 · BME280").exists(), "the device gets a hint");
@@ -35,6 +35,22 @@ class I2cViewTest extends ViewTest {
         findButton().withText("Read registers").click();
         assertTrue(findPre().withId("i2c-dump").component().getText().startsWith("F4: B7"),
                 "the write reaches the (simulated) device");
+    }
+
+    @Test
+    void togglesThePinsOfAPortExpander() {
+        navigate(I2cView.class);
+        findButton().withText("Scan bus").click();
+        findSpan().withId("i2c-0x20").click();
+        assertTrue(findH4().withText("Pins").exists(), "a PCF8574 address gets pin toggles");
+        var p4 = find(com.vaadin.flow.component.checkbox.Checkbox.class).withId("i2c-pin-4").first();
+        assertTrue(Boolean.TRUE.equals(p4.getValue()), "pins start high");
+        test(p4).click();
+        findButton().withId("i2c-expander-write").click();
+        test(p4).click(); // tick it back locally, then read what the (simulated) chip really has
+        findButton().withId("i2c-expander-read").click();
+        assertFalse(Boolean.TRUE.equals(p4.getValue()), "the chip kept P4 low after the write");
+        assertTrue(findSpan().withText("= 0xEF").exists());
     }
 
     @Test
