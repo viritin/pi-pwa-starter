@@ -64,9 +64,10 @@ public class I2cPanel extends VerticalLayout {
         toolbar.setAlignItems(Alignment.BASELINE);
 
         add(new H1("I²C"),
-                new Paragraph("Find what answers on the bus, then read its registers to check the wiring "
-                        + "and the datasheet before writing any driver code. "
-                        + "Typical wiring: SDA to GPIO2 (pin 3), SCL to GPIO3 (pin 5), 3V3 and GND."),
+                new Paragraph("Find what answers on the bus, then tap an address to read its registers and check "
+                        + "the wiring and the datasheet before writing any driver code. A PCF8574 port expander "
+                        + "(0x20–0x27, 0x38–0x3F) gets pin toggles instead, so its LEDs, relays and buttons can be "
+                        + "tried without code. Typical wiring: SDA to GPIO2 (pin 3), SCL to GPIO3 (pin 5), 3V3 and GND."),
                 simulation, toolbar, grid, status, tools, setup);
         simulation.setVisible(service.isSimulated());
         tools.setVisible(false);
