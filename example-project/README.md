@@ -30,6 +30,26 @@ java -jar target/quarkus-app/quarkus-run.jar
 Copy the **whole** `target/quarkus-app` directory when moving the application.
 The Quarkus Vaadin extension builds the frontend as part of packaging.
 
+### Deploy with boot2vm
+
+[boot2vm](https://github.com/mstahv/boot2vm) is a convenient way to deploy this
+Quarkus app to a Debian-based VM or Raspberry Pi OS. It uses SSH/rsync, systemd
+and Caddy as the reverse proxy, and installs the JDK on the target.
+Install the parent and helper module first with `./mvnw install` at the repository
+root, then run boot2vm from `example-project`, selecting `APP_TYPE=quarkus`:
+
+```sh
+jbang app install https://github.com/mstahv/boot2vm/blob/main/Deploy.java
+Deploy init
+Deploy
+```
+
+Review `vmhosting.conf` for your own host and users. For PWA installation, choose
+an HTTPS setup from [the HTTPS guide](HTTPS.md): Cloudflare Tunnel for remote
+access, DNS-01 for LAN-only public certificates, or Caddy's internal CA on devices
+you administer. The local boot2vm checkout adds `HTTPS=internal` and
+`Deploy root-cert`; use that checkout until those changes are published upstream.
+
 ### A note on the cached production bundle
 
 Vaadin keeps a pre-compiled frontend bundle in `src/main/bundles/prod.bundle`
@@ -205,6 +225,26 @@ to configure it and how to run a Home Assistant in Docker to test against are in
 
 ## Device and PWA notes
 
+See [HTTPS for the installed PWA](HTTPS.md) for Cloudflare Tunnel remote access,
+LAN-only HTTPS using your own domain and DNS-01 certificates, and a private-CA
+option for `.local` hostnames.
+
+### Server error corner
+
+The example installs a small development-friendly error safety net. It keeps
+the normal `System.out` and `System.err` destinations working, while watching
+their output for recognizable Java exception stack traces. It also registers a
+default uncaught-exception handler for background threads. A bounded in-memory
+incident list means errors are retained when nobody is looking; the next open
+view shows a corner warning with a **Details** dialog containing the time,
+source, thread and captured stack trace.
+
+This is a diagnostic fallback, not a replacement for structured logging. A
+library that swallows an exception, a scheduled task that keeps its failure in
+a `Future`, or a process that dies before Quarkus starts cannot be made visible
+to this UI automatically. The original streams remain intact, and the capture
+is deliberately bounded so it cannot grow with a noisy device.
+
 ### Plain HTTP on the LAN: what still works
 
 Service workers need a secure context on every browser, and only `localhost`,
@@ -243,7 +283,8 @@ for confirmation before either action. There is no authentication in this
 starter; add access control before exposing diagnostics or power actions to
 untrusted users. “Run GC” requests JVM garbage collection for diagnostics.
 
-Raspberry Pi deployment, native-image builds and memory tuning are future work.
+Native-image builds and memory tuning are future work; verify the target Pi
+architecture and JDK availability before deploying with boot2vm.
 The application has not yet been validated on a Pi. In particular, do not assume
 the original ARMv6 Pi Zero can run this Java 25 stack; validate the target JVM
 and architecture first. Pi Zero 2 W is a different hardware target.
