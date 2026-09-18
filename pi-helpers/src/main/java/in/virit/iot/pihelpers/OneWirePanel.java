@@ -39,6 +39,11 @@ public class OneWirePanel extends VerticalLayout {
         add(new H1("1-Wire sensors"),
                 new Paragraph("DS18B20 probes and other 1-Wire devices the kernel has found. Data goes to GPIO4 "
                         + "(pin 7) with a 4.7 kΩ resistor between data and 3V3; several probes share the same wire."),
+                new Paragraph("On a Waveshare Pioneer600 the three-pin 1-WIRE socket is already wired that way: "
+                        + "its DQ pin goes to GPIO4 and the 4.7 kΩ pull-up is on the board, so a DS18B20 pushed into "
+                        + "the socket shows up here once the driver is enabled. The socket is VDD, DQ, GND in "
+                        + "that order; follow the silkscreen, because a DS18B20 the wrong way round gets hot and "
+                        + "stays silent."),
                 simulation, card, status, setup);
         simulation.setVisible(service.isSimulated());
         if (!service.isBusPresent()) {

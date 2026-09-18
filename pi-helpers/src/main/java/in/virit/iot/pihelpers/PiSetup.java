@@ -16,6 +16,7 @@ public final class PiSetup {
     static final String CONFIG_TXT_DOCS = "https://www.raspberrypi.com/documentation/computers/config_txt.html";
     static final String OVERLAYS_README = "https://github.com/raspberrypi/firmware/blob/master/boot/overlays/README";
     static final String GPIO_DOCS = "https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio";
+    static final String PIONEER600_SCHEMATIC = "https://files.waveshare.com/upload/6/62/Pioneer600-Schematic.pdf";
     static final String BLUEZ_DOCS = "https://www.bluez.org/";
     static final String DEBIAN_BLUETOOTH_DOCS = "https://wiki.debian.org/BluetoothUser";
     static final String SUDOERS_DOCS = "https://www.sudo.ws/docs/man/sudoers.man/";
@@ -61,7 +62,9 @@ public final class PiSetup {
         return new SetupHint("Enabling 1-Wire on the Pi")
                 .text("The kernel's 1-Wire driver is off by default. Turn it on and reboot; probes then show up under "
                         + "/sys/bus/w1/devices as 28-… directories that anyone may read, so no group is needed. "
-                        + "Data is on GPIO4 unless config.txt says otherwise.")
+                        + "Data is on GPIO4 unless config.txt says otherwise. That is also where the Pioneer600's "
+                        + "1-WIRE socket is wired, pull-up included, so the plain w1-gpio overlay is all it needs "
+                        + "despite the w1-gpio-pullup line in Waveshare's manual.")
                 .commands("Enable and reboot",
                         "sudo raspi-config nonint do_onewire 0",
                         "sudo reboot")
@@ -72,7 +75,8 @@ public final class PiSetup {
                         "ls /sys/bus/w1/devices/",
                         "cat /sys/bus/w1/devices/28-*/temperature")
                 .link("raspi-config", RASPI_CONFIG_DOCS)
-                .link("Device tree overlays", OVERLAYS_README);
+                .link("Device tree overlays", OVERLAYS_README)
+                .link("Pioneer600 schematic", PIONEER600_SCHEMATIC);
     }
 
     /** The pwm-2chan overlay and write access to /sys/class/pwm. */
