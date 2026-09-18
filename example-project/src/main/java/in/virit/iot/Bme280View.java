@@ -250,7 +250,7 @@ public class Bme280View extends VerticalLayout {
                                     + "SDO to VCC gives 0x77; this view tries both.")),
                     new H4("Waveshare Pioneer600 expansion board"),
                     new Paragraph("Power the Pi down, push the Pioneer600 onto the 40-pin header and power up; there is "
-                            + "nothing to wire. Its sensor is a BMP280 at address 0x77, so this view shows temperature and "
+                            + "nothing to wire. Its sensor is a BMP280 at address 0x76, so this view shows temperature and "
                             + "pressure but no humidity. The same scan also lists the board's other I²C chips: the PCF8574 "
                             + "I/O expander at 0x20, the PCF8591 ADC/DAC at 0x48 and the DS3231 clock at 0x68."),
                     new Paragraph("The chip warms itself slightly and a breakout next to the Pi picks up its heat, so "
