@@ -52,7 +52,7 @@ class I2cViewTest extends ViewTest {
                 .withCondition(d -> "Enabling I²C on the Pi".equals(d.getSummaryText())).first();
         assertFalse(setup.isOpened(), "the simulated bus is present, so the steps are only a click away");
         assertTrue(textOf(setup).contains("sudo raspi-config nonint do_i2c 0"), "the steps are runnable commands");
-        assertTrue(textOf(setup).contains("sudo usermod -aG i2c " + System.getProperty("user.name")),
+        assertTrue(textOf(setup).contains("sudo usermod -aG gpio,i2c " + System.getProperty("user.name")),
                 "the group command names the account the application runs as");
     }
 }

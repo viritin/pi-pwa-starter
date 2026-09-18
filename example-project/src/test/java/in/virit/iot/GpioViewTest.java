@@ -7,6 +7,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The header map: tap a pin, make it an output, drive it, release everything. */
@@ -19,6 +20,10 @@ class GpioViewTest extends ViewTest {
         findButton().withText("Release all pins").click();
         test(find(ConfirmDialog.class).first()).confirm();
         assertEquals("Simulation · 0 pins configured", paragraph("gpio-status"));
+        var setup = find(com.vaadin.flow.component.details.Details.class)
+                .withCondition(d -> "Letting the application drive GPIO".equals(d.getSummaryText())).first();
+        assertFalse(setup.isOpened(), "nothing has failed, so the steps stay folded");
+        assertTrue(textOf(setup).contains("usermod -aG gpio,i2c,spi " + System.getProperty("user.name")));
 
         findDiv().withId("pin-11").click();
         test(find(RadioButtonGroup.class).withLabel("Mode").first()).selectItem("Output");

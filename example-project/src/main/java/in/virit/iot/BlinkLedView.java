@@ -13,6 +13,8 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.shared.Registration;
 import in.virit.iot.led.LedService;
+import in.virit.iot.pihelpers.PiSetup;
+import in.virit.iot.pihelpers.SetupHint;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
@@ -35,6 +37,7 @@ public class BlinkLedView extends VerticalLayout {
     private final IntegerField gpio = new IntegerField("GPIO number (BCM)");
     private final Switch led = new Switch("LED on");
     private final Paragraph status = new Paragraph();
+    private final SetupHint setup = PiSetup.gpio();
     private boolean editingGpio;
     private Registration poll;
     private int previousPollInterval;
@@ -73,17 +76,23 @@ public class BlinkLedView extends VerticalLayout {
                 new Paragraph("Choose a GPIO and switch your LED on or off."),
                 new Paragraph("Connect the GPIO through a current-limiting resistor to the LED, "
                         + "and the LED’s cathode to GND. HIGH is 3.3 V; LOW is 0 V."),
-                controls);
+                controls, setup);
         refresh();
     }
 
     private void perform(Runnable action) {
         try {
             action.run();
+        } catch (IllegalStateException | IllegalArgumentException explained) {
+            // Our own services say what is wrong in words meant for the user
+            LOG.warn("LED operation failed", explained);
+            Notification.show(explained.getMessage(), 8000, Notification.Position.MIDDLE);
+            setup.setOpened(true);
         } catch (RuntimeException failure) {
             LOG.warn("LED operation failed", failure);
-            Notification.show("Could not change the LED. Check the GPIO selection, device and permissions.",
-                    5000, Notification.Position.MIDDLE);
+            Notification.show("Could not change the LED: " + failure.getMessage()
+                    + ". Check the GPIO selection, device and permissions.", 8000, Notification.Position.MIDDLE);
+            setup.setOpened(true);
         }
         refresh();
     }

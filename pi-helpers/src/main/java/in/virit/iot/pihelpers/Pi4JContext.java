@@ -40,10 +40,26 @@ public class Pi4JContext {
         }
         if (context == null) {
             LOG.info("Initializing Pi4J context");
-            context = Pi4J.newAutoContext();
+            var created = Pi4J.newAutoContext();
+            if (created.providers().all().isEmpty()) {
+                // Pi4J's FFM plugin refuses to initialize when the user lacks the gpio group and logs why
+                // at ERROR; without this check the symptom would be a "provider not found" on every pin.
+                try {
+                    created.shutdown();
+                } catch (RuntimeException ignored) {
+                }
+                throw new IllegalStateException(NO_PROVIDERS);
+            }
+            context = created;
         }
         return context;
     }
+
+    /** The one reason Pi4J ends up with no providers on a Pi, in words that say what to do. */
+    static final String NO_PROVIDERS = "Pi4J loaded no hardware provider: its FFM plugin only starts when "
+            + System.getProperty("user.name") + " is in the gpio group (the log above has its exact complaint). "
+            + "Run: sudo usermod -aG gpio,i2c,spi " + System.getProperty("user.name")
+            + " and restart the application.";
 
     /** True when some IO in the shared context already uses the given BCM GPIO. */
     public synchronized boolean isGpioInUse(int bcm) {

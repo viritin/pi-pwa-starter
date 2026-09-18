@@ -100,6 +100,7 @@ public class GpioPanel extends VerticalLayout {
     private final Paragraph status = new Paragraph();
     private final SimulationBanner simulation = new SimulationBanner(
             "The pins on this screen live in memory: outputs drive nothing and inputs only change when you force them.");
+    private final SetupHint setup = PiSetup.gpio();
     private Registration listener;
     private PinDialog openDialog;
 
@@ -112,7 +113,7 @@ public class GpioPanel extends VerticalLayout {
                         + "Pins are BCM numbers; the small number is the physical header pin, "
                         + "pin 1 at the top left with the SD card slot facing up."),
                 new Paragraph("Outputs give 3.3 V and a few milliamps at most. Never connect 5 V to a GPIO."),
-                simulation, header, status, new Actions());
+                simulation, header, status, new Actions(), setup);
         simulation.setVisible(service.isSimulated());
         refresh();
     }
@@ -156,6 +157,7 @@ public class GpioPanel extends VerticalLayout {
             LOG.warn("GPIO operation failed", failure);
             Notification.show(failure.getMessage() != null ? failure.getMessage()
                     : "GPIO operation failed. Check the device and permissions.", 5000, Notification.Position.MIDDLE);
+            setup.setOpened(true);
         }
         refresh();
     }

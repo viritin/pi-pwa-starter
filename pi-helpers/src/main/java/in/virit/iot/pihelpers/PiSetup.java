@@ -17,6 +17,8 @@ public final class PiSetup {
     static final String OVERLAYS_README = "https://github.com/raspberrypi/firmware/blob/master/boot/overlays/README";
     static final String GPIO_DOCS = "https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio";
     static final String PIONEER600_SCHEMATIC = "https://files.waveshare.com/upload/6/62/Pioneer600-Schematic.pdf";
+    static final String PI4J_FFM_DOCS = "https://www.pi4j.com/documentation/providers/ffm/";
+    static final String PI4J_OS_SCRIPTS = "https://github.com/Pi4J/pi4j-os";
     static final String BLUEZ_DOCS = "https://www.bluez.org/";
     static final String DEBIAN_BLUETOOTH_DOCS = "https://wiki.debian.org/BluetoothUser";
     static final String SUDOERS_DOCS = "https://www.sudo.ws/docs/man/sudoers.man/";
@@ -36,6 +38,29 @@ public final class PiSetup {
         return "sudo usermod -aG " + groups + " " + user();
     }
 
+    /** Access to /dev/gpiochip* through Pi4J's FFM plugin, which insists on the gpio group. */
+    public static SetupHint gpio() {
+        return new SetupHint("Letting the application drive GPIO")
+                .text("Pins need no enabling; the kernel exposes them as /dev/gpiochip*. Pi4J's FFM plugin talks to "
+                        + "those devices directly and checks at startup that the application user is in the gpio group "
+                        + "(dialout on Ubuntu). If not, it loads no provider at all and every pin operation fails with "
+                        + "\"provider could not be found\", so the group is the first thing to fix.")
+                .commands("Give the application (running as " + user() + ") the groups Pi4J looks for",
+                        usermod("gpio,i2c,spi"))
+                .text(GROUP_NOTE)
+                .commands("Check the membership and the devices",
+                        "id " + user(),
+                        "ls -l /dev/gpiochip*",
+                        "sudo apt install -y gpiod && gpiodetect")
+                .commands("Run the JVM with native access enabled, or Java prints a warning per Pi4J call; "
+                                + "for a systemd service put it in JAVA_TOOL_OPTIONS in the unit's environment",
+                        "java --enable-native-access=ALL-UNNAMED -jar quarkus-app/quarkus-run.jar",
+                        "JAVA_TOOL_OPTIONS=--enable-native-access=ALL-UNNAMED")
+                .link("Pi4J FFM provider", PI4J_FFM_DOCS)
+                .link("Pi4J permission scripts", PI4J_OS_SCRIPTS)
+                .link("GPIO header", GPIO_DOCS);
+    }
+
     /** I²C bus 1 on GPIO2/3 and the i2c group. */
     public static SetupHint i2c() {
         return new SetupHint("Enabling I²C on the Pi")
@@ -46,8 +71,8 @@ public final class PiSetup {
                         "sudo reboot")
                 .commands("Or add this line to /boot/firmware/config.txt",
                         "dtparam=i2c_arm=on")
-                .commands("Let the application (running as " + user() + ") use the bus",
-                        usermod("i2c"))
+                .commands("Let the application (running as " + user() + ") use the bus; Pi4J's plugin also wants gpio",
+                        usermod("gpio,i2c"))
                 .text(GROUP_NOTE)
                 .commands("Check that the bus exists and what answers on it",
                         "ls /dev/i2c-*",

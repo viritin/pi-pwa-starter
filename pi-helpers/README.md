@@ -75,7 +75,13 @@ themselves, with the same version as pi-helpers:
 
 The FFM provider needs `--enable-native-access=ALL-UNNAMED` on the JVM and a
 user that may access `/dev/gpiochip*` and `/dev/i2c-*` (the `gpio` and `i2c`
-groups on Raspberry Pi OS). Running the module without Pi4J on the classpath
+groups on Raspberry Pi OS). The `gpio` group is not optional even for I²C-only
+use: Pi4J's FFM plugin checks it while initializing and, when it is missing,
+loads *no* provider at all; the symptom is `ProviderNotFoundException:
+ffm-digital-output` (or `ffm-i2c`) on the first pin operation, with the real
+complaint earlier in the log. `Pi4JContext` turns that into an
+`IllegalStateException` that names the user and the `usermod` line, and the
+GPIO, I²C and LED screens open their setup hint on it. Running the module without Pi4J on the classpath
 while its Pi4J-backed beans are present has not been verified; if Quarkus'
 build-time bean processing complains, add the two artifacts anyway.
 
