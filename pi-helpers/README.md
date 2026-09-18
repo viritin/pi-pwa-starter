@@ -86,7 +86,22 @@ GPIO, I²C and LED screens open their setup hint on it.
 Release Pi4J IOs with `Pi4JContext.release(io)`, never `io.close()`: in Pi4J
 4.0.2 `I2CBase.close()` does not unregister the device, so the next create at
 that address fails with `IOAlreadyExistsException`. `release` goes through
-`Context.shutdown(id)`, which unregisters and closes. Running the module without Pi4J on the classpath
+`Context.shutdown(id)`, which unregisters and closes.
+
+### Pi4J workarounds and when they can go
+
+The helpers carry three workarounds for Pi4J 4.0.2. Each names its upstream
+fix; drop it when `pi4j.version` reaches a release that contains the fix. The
+`pi4j-local` profile in the root pom builds against a locally installed Pi4J
+(`./mvnw -DskipTests install` in a checkout of the fork's `my-main`, version
+`5.0.0-mstahv-SNAPSHOT`) so the removal can be tried before that release:
+`./mvnw -Ppi4j-local -pl example-project -am test`.
+
+| Where | Workaround | Upstream |
+|---|---|---|
+| `Pi4JContext.release` | `Context.shutdown(id)` instead of `io.close()` | Fixed on `main` by PRs #678 and #726, unreleased |
+| `I2cService.scan` | ignores the value `read()` returns, only whether it throws | `I2CDirect.read()` sign-extends; fix on the fork's `fix/i2c-read-unsigned`, PR pending |
+| `Pi4JContext.context` | throws a clear message when the FFM plugin loaded no provider | By design upstream (issue #508); report about the misleading exception pending | Running the module without Pi4J on the classpath
 while its Pi4J-backed beans are present has not been verified; if Quarkus'
 build-time bean processing complains, add the two artifacts anyway.
 

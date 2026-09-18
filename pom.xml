@@ -36,6 +36,17 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+    <profiles>
+        <!-- Build against a locally installed Pi4J from the fork's my-main branch
+             (./mvnw -DskipTests install in ./pi4j) to try upstream fixes before a release:
+             ./mvnw -Ppi4j-local -pl example-project -am test -->
+        <profile>
+            <id>pi4j-local</id>
+            <properties>
+                <pi4j.version>5.0.0-mstahv-SNAPSHOT</pi4j.version>
+            </properties>
+        </profile>
+    </profiles>
     <build>
         <pluginManagement>
             <plugins>
