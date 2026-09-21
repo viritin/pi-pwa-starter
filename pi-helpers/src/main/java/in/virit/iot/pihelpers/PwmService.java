@@ -88,7 +88,7 @@ public class PwmService {
             channels.add(new Channel(0, 1, "GPIO19"));
             return channels;
         }
-        boolean pi5 = model().contains("Raspberry Pi 5");
+        boolean pi5 = BoardInfo.detect().isPi5();
         var pins = pins();
         for (String name : InterfaceStatus.list(SYSFS, "pwmchip")) {
             int chip;
@@ -228,14 +228,6 @@ public class PwmService {
 
     private static Path channelDir(Channel channel) {
         return SYSFS.resolve("pwmchip" + channel.chip()).resolve("pwm" + channel.channel());
-    }
-
-    private static String model() {
-        try {
-            return Files.readString(Path.of("/proc/device-tree/model")).replace("\0", "");
-        } catch (IOException | RuntimeException e) {
-            return "";
-        }
     }
 
     private static String readTrimmed(Path path) throws IOException {

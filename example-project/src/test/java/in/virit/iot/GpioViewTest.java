@@ -20,6 +20,7 @@ class GpioViewTest extends ViewTest {
         findButton().withText("Release all pins").click();
         test(find(ConfirmDialog.class).first()).confirm();
         assertEquals("Simulation · 0 pins configured", paragraph("gpio-status"));
+        assertTrue(paragraph("gpio-board").contains("40-pin"), "the map names the board and the header it shows");
         var setup = find(com.vaadin.flow.component.details.Details.class)
                 .withCondition(d -> "Letting the application drive GPIO".equals(d.getSummaryText())).first();
         assertFalse(setup.isOpened(), "nothing has failed, so the steps stay folded");

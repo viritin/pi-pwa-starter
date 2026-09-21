@@ -108,7 +108,13 @@ public class GpioPanel extends VerticalLayout {
         this.service = service;
         addClassName("gpio-panel");
         status.setId("gpio-status");
-        add(new H1("GPIO"),
+        var host = BoardInfo.detect();
+        var boardLine = new Paragraph(host.isRaspberryPi()
+                ? host.model() + " · the 40-pin header below is the same on every Raspberry Pi since the B+"
+                : host.describe() + " · the map shows the 40-pin Raspberry Pi header this application expects");
+        boardLine.setId("gpio-board");
+        boardLine.addClassName("gpio-board");
+        add(new H1("GPIO"), boardLine,
                 new Paragraph("Tap a GPIO to read it as an input or drive it as an output. "
                         + "Pins are BCM numbers; the small number is the physical header pin, "
                         + "pin 1 at the top left with the SD card slot facing up."),

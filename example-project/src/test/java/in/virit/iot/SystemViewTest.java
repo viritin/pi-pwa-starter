@@ -16,6 +16,8 @@ class SystemViewTest extends ViewTest {
     void showsMetricsAndInterfaces() {
         navigate(SystemView.class);
         assertTrue(findH4().withText("Host & process").exists());
+        assertTrue(findSpan().withText("Board").exists(), "the host's model is a badge");
+        assertTrue(findSpan().withTextContaining("Raspberry Pi").exists(), "either the model or the note that this is not a Pi");
         assertTrue(findH4().withText("Interfaces").exists());
         assertTrue(findSpan().withText("I²C").exists(), "the interface badges are labelled");
         findButton().withText("Run GC").click();

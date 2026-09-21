@@ -88,6 +88,8 @@ public class SystemPanel extends VerticalLayout {
 
     static class SystemStats extends Div {
 
+        private final StatBadge board = new StatBadge("Board");
+        private final StatBadge os = new StatBadge("OS");
         private final StatBadge uptime = new StatBadge("Uptime");
         private final StatBadge version = new StatBadge("Version");
         private final StatBadge heapUsage = new StatBadge("Heap", "%s / %s");
@@ -108,6 +110,9 @@ public class SystemPanel extends VerticalLayout {
             addClassName("panel");
             add(new H4("Host & process"));
             version.setValue(readAppVersion());
+            var host = BoardInfo.detect();
+            board.setValue(host.describe());
+            os.setValue(host.describeOs());
 
             var gcButton = new Button("Run GC", e -> {
                 System.gc();
@@ -115,7 +120,7 @@ public class SystemPanel extends VerticalLayout {
             });
             gcButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
 
-            add(new StatGrid(uptime, version, heapUsage, processMemory,
+            add(new StatGrid(board, os, uptime, version, heapUsage, processMemory,
                     osMemory, cpuUsage, cpuTemp, diskUsage,
                     network, wifiLink, wifiSignal, wifiBitrate, hotspot), gcButton);
         }

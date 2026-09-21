@@ -18,3 +18,4 @@
 .gpio-header .pin-out { border-color: color-mix(in srgb, #16a34a 45%, transparent); }
 .gpio-header .pin-high .pin-state { background: var(--aura-accent-color, var(--lumo-primary-color, #4f39f6)); color: #fff; }
 .gpio-header .pin-external { opacity: .75; border-style: dashed; }
+.gpio-panel .gpio-board { font-size: .9rem; opacity: .8; margin: 0; }

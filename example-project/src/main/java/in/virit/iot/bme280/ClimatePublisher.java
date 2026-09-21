@@ -2,6 +2,7 @@ package in.virit.iot.bme280;
 
 import com.vaadin.flow.shared.Registration;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import in.virit.iot.pihelpers.BoardInfo;
 import in.virit.iot.pihelpers.HomeAssistantDiscovery;
 import in.virit.iot.pihelpers.HomeAssistantDiscovery.Device;
 import in.virit.iot.pihelpers.HomeAssistantDiscovery.Sensor;
@@ -322,10 +323,7 @@ public class ClimatePublisher {
     }
 
     private static String model() {
-        try {
-            return Files.readString(Path.of("/proc/device-tree/model")).replace("\0", "").trim();
-        } catch (IOException | RuntimeException e) {
-            return "Pi Starter";
-        }
+        var model = BoardInfo.detect().model();
+        return model != null ? model : "Pi Starter";
     }
 }
