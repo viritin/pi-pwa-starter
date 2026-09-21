@@ -32,7 +32,11 @@ public class PwmService {
     private static final Path SYSFS = Path.of("/sys/class/pwm");
     private static final long NANOS_PER_SECOND = 1_000_000_000L;
 
-    public record Channel(int chip, int channel, String hint) {
+    /**
+     * @param gpio the GPIO this channel currently comes out on, when the host could tell; else null
+     * @param hint what to show next to the sysfs name: the GPIO, a guess, or "no GPIO routed"
+     */
+    public record Channel(int chip, int channel, Integer gpio, String hint) {
         public String key() {
             return "pwmchip" + chip + "/pwm" + channel;
         }
@@ -79,18 +83,25 @@ public class PwmService {
     /**
      * Channels of every PWM chip on the host, each labelled with the GPIO that
      * currently carries it when the host can tell, else with the possible pins.
+     * The chips are the SoC's PWM blocks; pinctrl names them PWM0 and PWM1, and
+     * the kernel numbers them in an order that has changed between releases
+     * (a Pi 5 had pwmchip2 for PWM0 on 6.6 and pwmchip0 on 6.12), so the block a
+     * chip is comes from the order of the devices' addresses, PWM0 being the lower.
      * The simulation offers a Pi 4 style chip 0.
      */
     public List<Channel> channels() {
         var channels = new ArrayList<Channel>();
         if (simulated) {
-            channels.add(new Channel(0, 0, "GPIO18"));
-            channels.add(new Channel(0, 1, "GPIO19"));
+            channels.add(new Channel(0, 0, 18, "GPIO18"));
+            channels.add(new Channel(0, 1, 19, "GPIO19"));
             return channels;
         }
         boolean pi5 = BoardInfo.detect().isPi5();
         var pins = pins();
-        for (String name : InterfaceStatus.list(SYSFS, "pwmchip")) {
+        var chips = new ArrayList<>(InterfaceStatus.list(SYSFS, "pwmchip"));
+        chips.sort(java.util.Comparator.comparing(PwmService::deviceAddress));
+        for (int block = 0; block < chips.size(); block++) {
+            String name = chips.get(block);
             int chip;
             int count;
             try {
@@ -100,13 +111,22 @@ public class PwmService {
                 continue;
             }
             for (int channel = 0; channel < count; channel++) {
-                Integer gpio = pins.tool() == null ? null : pins.gpioOfChannel(channel);
+                Integer gpio = pins.tool() == null ? null : pins.gpioOf(block, channel);
                 String hint = gpio != null ? "GPIO" + gpio
                         : pins.tool() != null ? "no GPIO routed" : hint(pi5, chip, channel);
-                channels.add(new Channel(chip, channel, hint));
+                channels.add(new Channel(chip, channel, gpio, hint));
             }
         }
         return channels;
+    }
+
+    /** The platform device behind a chip, e.g. "1f00098000.pwm"; sorting these puts PWM0 before PWM1. */
+    private static String deviceAddress(String chipName) {
+        try {
+            return Files.readSymbolicLink(SYSFS.resolve(chipName).resolve("device")).getFileName().toString();
+        } catch (IOException | RuntimeException e) {
+            return "~" + chipName; // unknown last, in chip order
+        }
     }
 
     private static String hint(boolean pi5, int chip, int channel) {

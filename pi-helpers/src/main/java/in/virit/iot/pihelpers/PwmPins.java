@@ -29,8 +29,9 @@ public final class PwmPins {
     private static final List<Path> CONFIG_FILES = List.of(Path.of("/boot/firmware/config.txt"), Path.of("/boot/config.txt"));
     private static final Pattern PINCTRL_LINE = Pattern.compile("GPIO(\\d+)\\s*=\\s*(\\S+)");
     private static final Pattern RASPI_GPIO_LINE = Pattern.compile("GPIO (\\d+):.*\\bfunc=(\\S+)");
-    /** PWM0_0, PWM0_CHAN2, PWM1: the last digit is the channel. */
-    private static final Pattern PWM_FUNCTION = Pattern.compile("^PWM\\d*(?:_(?:CHAN)?)?(\\d)$");
+    /** PWM0_0 and PWM0_CHAN2 name block and channel; raspi-gpio's bare PWM1 is channel 1 of block 0. */
+    private static final Pattern BLOCK_AND_CHANNEL = Pattern.compile("^PWM(\\d)_(?:CHAN)?(\\d)$");
+    private static final Pattern CHANNEL_ONLY = Pattern.compile("^PWM(\\d)$");
 
     private PwmPins() {
     }
@@ -42,11 +43,15 @@ public final class PwmPins {
      */
     public record Report(Map<Integer, String> functions, List<String> overlays, String tool) {
 
-        /** The GPIO currently set to the given PWM channel, or null when no pin is. */
-        public Integer gpioOfChannel(int channel) {
+        /**
+         * The GPIO currently set to the given channel of the given PWM block, or null
+         * when no pin is. A Pi 5 has two blocks of four channels; earlier models expose
+         * block 0 with two.
+         */
+        public Integer gpioOf(int block, int channel) {
             for (var entry : functions.entrySet()) {
-                Integer c = channelOf(entry.getValue());
-                if (c != null && c == channel) {
+                var slot = slotOf(entry.getValue());
+                if (slot != null && slot.block() == block && slot.channel() == channel) {
                     return entry.getKey();
                 }
             }
@@ -55,8 +60,12 @@ public final class PwmPins {
 
         /** True when the tool ran and no pin is set to PWM at all. */
         public boolean nothingRouted() {
-            return tool != null && functions.values().stream().noneMatch(f -> channelOf(f) != null);
+            return tool != null && functions.values().stream().noneMatch(f -> slotOf(f) != null);
         }
+    }
+
+    /** One PWM output: which block of the SoC and which channel in it. */
+    public record Slot(int block, int channel) {
     }
 
     /** Asks the host; never throws, a missing tool just leaves {@code tool} null. */
@@ -102,13 +111,18 @@ public final class PwmPins {
         return functions;
     }
 
-    /** The channel a function name refers to: PWM0_0 → 0, PWM0_CHAN3 → 3, PWM1 → 1; null for anything else. */
-    static Integer channelOf(String function) {
+    /** PWM0_0 → block 0 channel 0, PWM1_CHAN3 → block 1 channel 3, PWM1 → block 0 channel 1; null for anything else. */
+    static Slot slotOf(String function) {
         if (function == null) {
             return null;
         }
-        var m = PWM_FUNCTION.matcher(function.toUpperCase());
-        return m.matches() ? Integer.parseInt(m.group(1)) : null;
+        var upper = function.toUpperCase();
+        var m = BLOCK_AND_CHANNEL.matcher(upper);
+        if (m.matches()) {
+            return new Slot(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)));
+        }
+        m = CHANNEL_ONLY.matcher(upper);
+        return m.matches() ? new Slot(0, Integer.parseInt(m.group(1))) : null;
     }
 
     private static List<String> overlays() {

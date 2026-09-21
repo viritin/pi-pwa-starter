@@ -53,7 +53,10 @@ public class PwmPanel extends VerticalLayout {
         status.setId("pwm-status");
         channel.setLabel("PWM channel");
         channel.setItemLabelGenerator(Channel::label);
-        var channels = service.channels();
+        var all = service.channels();
+        // Only channels that reach a pin are offered when the host can tell; the rest would drive nothing
+        var routed = all.stream().filter(c -> c.gpio() != null).toList();
+        var channels = routed.isEmpty() ? all : routed;
         channel.setItems(channels);
         if (!channels.isEmpty()) {
             channel.setValue(channels.get(0));
@@ -79,7 +82,7 @@ public class PwmPanel extends VerticalLayout {
             }
         });
 
-        pins.show(service.pins());
+        pins.show(service.pins(), all.size() - channels.size());
         var controls = new Div(channel, pins, mode, servo, duty, enabled, status);
         controls.addClassName("panel");
         add(new H1("PWM & servo"),
@@ -112,7 +115,7 @@ public class PwmPanel extends VerticalLayout {
             addClassName("pwm-pins");
         }
 
-        void show(PwmPins.Report report) {
+        void show(PwmPins.Report report, int hiddenChannels) {
             var text = new StringBuilder();
             if (report.tool() == null) {
                 text.append("Pin functions unknown: neither pinctrl nor raspi-gpio is installed (sudo apt install raspi-utils).");
@@ -129,6 +132,10 @@ public class PwmPanel extends VerticalLayout {
                 text.append(" · config.txt: ").append(String.join("; ", report.overlays()));
             } else if (report.tool() != null) {
                 text.append(" · config.txt has no dtoverlay=pwm line.");
+            }
+            if (hiddenChannels > 0) {
+                text.append(" · ").append(hiddenChannels).append(hiddenChannels == 1 ? " channel" : " channels")
+                        .append(" with no pin not listed.");
             }
             setText(text.toString());
         }
