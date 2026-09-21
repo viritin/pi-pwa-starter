@@ -1,11 +1,6 @@
 package in.virit.iot.pihelpers;
 
-import org.jboss.logging.Logger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -21,10 +16,8 @@ import java.util.regex.Pattern;
  */
 public final class PwmPins {
 
-    private static final Logger LOG = Logger.getLogger(PwmPins.class);
     /** Every GPIO a hardware PWM channel can be routed to on any Pi model. */
     static final List<Integer> PWM_CAPABLE = List.of(12, 13, 14, 15, 18, 19);
-    private static final List<Path> CONFIG_FILES = List.of(Path.of("/boot/firmware/config.txt"), Path.of("/boot/config.txt"));
     /** PWM0_0 and PWM0_CHAN2 name block and channel; raspi-gpio's bare PWM1 is channel 1 of block 0. */
     private static final Pattern BLOCK_AND_CHANNEL = Pattern.compile("^PWM(\\d)_(?:CHAN)?(\\d)$");
     private static final Pattern CHANNEL_ONLY = Pattern.compile("^PWM(\\d)$");
@@ -85,23 +78,6 @@ public final class PwmPins {
     }
 
     private static List<String> overlays() {
-        var lines = new ArrayList<String>();
-        for (Path file : CONFIG_FILES) {
-            if (!Files.isReadable(file)) {
-                continue;
-            }
-            try {
-                for (String line : Files.readAllLines(file)) {
-                    String trimmed = line.trim();
-                    if (trimmed.startsWith("dtoverlay=pwm")) {
-                        lines.add(trimmed);
-                    }
-                }
-            } catch (IOException e) {
-                LOG.debugf(e, "Could not read %s", file);
-            }
-            break; // the first readable config.txt is the one in use
-        }
-        return lines;
+        return ConfigTxt.lines(line -> line.startsWith("dtoverlay=pwm"));
     }
 }

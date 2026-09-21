@@ -51,6 +51,17 @@ class I2cPinsTest {
     }
 
     @Test
+    void knowsTheBusesThatNeverReachTheHeader() {
+        var functions = new Pinctrl.Functions(Map.of(2, "input", 3, "input"), "pinctrl");
+        var bus13 = I2cPins.describe(13, functions);
+        assertTrue(bus13.internal());
+        assertFalse(bus13.known());
+        assertTrue(bus13.note().contains("camera"), bus13.note());
+        assertTrue(I2cPins.describe(0, functions).internal(), "the HAT EEPROM bus");
+        assertFalse(I2cPins.describe(1, functions).internal());
+    }
+
+    @Test
     void readsRaspiGpioOutputToo() {
         var functions = Pinctrl.parseRaspiGpio("GPIO 2: level=1 fsel=4 alt=0 func=SDA1\nGPIO 3: level=1 fsel=4 alt=0 func=SCL1\n");
         assertEquals(Map.of(2, "SDA1", 3, "SCL1"), functions);

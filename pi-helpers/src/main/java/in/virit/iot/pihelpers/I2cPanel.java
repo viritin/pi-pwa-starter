@@ -56,7 +56,8 @@ public class I2cPanel extends VerticalLayout {
         bus.setItems(buses);
         bus.addValueChangeListener(e -> wiring.show(e.getValue(), service.isSimulated()));
         if (!buses.isEmpty()) {
-            bus.setValue(buses.get(0));
+            // the header bus first when it exists; otherwise whatever the kernel has, and the wiring line explains
+            bus.setValue(buses.contains(1) ? 1 : buses.get(0));
         }
         var scan = new Button("Scan bus", e -> scan());
         scan.setId("i2c-scan");
@@ -75,6 +76,9 @@ public class I2cPanel extends VerticalLayout {
         tools.setVisible(false);
         if (buses.isEmpty()) {
             status.setText("No /dev/i2c-* device found. The bus is not enabled on this host; the steps below fix that.");
+            setup.setOpened(true);
+        } else if (!service.isSimulated() && !buses.contains(1)) {
+            status.setText("Only internal buses found; the header's bus i2c-1 is not enabled. The steps below turn it on.");
             setup.setOpened(true);
         } else {
             status.setText((service.isSimulated() ? "Simulation · " : "") + "Not scanned yet");
@@ -129,9 +133,14 @@ public class I2cPanel extends VerticalLayout {
                 setText("");
                 return;
             }
-            var pins = simulated ? new I2cPins.Bus(number, 2, 3, false) : I2cPins.describe(number);
+            var pins = simulated ? new I2cPins.Bus(number, 2, 3, false, null, false) : I2cPins.describe(number);
             var text = new StringBuilder();
-            if (pins.known()) {
+            if (pins.internal()) {
+                text.append("i2c-").append(number).append(" is ").append(pins.note())
+                        .append(". For a breakout board use bus 1 on ").append(PiHeader.describe(2)).append(" and ")
+                        .append(PiHeader.describe(3)).append("; it appears as i2c-1 once I²C is enabled (sudo raspi-config "
+                        + "nonint do_i2c 0, then reboot).");
+            } else if (pins.known()) {
                 text.append("Wire a device to i2c-").append(number).append(": SDA → ").append(PiHeader.describe(pins.sda()))
                         .append(", SCL → ").append(PiHeader.describe(pins.scl()))
                         .append(", VCC → 3V3 (pin ").append(PiHeader.PINS_3V3.get(0)).append(" or ").append(PiHeader.PINS_3V3.get(1))
@@ -142,12 +151,22 @@ public class I2cPanel extends VerticalLayout {
                 if (!pins.detected()) {
                     text.append(simulated ? "" : " These are the standard pins; pinctrl is not installed to confirm them.");
                 }
+            } else if (pins.probed()) {
+                text.append("i2c-").append(number).append(" is an extra bus, but pinctrl shows no header GPIO set to it "
+                        + "right now; its dtoverlay line in /boot/firmware/config.txt decides the pins.");
             } else {
                 text.append("i2c-").append(number).append(" is an extra bus: its pins come from the dtoverlay line in "
                         + "/boot/firmware/config.txt (for example i2c5,pins_12_13). pinctrl (sudo apt install raspi-utils) "
                         + "would show which GPIOs it is on.");
             }
-            text.append(" A device that stays silent is usually SDA and SCL swapped, VCC not connected, or a 5 V-only module.");
+            if (!simulated && ConfigTxt.present()) {
+                var lines = I2cPins.configLines();
+                text.append(lines.isEmpty() ? " config.txt has no i2c line, so the header bus is off."
+                        : " config.txt: " + String.join("; ", lines) + ".");
+            }
+            if (!pins.internal()) {
+                text.append(" A device that stays silent is usually SDA and SCL swapped, VCC not connected, or a 5 V-only module.");
+            }
             setText(text.toString());
         }
     }
