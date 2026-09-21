@@ -44,6 +44,7 @@ public class PwmPanel extends VerticalLayout {
     private final SetupHint setup = PiSetup.pwm();
     private final SimulationBanner simulation = new SimulationBanner(
             "This PWM chip is a fake: the numbers below are what a real one would be told, but no pin moves.");
+    private final PinReport pins = new PinReport();
     private boolean updating;
 
     public PwmPanel(PwmService service) {
@@ -78,7 +79,8 @@ public class PwmPanel extends VerticalLayout {
             }
         });
 
-        var controls = new Div(channel, mode, servo, duty, enabled, status);
+        pins.show(service.pins());
+        var controls = new Div(channel, pins, mode, servo, duty, enabled, status);
         controls.addClassName("panel");
         add(new H1("PWM & servo"),
                 new Paragraph("Position a hobby servo or dim an LED with a hardware PWM channel. "
@@ -96,6 +98,39 @@ public class PwmPanel extends VerticalLayout {
             setup.setOpened(true);
         } else {
             showState();
+        }
+    }
+
+    /**
+     * Where the PWM channels come out, as pinctrl reports it after boot, next to
+     * the config.txt line that asked for it. Saves guessing which header pin the
+     * servo wire goes to.
+     */
+    static class PinReport extends Paragraph {
+        PinReport() {
+            setId("pwm-pins");
+            addClassName("pwm-pins");
+        }
+
+        void show(PwmPins.Report report) {
+            var text = new StringBuilder();
+            if (report.tool() == null) {
+                text.append("Pin functions unknown: neither pinctrl nor raspi-gpio is installed (sudo apt install raspi-utils).");
+            } else {
+                text.append("Pins now (").append(report.tool()).append("): ");
+                var parts = new java.util.ArrayList<String>();
+                report.functions().forEach((gpio, function) -> parts.add("GPIO" + gpio + " = " + function));
+                text.append(String.join(", ", parts));
+                if (report.nothingRouted()) {
+                    text.append(". No GPIO is set to PWM, so the channels reach no pin; check the overlay line.");
+                }
+            }
+            if (!report.overlays().isEmpty()) {
+                text.append(" · config.txt: ").append(String.join("; ", report.overlays()));
+            } else if (report.tool() != null) {
+                text.append(" · config.txt has no dtoverlay=pwm line.");
+            }
+            setText(text.toString());
         }
     }
 

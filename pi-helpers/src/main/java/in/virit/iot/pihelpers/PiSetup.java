@@ -125,8 +125,9 @@ public final class PiSetup {
                 .commands("Let the application (running as " + user() + ") drive the channels",
                         usermod("gpio"))
                 .text(GROUP_NOTE)
-                .commands("Check that a chip is present; each pwmN under it is a channel",
-                        "ls /sys/class/pwm/ /sys/class/pwm/pwmchip*/")
+                .commands("Check that a chip is present (each pwmN under it is a channel) and which GPIOs carry PWM",
+                        "ls /sys/class/pwm/ /sys/class/pwm/pwmchip*/",
+                        "pinctrl get 12,13,18,19")
                 .text("On a Raspberry Pi 5 the chip is pwmchip2 and the channel follows the pin: GPIO12 is pwm0, "
                         + "GPIO13 pwm1, GPIO18 pwm2 and GPIO19 pwm3. On earlier models it is pwmchip0 with pwm0 for "
                         + "GPIO12 or 18 and pwm1 for GPIO13 or 19. The channel list above shows which pin each one is.")

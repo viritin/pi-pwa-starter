@@ -67,15 +67,29 @@ public class PwmService {
         return simulated;
     }
 
-    /** Channels of every PWM chip on the host. The simulation offers a Pi 4 style chip 0. */
+    /** Which GPIOs the channels are routed to right now, from pinctrl and config.txt; see {@link PwmPins}. */
+    public PwmPins.Report pins() {
+        if (simulated) {
+            return new PwmPins.Report(Map.of(12, "input", 13, "input", 18, "PWM0_0", 19, "PWM0_1"),
+                    List.of("dtoverlay=pwm-2chan"), "pinctrl");
+        }
+        return PwmPins.probe();
+    }
+
+    /**
+     * Channels of every PWM chip on the host, each labelled with the GPIO that
+     * currently carries it when the host can tell, else with the possible pins.
+     * The simulation offers a Pi 4 style chip 0.
+     */
     public List<Channel> channels() {
         var channels = new ArrayList<Channel>();
         if (simulated) {
-            channels.add(new Channel(0, 0, "GPIO18 (or 12)"));
-            channels.add(new Channel(0, 1, "GPIO19 (or 13)"));
+            channels.add(new Channel(0, 0, "GPIO18"));
+            channels.add(new Channel(0, 1, "GPIO19"));
             return channels;
         }
         boolean pi5 = model().contains("Raspberry Pi 5");
+        var pins = pins();
         for (String name : InterfaceStatus.list(SYSFS, "pwmchip")) {
             int chip;
             int count;
@@ -86,7 +100,10 @@ public class PwmService {
                 continue;
             }
             for (int channel = 0; channel < count; channel++) {
-                channels.add(new Channel(chip, channel, hint(pi5, chip, channel)));
+                Integer gpio = pins.tool() == null ? null : pins.gpioOfChannel(channel);
+                String hint = gpio != null ? "GPIO" + gpio
+                        : pins.tool() != null ? "no GPIO routed" : hint(pi5, chip, channel);
+                channels.add(new Channel(chip, channel, hint));
             }
         }
         return channels;
