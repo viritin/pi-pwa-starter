@@ -6,10 +6,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -27,8 +25,6 @@ public final class PwmPins {
     /** Every GPIO a hardware PWM channel can be routed to on any Pi model. */
     static final List<Integer> PWM_CAPABLE = List.of(12, 13, 14, 15, 18, 19);
     private static final List<Path> CONFIG_FILES = List.of(Path.of("/boot/firmware/config.txt"), Path.of("/boot/config.txt"));
-    private static final Pattern PINCTRL_LINE = Pattern.compile("GPIO(\\d+)\\s*=\\s*(\\S+)");
-    private static final Pattern RASPI_GPIO_LINE = Pattern.compile("GPIO (\\d+):.*\\bfunc=(\\S+)");
     /** PWM0_0 and PWM0_CHAN2 name block and channel; raspi-gpio's bare PWM1 is channel 1 of block 0. */
     private static final Pattern BLOCK_AND_CHANNEL = Pattern.compile("^PWM(\\d)_(?:CHAN)?(\\d)$");
     private static final Pattern CHANNEL_ONLY = Pattern.compile("^PWM(\\d)$");
@@ -70,45 +66,8 @@ public final class PwmPins {
 
     /** Asks the host; never throws, a missing tool just leaves {@code tool} null. */
     public static Report probe() {
-        String pins = PWM_CAPABLE.stream().map(String::valueOf).reduce((a, b) -> a + "," + b).orElse("");
-        Map<Integer, String> functions = Map.of();
-        String tool = null;
-        String output = run("pinctrl", "get", pins);
-        if (output != null) {
-            functions = parsePinctrl(output);
-            tool = "pinctrl";
-        } else {
-            output = run("raspi-gpio", "get", pins);
-            if (output != null) {
-                functions = parseRaspiGpio(output);
-                tool = "raspi-gpio";
-            }
-        }
-        return new Report(functions, overlays(), tool);
-    }
-
-    /** Lines like {@code 18: a5    pd | lo // GPIO18 = PWM0_0}. */
-    static Map<Integer, String> parsePinctrl(String output) {
-        var functions = new LinkedHashMap<Integer, String>();
-        for (String line : output.split("\\R")) {
-            var m = PINCTRL_LINE.matcher(line);
-            if (m.find()) {
-                functions.put(Integer.parseInt(m.group(1)), m.group(2));
-            }
-        }
-        return functions;
-    }
-
-    /** Lines like {@code GPIO 18: level=0 fsel=2 alt=5 func=PWM0}. */
-    static Map<Integer, String> parseRaspiGpio(String output) {
-        var functions = new LinkedHashMap<Integer, String>();
-        for (String line : output.split("\\R")) {
-            var m = RASPI_GPIO_LINE.matcher(line);
-            if (m.find()) {
-                functions.put(Integer.parseInt(m.group(1)), m.group(2));
-            }
-        }
-        return functions;
+        var functions = Pinctrl.probe(PWM_CAPABLE);
+        return new Report(functions.byGpio(), overlays(), functions.tool());
     }
 
     /** PWM0_0 → block 0 channel 0, PWM1_CHAN3 → block 1 channel 3, PWM1 → block 0 channel 1; null for anything else. */
@@ -144,22 +103,5 @@ public final class PwmPins {
             break; // the first readable config.txt is the one in use
         }
         return lines;
-    }
-
-    private static String run(String... command) {
-        try {
-            var process = new ProcessBuilder(command).redirectErrorStream(true).start();
-            if (!process.waitFor(2, TimeUnit.SECONDS)) {
-                process.destroyForcibly();
-                return null;
-            }
-            String output = new String(process.getInputStream().readAllBytes());
-            return process.exitValue() == 0 ? output : null;
-        } catch (IOException e) {
-            return null; // tool not installed
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
-        }
     }
 }

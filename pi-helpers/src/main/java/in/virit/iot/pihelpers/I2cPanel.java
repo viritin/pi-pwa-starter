@@ -42,7 +42,8 @@ public class I2cPanel extends VerticalLayout {
     private final Paragraph status = new Paragraph();
     private final SetupHint setup = PiSetup.i2c();
     private final SimulationBanner simulation = new SimulationBanner(
-            "This bus and the four devices on it are made up; register reads and writes go to an in-memory copy.");
+            "This bus and the devices on it are made up; register reads and writes go to an in-memory copy.");
+    private final WiringHint wiring = new WiringHint();
     private Set<Integer> found = Set.of();
 
     public I2cPanel(I2cService service) {
@@ -53,6 +54,7 @@ public class I2cPanel extends VerticalLayout {
         bus.setItemLabelGenerator(n -> "i2c-" + n);
         var buses = service.buses();
         bus.setItems(buses);
+        bus.addValueChangeListener(e -> wiring.show(e.getValue(), service.isSimulated()));
         if (!buses.isEmpty()) {
             bus.setValue(buses.get(0));
         }
@@ -67,8 +69,8 @@ public class I2cPanel extends VerticalLayout {
                 new Paragraph("Find what answers on the bus, then tap an address to read its registers and check "
                         + "the wiring and the datasheet before writing any driver code. A PCF8574 port expander "
                         + "(0x20–0x27, 0x38–0x3F) gets pin toggles instead, so its LEDs, relays and buttons can be "
-                        + "tried without code. Typical wiring: SDA to GPIO2 (pin 3), SCL to GPIO3 (pin 5), 3V3 and GND."),
-                simulation, toolbar, grid, status, tools, setup);
+                        + "tried without code."),
+                simulation, toolbar, wiring, grid, status, tools, setup);
         simulation.setVisible(service.isSimulated());
         tools.setVisible(false);
         if (buses.isEmpty()) {
@@ -109,6 +111,45 @@ public class I2cPanel extends VerticalLayout {
 
     private void select(int address) {
         tools.show(bus.getValue(), address);
+    }
+
+    /**
+     * Which header pins the selected bus is on, so a breakout can be wired
+     * without looking anything up: pinctrl says where an overlay put an extra
+     * bus, and bus 1 is on GPIO2/3 on every model.
+     */
+    static class WiringHint extends Paragraph {
+        WiringHint() {
+            setId("i2c-wiring");
+            addClassName("i2c-wiring");
+        }
+
+        void show(Integer number, boolean simulated) {
+            if (number == null) {
+                setText("");
+                return;
+            }
+            var pins = simulated ? new I2cPins.Bus(number, 2, 3, false) : I2cPins.describe(number);
+            var text = new StringBuilder();
+            if (pins.known()) {
+                text.append("Wire a device to i2c-").append(number).append(": SDA → ").append(PiHeader.describe(pins.sda()))
+                        .append(", SCL → ").append(PiHeader.describe(pins.scl()))
+                        .append(", VCC → 3V3 (pin ").append(PiHeader.PINS_3V3.get(0)).append(" or ").append(PiHeader.PINS_3V3.get(1))
+                        .append("), GND → pin ").append(PiHeader.PINS_GND.get(0)).append(" (or any other GND). Then Scan bus.");
+                if (number == 1) {
+                    text.append(" Bus 1 has pull-ups on the Pi and most breakouts add their own; fine for a few devices.");
+                }
+                if (!pins.detected()) {
+                    text.append(simulated ? "" : " These are the standard pins; pinctrl is not installed to confirm them.");
+                }
+            } else {
+                text.append("i2c-").append(number).append(" is an extra bus: its pins come from the dtoverlay line in "
+                        + "/boot/firmware/config.txt (for example i2c5,pins_12_13). pinctrl (sudo apt install raspi-utils) "
+                        + "would show which GPIOs it is on.");
+            }
+            text.append(" A device that stays silent is usually SDA and SCL swapped, VCC not connected, or a 5 V-only module.");
+            setText(text.toString());
+        }
     }
 
     class AddressGrid extends Div {

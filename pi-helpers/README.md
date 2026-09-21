@@ -16,7 +16,7 @@ server push in the application's AppShell for live updates.
 |---|---|---|---|
 | `SystemPanel` | `SystemControl` | no | Board model and OS (`BoardInfo`, from the device tree and os-release), host and JVM metrics, WiFi link, which interfaces (GPIO, I²C, SPI, UART, 1-Wire, PWM) the host exposes, confirmed reboot/shutdown |
 | `GpioPanel` | `GpioService` | yes | Tappable 40-pin header map; configure any GPIO as input (with pull resistor) or output, drive outputs, watch inputs live |
-| `I2cPanel` | `I2cService` | yes | `i2cdetect`-style bus scan (addresses the application already holds are listed as such), register hex dump, single register write with confirmation, pin toggles for PCF8574 port expanders, hints for common addresses |
+| `I2cPanel` | `I2cService` | yes | `i2cdetect`-style bus scan (addresses the application already holds are listed as such), a wiring line naming the selected bus's SDA/SCL header pins (from `pinctrl`, bus 1 by default), register hex dump, single register write with confirmation, pin toggles for PCF8574 port expanders, hints for common addresses |
 | `PwmPanel` | `PwmService` | no | Hardware PWM via sysfs: servo pulse width (µs, with angle slider and calibration) or duty cycle and frequency; shows which GPIO each channel is routed to, read from `pinctrl` (or `raspi-gpio`) and the `dtoverlay=pwm…` line in config.txt |
 | `OneWirePanel` | `OneWireService` | no | Live readings from `/sys/bus/w1`, e.g. DS18B20 temperature probes |
 | `BlePanel` | `BleScanService` | no (BlueZ) | Live list of nearby Bluetooth LE devices: name, address, RSSI, manufacturer, advertised services and payload |

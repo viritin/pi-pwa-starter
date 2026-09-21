@@ -38,6 +38,14 @@ class I2cViewTest extends ViewTest {
     }
 
     @Test
+    void tellsWhereToWireTheSelectedBus() {
+        navigate(I2cView.class);
+        var wiring = paragraph("i2c-wiring");
+        assertTrue(wiring.contains("SDA → GPIO2 (pin 3)"), wiring);
+        assertTrue(wiring.contains("SCL → GPIO3 (pin 5)"), wiring);
+    }
+
+    @Test
     void togglesThePinsOfAPortExpander() {
         navigate(I2cView.class);
         findButton().withText("Scan bus").click();
