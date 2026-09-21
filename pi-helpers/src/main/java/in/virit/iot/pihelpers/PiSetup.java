@@ -107,18 +107,29 @@ public final class PiSetup {
     /** The pwm-2chan overlay and write access to /sys/class/pwm. */
     public static SetupHint pwm() {
         return new SetupHint("Enabling hardware PWM on the Pi")
-                .text("raspi-config has no switch for PWM; a device tree overlay turns it on. pwm-2chan gives two "
-                        + "channels on GPIO18 (pin 12) and GPIO19 (pin 35), and after a reboot the chip appears under "
-                        + "/sys/class/pwm. Raspberry Pi OS lets the gpio group write to it.")
-                .commands("Add the overlay to /boot/firmware/config.txt (skipped if already there) and reboot",
-                        "grep -q '^dtoverlay=pwm-2chan' /boot/firmware/config.txt "
-                                + "|| echo 'dtoverlay=pwm-2chan' | sudo tee -a /boot/firmware/config.txt",
+                .text("raspi-config has no switch for PWM; a device tree overlay turns it on, and after a reboot the "
+                        + "chip appears under /sys/class/pwm. The Pi has two hardware PWM channels: PWM0 on GPIO12 or "
+                        + "GPIO18, PWM1 on GPIO13 or GPIO19. The pwm overlay exposes one channel, pwm-2chan both; a "
+                        + "servo needs one. Use exactly one dtoverlay=pwm… line.")
+                .commands("One channel on GPIO18 (pin 12), enough for a servo",
+                        "dtoverlay=pwm")
+                .commands("Two channels, GPIO18 (pin 12) and GPIO19 (pin 35)",
+                        "dtoverlay=pwm-2chan")
+                .commands("Other pins: GPIO12 (pin 32) and GPIO13 (pin 33). A Pioneer600 uses GPIO18 and 19 itself "
+                                + "but brings 12 and 13 out on its Sensor Interface as D3 and D2",
+                        "dtoverlay=pwm,pin=12,func=4",
+                        "dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4")
+                .commands("Add the chosen line to /boot/firmware/config.txt, then reboot",
+                        "sudo nano /boot/firmware/config.txt",
                         "sudo reboot")
                 .commands("Let the application (running as " + user() + ") drive the channels",
                         usermod("gpio"))
                 .text(GROUP_NOTE)
-                .commands("Check that a chip is present",
-                        "ls /sys/class/pwm/")
+                .commands("Check that a chip is present; each pwmN under it is a channel",
+                        "ls /sys/class/pwm/ /sys/class/pwm/pwmchip*/")
+                .text("On a Raspberry Pi 5 the chip is pwmchip2 and the channel follows the pin: GPIO12 is pwm0, "
+                        + "GPIO13 pwm1, GPIO18 pwm2 and GPIO19 pwm3. On earlier models it is pwmchip0 with pwm0 for "
+                        + "GPIO12 or 18 and pwm1 for GPIO13 or 19. The channel list above shows which pin each one is.")
                 .link("config.txt", CONFIG_TXT_DOCS)
                 .link("Device tree overlays", OVERLAYS_README);
     }

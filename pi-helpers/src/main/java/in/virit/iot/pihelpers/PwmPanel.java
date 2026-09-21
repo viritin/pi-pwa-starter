@@ -82,8 +82,11 @@ public class PwmPanel extends VerticalLayout {
         controls.addClassName("panel");
         add(new H1("PWM & servo"),
                 new Paragraph("Position a hobby servo or dim an LED with a hardware PWM channel. "
-                        + "Servos take the signal wire from the PWM pin, red to 5 V and brown or black to GND; "
-                        + "one small servo can run from the 5 V pin, anything bigger wants its own supply."),
+                        + "Servos take the signal wire (orange or yellow) from the PWM pin, red to 5 V and brown or "
+                        + "black to GND; one small servo such as an SG90 can run from the Pi's 5 V pin, anything bigger "
+                        + "wants its own supply with a shared GND. The servo needs no pull-up or resistor, and 3.3 V "
+                        + "on the signal wire is fine. A servo uses one channel; the second channel of pwm-2chan is "
+                        + "only for a second device."),
                 simulation, controls, setup);
         simulation.setVisible(service.isSimulated());
         if (channels.isEmpty()) {
