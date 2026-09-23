@@ -89,7 +89,10 @@ public class OneWirePanel extends VerticalLayout {
         if (service.isBusPresent()) {
             status.setText((service.isSimulated() ? "Simulation · " : "")
                     + sensors.size() + (sensors.size() == 1 ? " device" : " devices") + " · updated "
-                    + java.time.LocalTime.now().withNano(0));
+                    + java.time.LocalTime.now().withNano(0)
+                    + (service.phantoms() > 0 ? " · " + service.phantoms() + " phantom entries (family 0x00) ignored: "
+                    + "the kernel reads noise as devices when the data line floats, with nothing attached or no "
+                    + "4.7 kΩ pull-up" : ""));
         }
     }
 

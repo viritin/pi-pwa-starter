@@ -27,8 +27,20 @@ public class OneWireService {
     @ConfigProperty(name = "starter.hardware.simulated", defaultValue = "false")
     boolean simulated;
 
+    private volatile int phantoms;
+
     public boolean isSimulated() {
         return simulated;
+    }
+
+    /**
+     * How many entries the last {@link #read()} left out as noise. With the driver
+     * enabled but the data line floating (nothing attached, or no pull-up), the
+     * kernel's bus search turns noise into "00-…" devices; family 0x00 does not
+     * exist, so they are dropped rather than shown as sensors.
+     */
+    public int phantoms() {
+        return phantoms;
     }
 
     public boolean isBusPresent() {
@@ -43,12 +55,18 @@ public class OneWireService {
                     new Sensor("28-0316a279b3ff", family("28"), round(4.1 + 0.6 * Math.cos(t / 3)), null));
         }
         var sensors = new ArrayList<Sensor>();
+        int noise = 0;
         for (String id : InterfaceStatus.list(DEVICES, "")) {
             if (id.startsWith("w1_bus_master")) {
                 continue;
             }
+            if (id.startsWith("00-")) {
+                noise++;
+                continue;
+            }
             sensors.add(readSensor(id));
         }
+        phantoms = noise;
         return sensors;
     }
 
