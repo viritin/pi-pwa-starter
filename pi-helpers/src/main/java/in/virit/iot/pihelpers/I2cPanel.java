@@ -71,6 +71,9 @@ public class I2cPanel extends VerticalLayout {
                         + "the wiring and the datasheet before writing any driver code. A PCF8574 port expander "
                         + "(0x20–0x27, 0x38–0x3F) gets pin toggles instead, so its LEDs, relays and buttons can be "
                         + "tried without code."),
+                new Paragraph("The scan works like i2cdetect -y: it reads one byte from each address 0x03–0x77 and "
+                        + "lists those that acknowledge. A device that only accepts writes, or holds the bus while "
+                        + "busy, can stay invisible here as it would there; its datasheet address is the one to try."),
                 simulation, toolbar, wiring, grid, status, tools, setup);
         simulation.setVisible(service.isSimulated());
         tools.setVisible(false);

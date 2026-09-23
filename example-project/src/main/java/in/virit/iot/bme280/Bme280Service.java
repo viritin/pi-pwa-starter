@@ -150,7 +150,11 @@ public class Bme280Service {
             }
         } catch (Exception e) {
             // Never let the scheduled task die; the next tick retries
-            LOG.debugf(e, "BME280 sampling failed");
+            if (driver != null) {
+                LOG.warnf(e, "BME280 reading failed; reconnecting");
+            } else {
+                LOG.debugf(e, "BME280 sampling failed");
+            }
             status = "Reading failed: " + e.getMessage();
             closeDriver();
         }

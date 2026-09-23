@@ -75,19 +75,61 @@ public class Pi4JContext {
         if (io == null) {
             return;
         }
-        try {
-            if (context != null && context.registry().exists(io.id())) {
+        if (context != null && context.registry().exists(io.id())) {
+            try {
                 context.shutdown(io.id());
                 return;
+            } catch (RuntimeException e) {
+                // Pi4J 4.0.2 unregisters only after a successful shutdown, so a close that throws would keep
+                // the address reserved for good. The IO has marked itself closed by now, so a second shutdown
+                // skips the close and just unregisters.
+                LOG.warnf(e, "Pi4J could not close %s cleanly; unregistering it anyway", io.id());
             }
-        } catch (RuntimeException e) {
-            LOG.debugf(e, "Pi4J shutdown of %s failed; closing it directly", io.id());
+            try {
+                context.shutdown(io.id());
+            } catch (RuntimeException e) {
+                LOG.errorf(e, "%s stays registered in Pi4J; its pin or address cannot be opened again until restart", io.id());
+            }
+            return;
         }
         try {
             io.close();
         } catch (RuntimeException e) {
             LOG.debugf(e, "Closing %s failed", io.id());
         }
+    }
+
+    /** The id of the I²C device this application has open at the address, if any. */
+    public synchronized java.util.Optional<String> i2cHolder(int bus, int address) {
+        if (context == null) {
+            return java.util.Optional.empty();
+        }
+        return context.registry().allByType(com.pi4j.io.i2c.I2C.class).values().stream()
+                .filter(i2c -> i2c.bus() == bus && i2c.device() == address)
+                .map(IO::id)
+                .findFirst();
+    }
+
+    /**
+     * Releases every registered IO whose id starts with the prefix. For tools that
+     * never keep a device open between requests: anything of theirs still registered
+     * is a leftover of an earlier failure, and removing it lets the next request work.
+     *
+     * @return how many were released
+     */
+    public synchronized int releaseLeftovers(String idPrefix) {
+        if (context == null) {
+            return 0;
+        }
+        var leftovers = context.registry().all().values().stream()
+                .filter(io -> io.id().startsWith(idPrefix))
+                .map(io -> (IO<?, ?, ?>) io)
+                .toList();
+        leftovers.forEach(this::release);
+        if (!leftovers.isEmpty()) {
+            LOG.warnf("Released %d Pi4J leftovers of %s*", leftovers.size(), idPrefix);
+        }
+        return leftovers.size();
     }
 
     /** True when some IO in the shared context already uses the given BCM GPIO. */

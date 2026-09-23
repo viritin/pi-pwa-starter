@@ -109,6 +109,9 @@ public class I2cService {
     public record Scan(List<Integer> found, List<Integer> inUse, String problem) {
     }
 
+    /** Prefix of the ids the scan and the register tools use; they never keep a device open. */
+    static final String TOOL_ID_PREFIX = "pi-helpers-i2c-";
+
     /** Addresses that acknowledge a one byte read, like {@code i2cdetect -y N}. */
     public Scan scan(int bus) {
         if (isSimulated()) {
@@ -116,8 +119,10 @@ public class I2cService {
             found.sort(null);
             return new Scan(found, List.of(), null);
         }
+        pi4j.releaseLeftovers(TOOL_ID_PREFIX);
         var found = new ArrayList<Integer>();
         var inUse = new ArrayList<Integer>();
+        var stuck = new ArrayList<Integer>();
         int silent = 0;
         int failed = 0;
         String firstFailure = null;
@@ -130,8 +135,13 @@ public class I2cService {
                 withDevice(bus, address, I2C::read);
                 found.add(address);
             } catch (DeviceHeldException held) {
-                found.add(address);
-                inUse.add(address);
+                var holder = pi4j.i2cHolder(bus, address);
+                if (holder.isPresent() && !holder.get().startsWith(TOOL_ID_PREFIX)) {
+                    found.add(address); // a sensor service has it open, so it answered then
+                    inUse.add(address);
+                } else {
+                    stuck.add(address); // registered, but nobody of ours is using it
+                }
             } catch (RuntimeException e) {
                 if (looksLikeNoAcknowledge(e)) {
                     silent++;
@@ -148,6 +158,12 @@ public class I2cService {
         LOG.infof("I2C bus %d scan: found %s, in use by this application %s, %d silent, %d failed%s", bus,
                 found.stream().map(I2cService::hex).toList(), inUse.stream().map(I2cService::hex).toList(),
                 silent, failed, firstFailure == null ? "" : " (" + firstFailure + ")");
+        if (!stuck.isEmpty()) {
+            LOG.warnf("I2C bus %d: %d addresses are still registered in Pi4J although nothing uses them: %s",
+                    bus, stuck.size(), stuck.stream().map(I2cService::hex).toList());
+            return new Scan(found, inUse, stuck.size() + " addresses could not be probed because Pi4J still has them "
+                    + "registered from an earlier failure; the log has the reason. Restarting the application clears it.");
+        }
         // A bus nobody can use fails the same way at every address; report that instead of "no devices"
         return new Scan(found, inUse, found.isEmpty() && failed > 0 && silent == 0 ? firstFailure : null);
     }
