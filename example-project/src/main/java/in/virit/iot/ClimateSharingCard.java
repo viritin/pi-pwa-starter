@@ -5,15 +5,12 @@ import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.card.Card;
-import com.vaadin.flow.component.card.CardVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -34,7 +31,7 @@ import java.util.List;
  * its MQTT broker with one tap, asks for a login only if the broker insists,
  * and shows what is being published. A manual form covers brokers elsewhere.
  */
-public class ClimateSharingCard extends Card {
+public class ClimateSharingCard extends ClimateCard {
 
     private static final Logger LOG = Logger.getLogger(ClimateSharingCard.class);
 
@@ -55,9 +52,8 @@ public class ClimateSharingCard extends Card {
     public ClimateSharingCard(ClimatePublisher publisher, HomeAssistantFinder finder) {
         this.publisher = publisher;
         this.finder = finder;
-        addClassNames("climate-card", "climate-sharing");
-        addThemeVariants(CardVariant.OUTLINED);
-        setTitle("Share with Home Assistant");
+        super("Share with Home Assistant");
+        getStyle().setMaxWidth("44rem"); // more text than the reading cards
         found.setId("ha-found");
         status.setId("ha-status");
         connect.setId("ha-connect");
@@ -72,8 +68,9 @@ public class ClimateSharingCard extends Card {
             setCancelable(true);
             open();
         }});
-        var actions = new HorizontalLayout(connect, stop, remove);
-        actions.addClassName("climate-actions");
+        var actions = new FlexLayout(connect, stop, remove);
+        actions.setFlexWrap(FlexLayout.FlexWrap.WRAP);
+        actions.getStyle().setGap("var(--vaadin-gap-s, .5rem)");
         add(new Paragraph("Publishes the readings over MQTT with Home Assistant's discovery messages, so the "
                 + "device and its sensors appear in Home Assistant by themselves. Nothing to configure "
                 + "there beyond the Mosquitto broker."));
@@ -234,7 +231,9 @@ public class ClimateSharingCard extends Card {
             var apply = new Button("Connect with these settings", e -> perform(() -> publisher.start(read())));
             apply.setId("ha-connect-manual");
             var fields = new FlexLayout(host, port, username, password, deviceId, topicPrefix, interval);
-            fields.addClassName("climate-fields");
+            fields.setFlexWrap(FlexLayout.FlexWrap.WRAP);
+            fields.setAlignItems(Alignment.BASELINE);
+            fields.getStyle().setGap(".75rem");
             add(fields, apply, new Paragraph("Topics: <prefix>/<device id>/climate/state and …/status; "
                     + "discovery under homeassistant/sensor/…"));
         }

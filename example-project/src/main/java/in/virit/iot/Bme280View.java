@@ -2,17 +2,19 @@ package in.virit.iot;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.card.CardVariant;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.html.UnorderedList;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -67,7 +69,9 @@ public class Bme280View extends VerticalLayout {
     }
 
     private final Bme280Service service;
-    private final RadioButtonGroup<Range> range = new RadioButtonGroup<>("History", List.of(Range.values()));
+    private final RadioButtonGroup<Range> range = new RadioButtonGroup<>("History", List.of(Range.values())){{
+        addThemeVariants(RadioGroupVariant.AURA_HORIZONTAL);
+    }};
     private final SensorCard card = new SensorCard();
     private final DetailsCard details = new DetailsCard();
     private final Paragraph status = new Paragraph();
@@ -81,8 +85,7 @@ public class Bme280View extends VerticalLayout {
         range.setValue(Range.HOUR);
         range.setItemLabelGenerator(r -> r.label);
         range.addValueChangeListener(e -> refresh());
-        var cards = new Div(card, details);
-        cards.addClassName("climate-cards");
+        var cards = new ClimateCards(card, details);
         add(new H1("Climate"),
                 new Paragraph("Temperature, humidity and air pressure from a BME280 on the I²C bus, "
                         + "sampled every few seconds since the application started."),
@@ -125,24 +128,21 @@ public class Bme280View extends VerticalLayout {
     }
 
     /** The headline card: gauge on top, the other numbers under it, temperature history as a curve. */
-    class SensorCard extends Card {
+    class SensorCard extends ClimateCard {
         private final TemperatureGauge gauge = new TemperatureGauge();
         private final Span subtitle = new Span();
-        private final Span humidity = new Span();
-        private final Span pressure = new Span();
-        private final Span updated = new Span();
+        private final SecondaryLine humidity = new SecondaryLine();
+        private final SecondaryLine pressure = new SecondaryLine();
+        private final SecondaryLine updated = new SecondaryLine();
         private final ClimateSparkLine temperature = new ClimateSparkLine("Temperature °C");
 
         SensorCard() {
-            addClassNames("climate-card", "climate-gauge-card");
-            addThemeVariants(CardVariant.OUTLINED, CardVariant.COVER_MEDIA);
-            setTitle("Climate sensor");
+            super("Climate sensor");
+            addClassName("climate-gauge-card"); // the gauge's media slot needs ::part styling, see starter.css
+            addThemeVariants(CardVariant.COVER_MEDIA);
             setSubtitle(subtitle);
             gauge.setWidthFull();
             setMedia(gauge);
-            for (var line : List.of(humidity, pressure, updated)) {
-                line.addClassName("climate-line");
-            }
             add(humidity, pressure, updated, temperature);
         }
 
@@ -160,20 +160,29 @@ public class Bme280View extends VerticalLayout {
     }
 
     /** The two secondary quantities as their own curves; humidity disappears with a BMP280. */
-    class DetailsCard extends Card {
+    class DetailsCard extends ClimateCard {
         private final ClimateSparkLine humidity = new ClimateSparkLine("Humidity % RH");
         private final ClimateSparkLine pressure = new ClimateSparkLine("Pressure hPa");
 
         DetailsCard() {
-            addClassName("climate-card");
-            addThemeVariants(CardVariant.OUTLINED);
-            setTitle("Humidity and pressure");
+            super("Humidity and pressure");
             add(humidity, pressure);
         }
 
         void update(List<Reading> history) {
             humidity.setHistory(history, Reading::humidity);
             pressure.setHistory(history, Reading::pressure);
+        }
+    }
+
+    /** The readings' cards next to each other, wrapping to one per row on a narrow screen. */
+    static class ClimateCards extends FlexLayout {
+        ClimateCards(Component... cards) {
+            super(cards);
+            setWidthFull();
+            setFlexWrap(FlexWrap.WRAP);
+            setAlignItems(Alignment.START);
+            getStyle().setGap("1rem");
         }
     }
 
@@ -190,7 +199,9 @@ public class Bme280View extends VerticalLayout {
 
         ClimateSparkLine(String title) {
             super(400, 100);
+            addClassName("climate-sparkline"); // SVG strokes and fills follow the theme, see starter.css
             setWidthFull();
+            getStyle().setMarginTop(".5rem");
             setTitle(title);
         }
 
