@@ -12,6 +12,7 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.component.card.Card;
 import in.virit.iot.led.LedService;
 import in.virit.iot.pihelpers.PiSetup;
 import in.virit.iot.pihelpers.SetupHint;
@@ -70,8 +71,8 @@ public class BlinkLedView extends VerticalLayout {
             }
         });
 
-        var controls = new VerticalLayout(gpio, led, status);
-        controls.addClassName("panel");
+        var controls = new Card();
+        controls.add(gpio, led, status);
         add(new H1("Blink a LED"),
                 new Paragraph("Choose a GPIO and switch your LED on or off."),
                 new Paragraph("Connect the GPIO through a current-limiting resistor to the LED, "

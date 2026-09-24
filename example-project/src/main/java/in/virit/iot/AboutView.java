@@ -2,7 +2,6 @@ package in.virit.iot;
 
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
@@ -12,6 +11,8 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
+import com.vaadin.flow.component.card.Card;
+import com.vaadin.flow.component.Component;
 
 @Route(value = "", layout = TopLayout.class)
 @RouteAlias(value = "about", layout = TopLayout.class)
@@ -32,19 +33,17 @@ public class AboutView extends VerticalLayout {
         var hero = new Div(logo, heading);
         hero.addClassName("about-hero");
         add(hero);
-        var intro = new Div(new H2("Make yourself at home"),
+        add(new Section("Make yourself at home",
                 new Paragraph("Connect a sensor, automate a light or keep an eye on your home. "
-                        + "This application gives your project a home on your phone and desktop."));
-        intro.addClassName("panel");
-        var examples = new Div(new H2("Two examples to build on"),
+                        + "This application gives your project a home on your phone and desktop.")));
+        add(new Section("Two examples to build on",
                 new Paragraph(new Name("Blink a LED"), new Span(" is the smallest complete feature: a view, a service "
                         + "that owns one output through the shared Pi4J context, a simulated mode and error handling. "
                         + "Copy it for a relay, a buzzer or a button.")),
                 new Paragraph(new Name("Climate"), new Span(" reads a BME280 sensor from application start, keeps a day "
                         + "of history and draws it with a gauge and sparklines. Copy it for anything that "
-                        + "produces a stream of numbers.")));
-        examples.addClassName("panel");
-        var tools = new Div(new H2("Tools for the workbench"),
+                        + "produces a stream of numbers."))));
+        add(new Section("Tools for the workbench",
                 new Paragraph(new Name("System"), new Span(" shows how the device is doing and which interfaces are "
                         + "enabled, and can reboot or shut it down. ")),
                 new Paragraph(new Name("Proto Tools"), new Span(" checks the wiring before you write code: drive and read "
@@ -52,13 +51,19 @@ public class AboutView extends VerticalLayout {
                         + "read 1-Wire probes and see which Bluetooth LE devices are around.")),
                 new Paragraph("They are meant for prototyping on a trusted network. In a finished application you "
                         + "will most likely remove them from the menu, or put them behind a login: delete the "
-                        + "views in this project or drop the pi-helpers dependency."));
-        tools.addClassName("panel");
-        var install = new Div(new H2("Keep it close"),
+                        + "views in this project or drop the pi-helpers dependency.")));
+        add(new Section("Keep it close",
                 new Paragraph("Add this app to your home screen using your browser’s install or share menu. "
-                        + "Live views need a connection to this device."));
-        install.addClassName("panel");
-        add(intro, examples, tools, install);
+                        + "Live views need a connection to this device.")));
+    }
+
+    /** One titled block of the page. */
+    static class Section extends Card {
+        Section(String title, Component... content) {
+            setTitle(title);
+            setWidthFull();
+            add(content);
+        }
     }
 
     /** A view's name inside running text, set apart so a paragraph can be scanned by it. */

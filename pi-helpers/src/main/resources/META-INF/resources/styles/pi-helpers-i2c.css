@@ -1,6 +1,4 @@
 .i2c-panel { width: 100%; box-sizing: border-box; }
-.i2c-panel > .panel { box-sizing: border-box; width: 100%; padding: 1rem;
-  border-radius: 1rem; border: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
 .i2c-panel .i2c-grid { display: grid; grid-template-columns: auto repeat(16, minmax(1.6rem, 1fr)); gap: 2px;
   width: 100%; max-width: 40rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .75rem; }
 .i2c-panel .i2c-row { padding: .3rem .4rem; opacity: .6; }

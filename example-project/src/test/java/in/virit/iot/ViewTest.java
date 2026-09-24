@@ -71,6 +71,12 @@ abstract class ViewTest extends QuarkusBrowserlessTest implements Locators {
         throw new AssertionError("Timed out waiting for " + description);
     }
 
+    /** True when a Card with a title containing the text is on screen. */
+    protected boolean cardTitled(String text) {
+        return find(com.vaadin.flow.component.card.Card.class).all().stream()
+                .anyMatch(card -> card.getTitleAsText() != null && card.getTitleAsText().contains(text));
+    }
+
     protected static String textOf(Component component) {
         return component.getElement().getTextRecursively();
     }

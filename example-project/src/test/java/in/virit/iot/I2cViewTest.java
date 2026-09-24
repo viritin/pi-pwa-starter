@@ -21,7 +21,7 @@ class I2cViewTest extends ViewTest {
         assertEquals("Simulation · 5 devices on i2c-1", paragraph("i2c-status"));
 
         findSpan().withId("i2c-0x76").click();
-        assertTrue(findH4().withTextContaining("0x76 · BME280").exists(), "the device gets a hint");
+        assertTrue(cardTitled("0x76 · BME280"), "the device gets a hint");
         test(findTextField().withLabel("Start register (hex)").component()).setValue("D0");
         findButton().withText("Read registers").click();
         assertTrue(findPre().withId("i2c-dump").component().getText().startsWith("D0: 60"),

@@ -18,6 +18,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.card.Card;
 import org.jboss.logging.Logger;
 
 import java.util.HashMap;
@@ -209,8 +210,7 @@ public class I2cPanel extends VerticalLayout {
         }
     }
 
-    class DeviceTools extends Div {
-        private final H4 title = new H4();
+    class DeviceTools extends Card {
         private final TextField startRegister = new TextField("Start register (hex)", "00", "");
         private final IntegerField count = new IntegerField("Bytes");
         private final Pre dump = new Pre();
@@ -221,7 +221,7 @@ public class I2cPanel extends VerticalLayout {
         private int address;
 
         DeviceTools() {
-            addClassName("panel");
+            setWidthFull();
             count.setValue(16);
             count.setMin(1);
             count.setMax(256);
@@ -243,7 +243,7 @@ public class I2cPanel extends VerticalLayout {
             readRow.addClassName("i2c-row-fields");
             var writeRow = new FlexLayout(writeRegister, writeValue, write);
             writeRow.addClassName("i2c-row-fields");
-            add(title, expander,
+            add(expander,
                     new Paragraph("Register dumps assume the device auto-increments its register pointer, "
                             + "as most sensors do. Writes change the device state; keep the datasheet open."),
                     readRow, dump, new H4("Write one register"), writeRow);
@@ -253,7 +253,7 @@ public class I2cPanel extends VerticalLayout {
             this.bus = bus;
             this.address = address;
             var hint = I2cService.hint(address);
-            title.setText(I2cService.hex(address) + (hint != null ? " · " + hint + "?" : ""));
+            setTitle(I2cService.hex(address) + (hint != null ? " · " + hint + "?" : ""));
             dump.setText("");
             expander.show(bus, address);
             setVisible(true);

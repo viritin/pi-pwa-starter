@@ -26,9 +26,6 @@ body::before {
 .page { max-width: 68rem; margin-inline: auto; padding: clamp(1rem, 4vw, 3rem); gap: 1.25rem; }
 .page h1 { font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1.15; margin: 0; }
 .page h2, .page h4 { margin-top: 0; }
-.panel { box-sizing: border-box; width: 100%; padding: clamp(1rem, 3vw, 2rem);
-  background: var(--aura-surface-color); border-radius: 1.25rem;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
 .brand { display: grid; gap: .4rem; padding: 2rem 1rem; text-align: center; }
 .brand-title { font-size: 1.5rem; font-weight: 700; }
 .eyebrow { font-size: .75rem; letter-spacing: .12em; font-weight: 700; }
@@ -70,8 +67,6 @@ body::before {
 .climate-card svg text { fill: currentColor; opacity: .65; }
 .climate-line { display: block; color: var(--vaadin-text-color-secondary); }
 .climate-cards { display: flex; flex-wrap: wrap; gap: 1rem; width: 100%; align-items: flex-start; }
-.wiring ul { margin: .25rem 0 .75rem; padding-inline-start: 1.25rem; }
-.wiring li { margin: .15rem 0; }
 .climate-sharing { max-width: 44rem; }
 .climate-actions { flex-wrap: wrap; }
 .climate-fields { flex-wrap: wrap; gap: .75rem; align-items: baseline; }

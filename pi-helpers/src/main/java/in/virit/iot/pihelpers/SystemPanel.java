@@ -5,15 +5,14 @@ import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.dependency.StyleSheet;
+import com.vaadin.flow.component.card.Card;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
@@ -86,7 +85,7 @@ public class SystemPanel extends VerticalLayout {
         }
     }
 
-    static class SystemStats extends Div {
+    static class SystemStats extends Card {
 
         private final StatBadge board = new StatBadge("Board");
         private final StatBadge os = new StatBadge("OS");
@@ -107,8 +106,8 @@ public class SystemPanel extends VerticalLayout {
         private WifiInfo.Link wifi = WifiInfo.Link.UNAVAILABLE;
 
         SystemStats() {
-            addClassName("panel");
-            add(new H4("Host & process"));
+            setTitle("Host & process");
+            setWidthFull();
             version.setValue(readAppVersion());
             var host = BoardInfo.detect();
             board.setValue(host.describe());
@@ -277,7 +276,7 @@ public class SystemPanel extends VerticalLayout {
      * Which buses the host exposes, as seen from /dev and /sys. Prototyping usually
      * starts with "is I2C even enabled?", so the answer sits next to the metrics.
      */
-    static class InterfaceCard extends Div {
+    static class InterfaceCard extends Card {
 
         private final StatBadge gpio = new StatBadge("GPIO");
         private final StatBadge i2c = new StatBadge("I²C");
@@ -287,10 +286,9 @@ public class SystemPanel extends VerticalLayout {
         private final StatBadge pwm = new StatBadge("PWM");
 
         InterfaceCard() {
-            addClassName("panel");
-            add(new H4("Interfaces"));
-            add(new StatGrid(gpio, i2c, spi, uart, oneWire, pwm));
-            add(PiSetup.interfaces());
+            setTitle("Interfaces");
+            setWidthFull();
+            add(new StatGrid(gpio, i2c, spi, uart, oneWire, pwm), PiSetup.interfaces());
         }
 
         void update(InterfaceStatus.Status status) {
@@ -303,7 +301,7 @@ public class SystemPanel extends VerticalLayout {
         }
     }
 
-    static class SystemActions extends Div {
+    static class SystemActions extends Card {
 
         private static void requestPowerAction(Runnable action, String successMessage) {
             try {
@@ -317,8 +315,8 @@ public class SystemPanel extends VerticalLayout {
 
 
         SystemActions(SystemControl systemControl) {
-            addClassName("panel");
-            add(new H4("Power"));
+            setTitle("Power");
+            setWidthFull();
 
             var rebootButton = new Button("Reboot", VaadinIcon.REFRESH.create(), e -> {
                 var dialog = new ConfirmDialog(

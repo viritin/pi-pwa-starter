@@ -6,7 +6,6 @@ import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.card.CardVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Paragraph;
@@ -234,11 +233,11 @@ public class Bme280View extends VerticalLayout {
     }
 
     /** How to connect the sensor, for the two ways it usually arrives on the desk. */
-    class WiringPanel extends Div {
+    class WiringPanel extends Card {
         WiringPanel() {
-            addClassNames("panel", "wiring");
-            add(new H2("Connecting the sensor"),
-                    intro(),
+            setTitle("Connecting the sensor");
+            setWidthFull();
+            add(intro(),
                     PiSetup.i2c(),
                     new H4("BME280 or BMP280 breakout board"),
                     new UnorderedList(
