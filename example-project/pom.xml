@@ -11,6 +11,7 @@
     <name>Pi Starter</name>
     <properties>
         <jairosvg.version>1.0.14</jairosvg.version>
+        <simulation.skipTestSources>false</simulation.skipTestSources>
     </properties>
     <dependencies>
         <dependency>
@@ -102,6 +103,48 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <profiles>
+        <profile>
+            <id>simulation</id>
+            <properties>
+                <!-- These sources are already compiled as application classes in this profile. -->
+                <simulation.skipTestSources>true</simulation.skipTestSources>
+            </properties>
+            <build>
+                <!-- Never leave simulated application classes in the production output tree. -->
+                <directory>target/simulation</directory>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>simulation-dev-sources</id>
+                                <phase>generate-sources</phase>
+                                <goals><goal>add-source</goal></goals>
+                                <configuration>
+                                    <sources><source>src/simulation/java</source></sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.quarkus.platform</groupId>
+                        <artifactId>quarkus-maven-plugin</artifactId>
+                        <configuration>
+                            <!-- Dev-mode defaults for the helpers that still use in-service simulation. -->
+                            <systemProperties>
+                                <starter.hardware.simulated>true</starter.hardware.simulated>
+                                <starter.power-actions.enabled>false</starter.power-actions.enabled>
+                                <starter.mdns.enabled>false</starter.mdns.enabled>
+                                <starter.data-dir>${project.build.directory}/dev-data</starter.data-dir>
+                            </systemProperties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
     <build>
         <resources>
             <resource>
@@ -112,6 +155,22 @@
             </resource>
         </resources>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>simulation-test-sources</id>
+                        <phase>generate-test-sources</phase>
+                        <goals><goal>add-test-source</goal></goals>
+                        <configuration>
+                            <skipAddTestSource>${simulation.skipTestSources}</skipAddTestSource>
+                            <sources><source>src/simulation/java</source></sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>

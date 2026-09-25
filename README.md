@@ -12,11 +12,23 @@ Requires JDK 25. Build both modules, run the browserless view tests and the Play
 ./mvnw verify
 ```
 
-Start development with both modules in the reactor:
+Start development with simulated BME280 data and the other hardware helpers in
+simulation mode:
 
 ```sh
-./mvnw -pl example-project -am quarkus:dev
+./mvnw -Psimulation -pl example-project -am quarkus:dev
 ```
+
+The BME280 simulation lives in `example-project/src/simulation/java` and is
+only added by the `simulation` Maven profile (or to test sources for tests).
+It is a CDI alternative for the measurement source, so the regular sampling,
+history and view code still runs. Its deterministic values and history can be
+edited without changing production code. The profile uses its own build output
+directory and disables host power actions.
+
+The simulation currently covers the climate sensor. Other helper panels have
+their existing simulated behavior, enabled by the profile for local
+development.
 
 To work from the example directory independently, first install the reactor
 artifacts with `./mvnw install`, then run `./mvnw quarkus:dev` there.

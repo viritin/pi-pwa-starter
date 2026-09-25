@@ -200,7 +200,9 @@ References: [Vaadin Switch example](https://github.com/vaadin/docs/blob/main/src
 `Bme280View` is the second example view, for a sensor that produces a stream of
 numbers rather than a switch. `bme280/Bme280Service` starts sampling at
 application startup, keeps the last 24 hours in memory and pushes each reading
-to open views; the view shows the temperature on a gauge, humidity and
+to open views; its `Bme280Sensor` CDI dependency supplies measurements, while
+the service owns shared sampling, history and notifications. The view shows
+the temperature on a gauge, humidity and
 pressure as lines and the history as sparklines with a selectable period. The
 gauge and sparkline are the `in.virit:gauge` and `in.virit:svg-visualizations`
 add-ons, the same ones ScrewCloud's pi-reader draws its sensor cards with.
@@ -211,8 +213,11 @@ tries addresses 0x76 and 0x77 on `starter.bme280.bus` (default 1) and
 reconnects if the sensor disappears. The screen itself explains the wiring for
 a breakout board and for the Waveshare Pioneer600 expansion board, whose BMP280
 sits at 0x77. Nothing is sampled on a host without `/dev/i2c-1`; the status line
-says so. In simulated mode the service fabricates three hours of history at
-startup so the curves are visible immediately.
+says so. For local UI work, run the root `./mvnw -Psimulation -pl
+example-project -am quarkus:dev` command. The profile substitutes the
+deterministic source in `src/simulation/java`, which supplies three hours of
+initial history so curves are visible immediately. The normal production build
+does not include that source; tests use it as an alternative.
 
 ## Sharing readings with Home Assistant (optional)
 

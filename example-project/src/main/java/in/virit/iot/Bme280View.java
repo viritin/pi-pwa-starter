@@ -149,7 +149,7 @@ public class Bme280View extends VerticalLayout {
 
         void update(Reading latest, List<Reading> history) {
             setTitle(service.model() != null ? service.model() : "Climate sensor");
-            subtitle.setText(service.isSimulated() ? "Simulation" : service.status());
+            subtitle.setText(service.status());
             gauge.setTemperature(latest == null ? null : latest.temperature());
             humidity.setText("Humidity " + format(latest == null ? null : latest.humidity(), "%.1f %% RH"));
             humidity.setVisible(latest == null || latest.humidity() != null);
