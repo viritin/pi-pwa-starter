@@ -22,7 +22,6 @@ import com.vaadin.flow.component.Component;
 public class AboutView extends VerticalLayout {
 
     public AboutView() {
-        addClassName("page");
         add(new Hero());
         add(new Section("Make yourself at home",
                 new Paragraph("Connect a sensor, automate a light or keep an eye on your home. "

@@ -16,6 +16,5 @@ public class SystemView extends SystemPanel {
     @Inject
     public SystemView(SystemControl systemControl) {
         super(systemControl);
-        addClassName("page");
     }
 }

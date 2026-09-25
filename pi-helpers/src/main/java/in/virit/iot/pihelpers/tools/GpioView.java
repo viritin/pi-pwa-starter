@@ -23,6 +23,5 @@ public class GpioView extends GpioPanel {
     @Inject
     public GpioView(GpioService gpioService) {
         super(gpioService);
-        addClassName("page");
     }
 }

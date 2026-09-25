@@ -23,6 +23,5 @@ public class BleView extends BlePanel {
     @Inject
     public BleView(BleScanService bleScanService) {
         super(bleScanService);
-        addClassName("page");
     }
 }

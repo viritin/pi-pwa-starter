@@ -23,6 +23,5 @@ public class OneWireView extends OneWirePanel {
     @Inject
     public OneWireView(OneWireService oneWireService) {
         super(oneWireService);
-        addClassName("page");
     }
 }

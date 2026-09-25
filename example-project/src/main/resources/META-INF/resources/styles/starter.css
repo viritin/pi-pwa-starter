@@ -23,18 +23,23 @@ body::before {
   background: var(--aura-app-background);
   pointer-events: none;
 }
-.page { max-width: 68rem; margin-inline: auto; padding: clamp(1rem, 4vw, 3rem); gap: 1.25rem; }
-.page h1 { font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1.15; margin: 0; }
-.page h2, .page h4 { margin-top: 0; }
+/* Every view. MobileMainLayout puts the routed view next to its own header row inside
+   .mobile-content, so this frames all routes, pi-helpers' Proto Tools included, without a
+   class on each view. */
+.mobile-content > :not(.mobile-content-header) { max-width: 68rem; margin-inline: auto;
+  padding: clamp(1rem, 4vw, 3rem); gap: 1.25rem; }
+.mobile-content > :not(.mobile-content-header) h1 { font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1.15; margin: 0; }
+.mobile-content > :not(.mobile-content-header) :is(h2, h4) { margin-top: 0; }
 
 /* MobileMainLayout flattens these surfaces on small/short screens.
    Keep Aura's root gradient visible instead, including behind long views.
-   The content override needs !important to match the addon's part rule. */
+   :root outranks the add-on's plain vaadin-app-layout rules whatever order the stylesheets
+   load in; the content override also needs !important to match the add-on's part rule. */
 @media (max-width: 800px), (max-height: 600px) {
-  vaadin-app-layout.starter-layout {
+  :root vaadin-app-layout {
     background: transparent;
   }
-  vaadin-app-layout.starter-layout::part(content) {
+  :root vaadin-app-layout::part(content) {
     background: transparent !important;
   }
 }

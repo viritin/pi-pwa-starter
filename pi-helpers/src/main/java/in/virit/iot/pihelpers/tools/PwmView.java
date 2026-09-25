@@ -23,6 +23,5 @@ public class PwmView extends PwmPanel {
     @Inject
     public PwmView(PwmService pwmService) {
         super(pwmService);
-        addClassName("page");
     }
 }

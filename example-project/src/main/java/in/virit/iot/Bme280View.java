@@ -86,7 +86,6 @@ public class Bme280View extends VerticalLayout {
     @Inject
     public Bme280View(Bme280Service service, ClimatePublisher publisher, HomeAssistantFinder finder) {
         this.service = service;
-        addClassName("page");
         status.setId("bme280-status");
         range.setValue(Range.HOUR);
         range.setItemLabelGenerator(r -> r.label);

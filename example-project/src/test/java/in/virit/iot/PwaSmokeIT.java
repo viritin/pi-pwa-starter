@@ -25,6 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @QuarkusIntegrationTest
 class PwaSmokeIT {
 
+    /** The view's own heading: MobileMainLayout puts the view next to its header row in .mobile-content. */
+    private static final String VIEW_HEADING = ".mobile-content > :not(.mobile-content-header) h1";
+
     private static final String[] ROUTES = {"about", "system", "blinkled", "bme280", "gpio", "i2c", "pwm", "onewire", "ble"};
 
     @TestHTTPResource
@@ -47,7 +50,7 @@ class PwaSmokeIT {
                     new Page.GetByRoleOptions().setName("Small device. Big possibilities.").setExact(true))).isVisible();
             page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("System").setExact(true)).click();
             assertThat(page).hasURL(baseUri.resolve("system").toString());
-            assertThat(page.locator(".page h1")).hasText("System Monitor");
+            assertThat(page.locator(VIEW_HEADING)).hasText("System Monitor");
 
             // Every route in a fresh browser: a reused production bundle can miss a new
             // route's chunk, which only shows when nothing else has loaded its components.
@@ -63,7 +66,7 @@ class PwaSmokeIT {
                             + request.url() + " (" + request.failure() + ")"));
                     direct.setDefaultTimeout(15_000);
                     direct.navigate(baseUri.resolve(route).toString());
-                    assertThat(direct.locator(".page h1")).isVisible();
+                    assertThat(direct.locator(VIEW_HEADING)).isVisible();
                     direct.waitForTimeout(500);
                     Object undefined = direct.evaluate("() => [...new Set([...document.querySelectorAll('*')]"
                             + ".map(e => e.tagName.toLowerCase()).filter(t => t.startsWith('vaadin-') && !customElements.get(t)))].join(',')");

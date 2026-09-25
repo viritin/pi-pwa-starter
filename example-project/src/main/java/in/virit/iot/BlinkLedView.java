@@ -49,7 +49,6 @@ public class BlinkLedView extends VerticalLayout {
     @Inject
     public BlinkLedView(LedService service) {
         this.service = service;
-        addClassName("page");
         gpio.addFocusListener(e -> editingGpio = true);
         gpio.addBlurListener(e -> editingGpio = false);
         status.setId("led-status");

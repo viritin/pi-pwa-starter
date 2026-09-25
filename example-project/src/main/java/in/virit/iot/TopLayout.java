@@ -18,7 +18,6 @@ public class TopLayout extends MobileMainLayout {
 
     @Inject
     public TopLayout(IncidentOverlay incidentOverlay) {
-        addClassName("starter-layout");
         addNavbarHelper(incidentOverlay);
     }
 

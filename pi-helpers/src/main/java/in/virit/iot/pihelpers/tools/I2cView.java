@@ -23,6 +23,5 @@ public class I2cView extends I2cPanel {
     @Inject
     public I2cView(I2cService i2cService) {
         super(i2cService);
-        addClassName("page");
     }
 }
