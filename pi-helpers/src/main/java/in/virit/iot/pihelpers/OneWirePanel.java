@@ -3,11 +3,10 @@ package in.virit.iot.pihelpers;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.dependency.StyleSheet;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.card.Card;
 import in.virit.iot.pihelpers.OneWireService.Sensor;
 
 import java.util.LinkedHashMap;
@@ -96,15 +95,16 @@ public class OneWirePanel extends VerticalLayout {
         }
     }
 
-    class SensorCard extends Div {
+    class SensorCard extends Card {
         private final StatGrid grid = new StatGrid();
         private final Map<String, StatBadge> badges = new LinkedHashMap<>();
         private final Paragraph empty = new Paragraph("No devices yet. Check the wiring and the pull-up resistor; "
                 + "new probes appear within a few seconds.");
 
         SensorCard() {
-            addClassName("panel");
-            add(new H4("Devices"), grid, empty);
+            setTitle("Devices");
+            setWidthFull();
+            add(grid, empty);
         }
 
         void update(List<Sensor> sensors) {

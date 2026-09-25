@@ -26,25 +26,6 @@ body::before {
 .page { max-width: 68rem; margin-inline: auto; padding: clamp(1rem, 4vw, 3rem); gap: 1.25rem; }
 .page h1 { font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1.15; margin: 0; }
 .page h2, .page h4 { margin-top: 0; }
-.panel { box-sizing: border-box; width: 100%; padding: clamp(1rem, 3vw, 2rem);
-  background: var(--aura-surface-color); border-radius: 1.25rem;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
-.brand { display: grid; gap: .4rem; padding: 2rem 1rem; text-align: center; }
-.brand-title { font-size: 1.5rem; font-weight: 700; }
-.eyebrow { font-size: .75rem; letter-spacing: .12em; font-weight: 700; }
-.about-hero { display: flex; align-items: center; gap: clamp(1rem, 3vw, 2rem); width: 100%; }
-.about-logo { display: block; width: 8rem; height: 8rem; flex-shrink: 0; border-radius: 1.75rem; }
-.about-heading { display: grid; gap: .75rem; min-width: 0; }
-.about-heading p { margin: 0; }
-.incident-overlay { position: fixed; z-index: 20; right: 1rem; bottom: 1rem; display: flex; align-items: center;
-  gap: .75rem; padding: .7rem .85rem; color: #fff; background: #a32929; border-radius: .75rem;
-  box-shadow: 0 .4rem 1.5rem #0004; }
-.incident-overlay[hidden] { display: none; }
-.incident-details { color: #fff; background: transparent; border: 1px solid #fff8; }
-@media (max-width: 600px) {
-  .about-hero { flex-direction: column; align-items: flex-start; }
-  .about-logo { width: 6rem; height: 6rem; border-radius: 1.25rem; }
-}
 
 /* MobileMainLayout flattens these surfaces on small/short screens.
    Keep Aura's root gradient visible instead, including behind long views.
@@ -58,20 +39,11 @@ body::before {
   }
 }
 
-/* Climate (BME280) example: the card lifts off the page like pi-reader's sensor cards,
-   the gauge sits centred in a 2:1 media slot and the sparklines follow the theme. */
-.climate-card { --aura-surface-level: 4; flex: 1 1 20rem; max-width: 30rem; min-width: 0; }
-.climate-card > svg { margin-top: .5rem; }
+/* Climate view: what Java cannot set. The gauge sits centred in the card's 2:1 media slot
+   (a shadow part), and the sparklines' SVG strokes follow the theme. */
 .climate-gauge-card::part(media) { aspect-ratio: 2 / 1; display: flex; align-items: center; justify-content: center;
   box-sizing: border-box; padding: 1px 1px 0; background-clip: content-box; }
-.climate-card react-gauge { max-width: min(20rem, 84%); margin: 0 auto; padding-bottom: .5rem; }
-.climate-card svg path { stroke: var(--aura-accent-color, #4f39f6); stroke-width: 1.25; }
-.climate-card svg line { stroke: currentColor; opacity: .25; }
-.climate-card svg text { fill: currentColor; opacity: .65; }
-.climate-line { display: block; color: var(--vaadin-text-color-secondary); }
-.climate-cards { display: flex; flex-wrap: wrap; gap: 1rem; width: 100%; align-items: flex-start; }
-.wiring ul { margin: .25rem 0 .75rem; padding-inline-start: 1.25rem; }
-.wiring li { margin: .15rem 0; }
-.climate-sharing { max-width: 44rem; }
-.climate-actions { flex-wrap: wrap; }
-.climate-fields { flex-wrap: wrap; gap: .75rem; align-items: baseline; }
+.climate-gauge-card react-gauge { max-width: min(20rem, 84%); margin: 0 auto; padding-bottom: .5rem; }
+.climate-sparkline path { stroke: var(--aura-accent-color, #4f39f6); stroke-width: 1.25; }
+.climate-sparkline line { stroke: currentColor; opacity: .25; }
+.climate-sparkline text { fill: currentColor; opacity: .65; }

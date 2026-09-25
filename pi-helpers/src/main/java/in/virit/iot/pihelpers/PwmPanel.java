@@ -4,7 +4,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.dependency.StyleSheet;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
@@ -15,6 +14,7 @@ import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.slider.IntegerSlider;
 import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.component.card.Card;
 import in.virit.iot.pihelpers.PwmService.Channel;
 import in.virit.iot.pihelpers.PwmService.State;
 import org.jboss.logging.Logger;
@@ -83,8 +83,9 @@ public class PwmPanel extends VerticalLayout {
         });
 
         pins.show(service.pins(), all.size() - channels.size());
-        var controls = new Div(channel, pins, mode, servo, duty, enabled, status);
-        controls.addClassName("panel");
+        var controls = new Card();
+        controls.setWidthFull();
+        controls.add(channel, pins, mode, servo, duty, enabled, status);
         add(new H1("PWM & servo"),
                 new Paragraph("Position a hobby servo or dim an LED with a hardware PWM channel. "
                         + "Servos take the signal wire (orange or yellow) from the PWM pin, red to 5 V and brown or "

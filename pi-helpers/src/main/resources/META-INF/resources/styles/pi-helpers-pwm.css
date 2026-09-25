@@ -1,6 +1,4 @@
 .pwm-panel { width: 100%; box-sizing: border-box; }
-.pwm-panel > .panel { box-sizing: border-box; width: 100%; padding: 1rem; display: grid; gap: .75rem;
-  border-radius: 1rem; border: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
 .pwm-panel .pwm-presets { flex-wrap: wrap; }
 .pwm-panel .pwm-fields { flex-wrap: wrap; gap: .75rem; align-items: baseline; }
 .pwm-panel .pwm-pins { font-size: .85rem; opacity: .8; margin: .25rem 0 .5rem; }

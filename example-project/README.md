@@ -18,7 +18,7 @@ the parent and `pi-helpers`, then use the wrapper in this directory:
 ./mvnw quarkus:dev
 ```
 
-Open http://localhost:8080. About is at `/` (also `/about`), System at `/system` and Blink a LED at `/blink-led`.
+Open http://localhost:8080. About is at `/` (also `/about`), System at `/system` and Blink a LED at `/blinkled`.
 
 Build and run the production application:
 
@@ -112,18 +112,15 @@ Reports land in `target/surefire-reports` and `target/failsafe-reports`.
   Missing Linux files or optional `iw`/`nmcli` tools produce `N/A`.
   “Uptime” is JVM uptime; “Version” is the application artifact timestamp.
   The hotspot field is only a metered-connection heuristic.
-- `GpioView`, `I2cView`, `PwmView`, `OneWireView` and `BleView` do the same for the
-  prototyping panels in `pi-helpers`. They are grouped under “Proto Tools” with
-  Viritin's `@MenuItem(parent = ProtoTools.class)`; `ProtoTools` is a plain
-  annotated class, which the menu renders as a drawer sub-menu on desktop and a
-  popover item in the mobile bottom bar. The panels offer a tappable header map for reading and
-  driving GPIOs, an I²C scanner with register dump and write, a PWM/servo
+- The **Proto Tools** screens come from `pi-helpers` and need no code here:
+  `starter.proto-tools.enabled=true` in `application.properties` adds them at
+  startup under a “Proto Tools” menu group, inside this application's layout
+  (`TopLayout` is marked `@Layout`). They offer a tappable header map for reading
+  and driving GPIOs, an I²C scanner with register dump and write, a PWM/servo
   control, live 1-Wire (DS18B20) readings and a Bluetooth LE scanner listing
-  nearby devices through BlueZ. Each panel ends with a folded setup hint that
-  gives the commands to enable its bus on the Pi, with copy buttons and links
-  to the documentation; it opens by itself when the hardware is missing. See
-  [Pi Helpers](../pi-helpers/README.md) for the same steps in one place.
-  Delete the views you do not want.
+  nearby devices through BlueZ, each with a folded setup hint for enabling its
+  bus. Set the flag to `false` in a finished application. See
+  [Pi Helpers](../pi-helpers/README.md) for details.
 
 ## Logo and PWA icon
 

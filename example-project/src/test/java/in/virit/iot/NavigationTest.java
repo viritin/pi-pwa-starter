@@ -1,5 +1,10 @@
 package in.virit.iot;
 
+import in.virit.iot.pihelpers.tools.GpioView;
+import in.virit.iot.pihelpers.tools.I2cView;
+import in.virit.iot.pihelpers.tools.PwmView;
+import in.virit.iot.pihelpers.tools.OneWireView;
+import in.virit.iot.pihelpers.tools.BleView;
 import com.vaadin.flow.component.html.H1;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;

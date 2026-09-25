@@ -4,10 +4,19 @@ Reusable Vaadin components for Quarkus applications on a Raspberry Pi. The
 panels are meant for the prototyping phase: check the wiring, find a sensor,
 wiggle a pin or a servo before writing any application code.
 
-Every panel is a plain component without a route, menu entry or application
-layout. The example's views extend the panels and add those annotations;
-another application can also embed a panel as a component. Inject the matching
-service and pass it to the panel constructor. The module's `META-INF/beans.xml`
+The prototyping panels are also ready-made screens: with
+`starter.proto-tools.enabled=true`, `ProtoToolsRegistrar` registers GPIO, I²C,
+PWM, 1-Wire and Bluetooth LE views at startup (package `…pihelpers.tools`,
+routes `gpio`, `i2c`, `pwm`, `onewire`, `ble`) under a “Proto Tools” group in
+Viritin's menu. They use the application's `@Layout` class as their layout, so an
+application only sets the flag. The views are `@Route(registerAtStartup = false)`
+so that Vaadin's production bundle still includes the components they use;
+their paths follow Vaadin's naming convention (`GpioView` → `gpio`).
+
+Every panel itself is a plain component without a route, menu entry or
+application layout, so an application can also embed one: inject the matching
+service and pass it to the panel constructor (the example's `SystemView` does
+this with `SystemPanel`). The module's `META-INF/beans.xml`
 makes the CDI services discoverable from its JAR, and each panel brings its own
 scoped stylesheet; the application supplies the Vaadin theme. Enable Vaadin
 server push in the application's AppShell for live updates.

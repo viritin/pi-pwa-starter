@@ -32,18 +32,22 @@
             <version>${pi4j.version}</version>
             <optional>true</optional>
         </dependency>
-        <!-- Optional: only the Bluetooth LE scanner needs BlueZ over D-Bus. -->
+        <!-- The Proto Tools menu entries use Viritin's @MenuItem, like the application's layout. -->
+        <dependency>
+            <groupId>in.virit</groupId>
+            <artifactId>viritin</artifactId>
+            <version>${viritin.version}</version>
+        </dependency>
+        <!-- The Bluetooth LE scanner talks to BlueZ over the system D-Bus. -->
         <dependency>
             <groupId>com.github.hypfvieh</groupId>
             <artifactId>bluez-dbus</artifactId>
             <version>0.3.2</version>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.github.hypfvieh</groupId>
             <artifactId>dbus-java-transport-native-unixsocket</artifactId>
             <version>5.1.1</version>
-            <optional>true</optional>
         </dependency>
         <!-- Optional: only the MQTT publisher and the Home Assistant finder need these. -->
         <dependency>

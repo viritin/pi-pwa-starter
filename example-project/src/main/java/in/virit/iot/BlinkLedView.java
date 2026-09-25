@@ -12,6 +12,7 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.component.card.Card;
 import in.virit.iot.led.LedService;
 import in.virit.iot.pihelpers.PiSetup;
 import in.virit.iot.pihelpers.SetupHint;
@@ -28,13 +29,13 @@ import org.jboss.logging.Logger;
  * actuator. The generic screens under "Proto Tools" are for checking wiring
  * and are not meant as a starting point for application code.
  */
-@Route(value = "blink-led", layout = TopLayout.class)
+@Route
 @Menu(title = "Blink a LED", icon = "vaadin:lightbulb", order = 3)
 @PageTitle("Blink a LED | Pi Starter")
 public class BlinkLedView extends VerticalLayout {
     private static final Logger LOG = Logger.getLogger(BlinkLedView.class);
     private final LedService service;
-    private final IntegerField gpio = new IntegerField("GPIO number (BCM)");
+    private final GpioField gpio = new GpioField();
     private final Switch led = new Switch("LED on");
     private final Paragraph status = new Paragraph();
     private final SetupHint setup = PiSetup.gpio();
@@ -48,11 +49,6 @@ public class BlinkLedView extends VerticalLayout {
         addClassName("page");
         gpio.addFocusListener(e -> editingGpio = true);
         gpio.addBlurListener(e -> editingGpio = false);
-        gpio.setMin(0);
-        gpio.setMax(27);
-        gpio.setStepButtonsVisible(true);
-        gpio.setHelperText("BCM number, not the physical header pin. GPIO 26 = header pin 37.");
-        gpio.setErrorMessage("Enter a whole BCM GPIO number from 0 to 27.");
         status.setId("led-status");
 
         gpio.addValueChangeListener(event -> {
@@ -70,14 +66,33 @@ public class BlinkLedView extends VerticalLayout {
             }
         });
 
-        var controls = new VerticalLayout(gpio, led, status);
-        controls.addClassName("panel");
         add(new H1("Blink a LED"),
                 new Paragraph("Choose a GPIO and switch your LED on or off."),
                 new Paragraph("Connect the GPIO through a current-limiting resistor to the LED, "
                         + "and the LED’s cathode to GND. HIGH is 3.3 V; LOW is 0 V."),
-                controls, setup);
+                new LedControls(), setup);
         refresh();
+    }
+
+    /** The pin, the switch and what the LED is doing, stacked in one card. */
+    class LedControls extends Card {
+        LedControls() {
+            var stack = new VerticalLayout(gpio, led, status);
+            stack.setPadding(false);
+            add(stack);
+        }
+    }
+
+    /** A BCM GPIO number, 0–27, with the hint that it is not the header pin. */
+    static class GpioField extends IntegerField {
+        GpioField() {
+            super("GPIO number (BCM)");
+            setMin(0);
+            setMax(27);
+            setStepButtonsVisible(true);
+            setHelperText("BCM number, not the physical header pin. GPIO 26 = header pin 37.");
+            setErrorMessage("Enter a whole BCM GPIO number from 0 to 27.");
+        }
     }
 
     private void perform(Runnable action) {

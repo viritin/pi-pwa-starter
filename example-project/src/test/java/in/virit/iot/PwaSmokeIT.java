@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @QuarkusIntegrationTest
 class PwaSmokeIT {
 
-    private static final String[] ROUTES = {"about", "system", "blink-led", "bme280", "gpio", "i2c", "pwm", "onewire", "ble"};
+    private static final String[] ROUTES = {"about", "system", "blinkled", "bme280", "gpio", "i2c", "pwm", "onewire", "ble"};
 
     @TestHTTPResource
     URI baseUri;
