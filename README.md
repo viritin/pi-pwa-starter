@@ -1,6 +1,7 @@
 # Pi Java PWA Starter
 
-A Maven reactor for a small Quarkus + Vaadin IoT application:
+A small Quarkus + Vaadin IoT application, split into independently buildable
+Maven projects:
 
 - **example-project**: runnable PWA, theme, navigation, browserless view tests and a browser smoke test.
 - **pi-helpers**: reusable prototyping panels: System (host diagnostics, interfaces,
@@ -12,11 +13,12 @@ Requires JDK 25. Build both modules, run the browserless view tests and the Play
 ./mvnw verify
 ```
 
-Start development with simulated BME280 data and the other hardware helpers in
-simulation mode:
+Start the example directly from its own directory with simulated BME280 data
+and the other hardware helpers in simulation mode:
 
 ```sh
-./mvnw -Psimulation -pl example-project -am quarkus:dev
+cd example-project
+./mvnw -Psimulation quarkus:dev
 ```
 
 The BME280 simulation lives in `example-project/src/simulation/java` and is
@@ -30,8 +32,12 @@ The simulation currently covers the climate sensor. Other helper panels have
 their existing simulated behavior, enabled by the profile for local
 development.
 
-To work from the example directory independently, first install the reactor
-artifacts with `./mvnw install`, then run `./mvnw quarkus:dev` there.
+The root POM only aggregates both projects. Build everything with
+`./mvnw verify`, or install just the reusable library with
+`./mvnw -pl pi-helpers install`. The example has its own POM and wrapper and
+resolves `pi-helpers` as a normal versioned dependency, so it can be opened and
+run on its own after that library version is available locally or from Maven
+Central.
 
 See [the example README](example-project/README.md) for application details and
 [Pi Helpers](pi-helpers/README.md) for the reusable component.

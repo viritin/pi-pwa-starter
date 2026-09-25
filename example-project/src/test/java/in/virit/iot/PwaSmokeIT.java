@@ -10,6 +10,7 @@ import io.quarkus.test.junit.QuarkusIntegrationTest;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
+import java.util.ArrayList;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,13 +54,21 @@ class PwaSmokeIT {
             for (String route : ROUTES) {
                 try (BrowserContext fresh = browser.newContext()) {
                     Page direct = fresh.newPage();
+                    var browserErrors = new ArrayList<String>();
+                    direct.onPageError(error -> browserErrors.add("pageerror: " + error));
+                    direct.onConsoleMessage(message -> {
+                        if (message.type().equals("error")) browserErrors.add("console: " + message.text());
+                    });
+                    direct.onRequestFailed(request -> browserErrors.add("request failed: "
+                            + request.url() + " (" + request.failure() + ")"));
                     direct.setDefaultTimeout(15_000);
                     direct.navigate(baseUri.resolve(route).toString());
                     assertThat(direct.locator(".page h1")).isVisible();
                     direct.waitForTimeout(500);
                     Object undefined = direct.evaluate("() => [...new Set([...document.querySelectorAll('*')]"
                             + ".map(e => e.tagName.toLowerCase()).filter(t => t.startsWith('vaadin-') && !customElements.get(t)))].join(',')");
-                    assertEquals("", undefined, "Undefined Vaadin elements on /" + route + " in a fresh browser");
+                    assertEquals("", undefined, "Undefined Vaadin elements on /" + route + " in a fresh browser. "
+                            + "Browser errors: " + browserErrors);
                 }
             }
         }

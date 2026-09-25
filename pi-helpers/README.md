@@ -101,10 +101,11 @@ that address fails with `IOAlreadyExistsException`. `release` goes through
 
 The helpers carry three workarounds for Pi4J 4.0.2. Each names its upstream
 fix; drop it when `pi4j.version` reaches a release that contains the fix. The
-`pi4j-local` profile in the root pom builds against a locally installed Pi4J
+`pi4j-local` profile in this module's pom builds against a locally installed Pi4J
 (`./mvnw -DskipTests install` in a checkout of the fork's `my-main`, version
 `5.0.0-mstahv-SNAPSHOT`) so the removal can be tried before that release:
-`./mvnw -Ppi4j-local -pl example-project -am test`.
+`../mvnw -Ppi4j-local test` from this module directory (or
+`./mvnw -Ppi4j-local test` from `example-project`).
 
 | Where | Workaround | Upstream |
 |---|---|---|

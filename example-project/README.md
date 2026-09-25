@@ -5,18 +5,27 @@ This is the runnable example that a future Maven archetype will generate.
 
 ## Run
 
-Use JDK 25. From the repository root, start both modules in the reactor:
+Use JDK 25. `example-project` is a standalone Maven project. Install the local
+helper library once from the repository root if it is not already available
+from Maven Central:
 
 ```sh
-./mvnw -pl example-project -am quarkus:dev
+cd ..
+./mvnw -pl pi-helpers install
+cd example-project
 ```
 
-Alternatively, first run `./mvnw install` at the repository root to install
-the parent and `pi-helpers`, then use the wrapper in this directory:
+Then start the app with this directory's Maven wrapper:
 
 ```sh
 ./mvnw quarkus:dev
 ```
+
+In IntelliJ, use a **Maven** run configuration for this standalone project:
+set the working directory to `example-project` and the command line to
+`-Psimulation quarkus:dev`. This activates the simulation Maven profile for
+that run. You can also run `quarkus:dev` from the Maven tool window after
+activating `simulation` in its Profiles panel.
 
 Open http://localhost:8080. About is at `/` (also `/about`), System at `/system` and Blink a LED at `/blinkled`.
 
@@ -35,8 +44,9 @@ The Quarkus Vaadin extension builds the frontend as part of packaging.
 [boot2vm](https://github.com/mstahv/boot2vm) is a convenient way to deploy this
 Quarkus app to a Debian-based VM or Raspberry Pi OS. It uses SSH/rsync, systemd
 and Caddy as the reverse proxy, and installs the JDK on the target.
-Install the parent and helper module first with `./mvnw install` at the repository
-root, then run boot2vm from `example-project`, selecting `APP_TYPE=quarkus`:
+Install the helper module first with `./mvnw -pl pi-helpers install` at the
+repository root, then run boot2vm from `example-project`, selecting
+`APP_TYPE=quarkus`:
 
 ```sh
 jbang app install https://github.com/mstahv/boot2vm/blob/main/Deploy.java
@@ -140,10 +150,10 @@ No image tools beyond the project's JDK 25 are needed.
 The generator skips rendering if the PNG exists and the SVG, generator source
 and JairoSVG version have not changed (SHA-256 fingerprint). A missing PNG or
 `clean` rebuild generates it again. Generated PNGs are not committed.
-To refresh the icon without packaging, from the repository root run:
+To refresh the icon without packaging, run this in `example-project`:
 
 ```sh
-./mvnw -pl example-project -am process-resources
+./mvnw process-resources
 ```
 
 After editing the SVG during a running dev session, run that command again
@@ -185,7 +195,7 @@ and production default to real hardware; device/access failures display an
 error and restore the last successful state.
 
 To remove hardware support, delete `BlinkLedView`, `led/LedService` and the
-GPIO/I²C/PWM/1-Wire views, remove both Pi4J dependencies and the parent's
+GPIO/I²C/PWM/1-Wire views, remove both Pi4J dependencies and the
 `pi4j.version` property, then remove the hardware browser assertions and
 configuration.
 
@@ -210,8 +220,8 @@ tries addresses 0x76 and 0x77 on `starter.bme280.bus` (default 1) and
 reconnects if the sensor disappears. The screen itself explains the wiring for
 a breakout board and for the Waveshare Pioneer600 expansion board, whose BMP280
 sits at 0x77. Nothing is sampled on a host without `/dev/i2c-1`; the status line
-says so. For local UI work, run the root `./mvnw -Psimulation -pl
-example-project -am quarkus:dev` command. The profile substitutes the
+says so. For local UI work, run `./mvnw -Psimulation quarkus:dev` from the
+`example-project` directory. The profile substitutes the
 deterministic source in `src/simulation/java`, which supplies three hours of
 initial history so curves are visible immediately. The normal production build
 does not include that source; tests use it as an alternative.

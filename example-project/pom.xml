@@ -2,22 +2,44 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>in.virit.iot</groupId>
-        <artifactId>pi-starter-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
-    </parent>
+    <groupId>in.virit.iot</groupId>
     <artifactId>pi-starter</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <name>Pi Starter</name>
     <properties>
+        <maven.compiler.release>25</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <quarkus.version>3.37.2</quarkus.version>
+        <vaadin.version>25.3.0-beta2</vaadin.version>
+        <pi4j.version>4.0.2</pi4j.version>
+        <viritin.version>3.8.1</viritin.version>
+        <pi-helpers.version>1.0.0-SNAPSHOT</pi-helpers.version>
         <jairosvg.version>1.0.14</jairosvg.version>
         <simulation.skipTestSources>false</simulation.skipTestSources>
     </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.quarkus.platform</groupId>
+                <artifactId>quarkus-bom</artifactId>
+                <version>${quarkus.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.vaadin</groupId>
+                <artifactId>vaadin-bom</artifactId>
+                <version>${vaadin.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>in.virit.iot</groupId>
             <artifactId>pi-helpers</artifactId>
-            <version>${project.version}</version>
+            <version>${pi-helpers.version}</version>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
@@ -93,6 +115,11 @@
         </dependency>
     </dependencies>
     <profiles>
+        <!-- Build against a locally installed Pi4J from the fork's my-main branch. -->
+        <profile>
+            <id>pi4j-local</id>
+            <properties><pi4j.version>5.0.0-mstahv-SNAPSHOT</pi4j.version></properties>
+        </profile>
         <profile>
             <id>simulation</id>
             <properties>
