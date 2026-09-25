@@ -5,13 +5,15 @@ import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.card.Card;
+import com.vaadin.flow.component.card.CardVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.FlexLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -24,14 +26,14 @@ import in.virit.iot.pihelpers.MqttSettings;
 import org.jboss.logging.Logger;
 
 import java.time.Duration;
-import java.util.List;
+import java.util.Optional;
 
 /**
  * "Share with Home Assistant": finds the instance on the network, connects to
  * its MQTT broker with one tap, asks for a login only if the broker insists,
  * and shows what is being published. A manual form covers brokers elsewhere.
  */
-public class ClimateSharingCard extends ClimateCard {
+public class ClimateSharingCard extends Card {
 
     private static final Logger LOG = Logger.getLogger(ClimateSharingCard.class);
 
@@ -43,17 +45,20 @@ public class ClimateSharingCard extends ClimateCard {
     private final Button stop = new Button("Stop sharing");
     private final Button remove = new Button("Remove from Home Assistant");
     private final ManualForm manual = new ManualForm();
-    private volatile Instance instance;
-    private boolean lookedUp;
-    private boolean lookupDone;
+    /** Null until the network lookup has answered; then what it found, if anything. */
+    private Optional<Instance> lookup;
+    private boolean lookupStarted;
     private Registration listener;
     private CredentialsDialog credentials;
 
     public ClimateSharingCard(ClimatePublisher publisher, HomeAssistantFinder finder) {
         this.publisher = publisher;
         this.finder = finder;
-        super("Share with Home Assistant");
-        getStyle().setMaxWidth("44rem"); // more text than the reading cards
+        // A card of its own below the readings, not one of their row, so not a ClimateCard
+        setTitle("Share with Home Assistant");
+        addThemeVariants(CardVariant.OUTLINED);
+        setWidthFull();
+        getStyle().setMaxWidth("44rem");
         found.setId("ha-found");
         status.setId("ha-status");
         connect.setId("ha-connect");
@@ -68,9 +73,6 @@ public class ClimateSharingCard extends ClimateCard {
             setCancelable(true);
             open();
         }});
-        var actions = new FlexLayout(connect, stop, remove);
-        actions.setFlexWrap(FlexLayout.FlexWrap.WRAP);
-        actions.getStyle().setGap("var(--vaadin-gap-s, .5rem)");
         add(new Paragraph("Publishes the readings over MQTT with Home Assistant's discovery messages, so the "
                 + "device and its sensors appear in Home Assistant by themselves. Nothing to configure "
                 + "there beyond the Mosquitto broker."));
@@ -79,10 +81,14 @@ public class ClimateSharingCard extends ClimateCard {
             var configured = new Paragraph("Configured in application.properties (starter.mqtt.*): broker "
                     + settings.host() + ":" + settings.port() + ", device id " + settings.deviceId()
                     + (settings.enabled() ? "" : ", publishing disabled") + ". Change it there.");
-            configured.setId("ha-found");
             add(configured, status);
         } else {
-            add(found, actions, status, new Details("Use another broker", manual));
+            var otherBroker = new Details("Use another broker", manual);
+            otherBroker.setWidthFull(); // so the form sees the card's width and can use two columns
+            // Filled when opened rather than on every status change, so nothing overwrites typing
+            otherBroker.addOpenedChangeListener(e -> manual.fill(publisher.settings()));
+            add(found, new HorizontalLayout(connect, stop, remove), status, otherBroker);
+            manual.fill(publisher.settings());
         }
         refresh();
     }
@@ -96,8 +102,8 @@ public class ClimateSharingCard extends ClimateCard {
                 refresh();
             }
         }));
-        if (!lookedUp && !publisher.isConfiguredExternally()) {
-            lookedUp = true;
+        if (!lookupStarted && !publisher.isConfiguredExternally()) {
+            lookupStarted = true;
             lookUp(ui);
         }
         refresh();
@@ -119,10 +125,9 @@ public class ClimateSharingCard extends ClimateCard {
         }
         found.setText("Looking for Home Assistant on this network…");
         var thread = new Thread(() -> {
-            List<Instance> instances = finder.find(Duration.ofSeconds(3));
+            var instances = finder.find(Duration.ofSeconds(3));
             ui.access(() -> {
-                instance = instances.isEmpty() ? null : instances.get(0);
-                lookupDone = true;
+                lookup = instances.stream().findFirst();
                 refresh();
             });
         }, "home-assistant-lookup");
@@ -131,12 +136,12 @@ public class ClimateSharingCard extends ClimateCard {
     }
 
     private void connectToFound() {
-        var target = instance;
-        if (target == null) {
-            return;
-        }
-        var settings = publisher.settings().withBroker(target.host(), target.hasBroker() ? target.mqttPort() : HomeAssistantFinder.MQTT_PORT);
-        perform(() -> publisher.start(settings));
+        found().ifPresent(target -> perform(() -> publisher.start(publisher.settings()
+                .withBroker(target.host(), target.hasBroker() ? target.mqttPort() : HomeAssistantFinder.MQTT_PORT))));
+    }
+
+    private Optional<Instance> found() {
+        return lookup == null ? Optional.empty() : lookup;
     }
 
     private void perform(Runnable action) {
@@ -152,31 +157,31 @@ public class ClimateSharingCard extends ClimateCard {
 
     private void refresh() {
         var settings = publisher.settings();
-        var state = publisher.state();
         boolean sharing = settings.enabled();
-        var target = instance;
-        if (lookupDone && finder.isEnabled()) {
-            if (target == null) {
-                found.setText("No Home Assistant announced on this network. It may be on another subnet "
-                        + "or running without host networking; use the form below.");
-            } else if (target.port() > 0) {
-                found.setText("Home Assistant “" + target.name() + "” found at " + target.host()
-                        + (target.hasBroker() ? " · MQTT broker answers on port " + target.mqttPort()
-                        : " · no broker on port 1883, is the Mosquitto add-on installed?"));
-            } else {
-                found.setText("MQTT broker “" + target.name() + "” found at " + target.host() + ":" + target.mqttPort());
-            }
+        var target = found();
+        if (lookup != null) {
+            found.setText(target.map(ClimateSharingCard::describe).orElse("No Home Assistant announced on this "
+                    + "network. It may be on another subnet or running without host networking; use the form below."));
         }
-        connect.setVisible(!sharing && target != null);
-        connect.setEnabled(target != null && (target.hasBroker() || target.port() > 0));
+        connect.setVisible(!sharing && target.isPresent());
+        connect.setEnabled(target.filter(t -> t.hasBroker() || t.port() > 0).isPresent());
         stop.setVisible(sharing);
         remove.setVisible(settings.hasBroker());
         status.setText(publisher.status());
-        manual.show(settings);
+        var state = publisher.state();
         if (sharing && state == MqttPublisher.State.UNAUTHORIZED && (credentials == null || !credentials.isOpened())) {
             credentials = new CredentialsDialog(settings);
             credentials.open();
         }
+    }
+
+    private static String describe(Instance target) {
+        if (target.port() <= 0) {
+            return "MQTT broker “" + target.name() + "” found at " + target.host() + ":" + target.mqttPort();
+        }
+        return "Home Assistant “" + target.name() + "” found at " + target.host()
+                + (target.hasBroker() ? " · MQTT broker answers on port " + target.mqttPort()
+                : " · no broker on port 1883, is the Mosquitto add-on installed?");
     }
 
     /** Only when the broker asks: the Mosquitto add-on wants a Home Assistant login. */
@@ -186,10 +191,8 @@ public class ClimateSharingCard extends ClimateCard {
             var username = new TextField("Username", settings.username(), "");
             var password = new PasswordField("Password");
             password.setValue(settings.password() == null ? "" : settings.password());
-            var form = new VerticalLayout(new Paragraph("Use a Home Assistant user, or a login configured in the "
-                    + "Mosquitto add-on. It is stored on this device for the next start."), username, password);
-            form.setPadding(false);
-            add(form);
+            add(new Paragraph("Use a Home Assistant user, or a login configured in the Mosquitto add-on. "
+                    + "It is stored on this device for the next start."), new FormLayout(username, password));
             var connect = new Button("Connect", e -> {
                 close();
                 perform(() -> publisher.start(settings.withCredentials(username.getValue(), password.getValue())));
@@ -203,7 +206,7 @@ public class ClimateSharingCard extends ClimateCard {
     }
 
     /** Everything editable, for a broker mDNS did not find or settings other than the defaults. */
-    class ManualForm extends VerticalLayout {
+    class ManualForm extends FormLayout {
         private final TextField host = new TextField("Broker host");
         private final IntegerField port = new IntegerField("Port");
         private final TextField username = new TextField("Username");
@@ -211,31 +214,35 @@ public class ClimateSharingCard extends ClimateCard {
         private final TextField deviceId = new TextField("Device id");
         private final TextField topicPrefix = new TextField("Topic prefix");
         private final IntegerField interval = new IntegerField("Interval (s)");
-        private boolean editing;
 
         ManualForm() {
-            setPadding(false);
+            setAutoResponsive(true);
+            setAutoRows(true); // fields flow into the columns instead of one per row
+            setMaxColumns(2);
+            setExpandFields(true);
             host.setPlaceholder("homeassistant.local or 192.168.1.10");
-            host.setWidth("16em");
-            port.setWidth("6em");
             port.setMin(1);
             port.setMax(65535);
             deviceId.setHelperText("Part of every topic; keep it once Home Assistant knows it");
             interval.setMin(5);
             interval.setMax(3600);
-            interval.setWidth("7em");
-            for (var field : List.of(host, username, password, deviceId, topicPrefix)) {
-                field.addFocusListener(e -> editing = true);
-                field.addBlurListener(e -> editing = false);
-            }
             var apply = new Button("Connect with these settings", e -> perform(() -> publisher.start(read())));
             apply.setId("ha-connect-manual");
-            var fields = new FlexLayout(host, port, username, password, deviceId, topicPrefix, interval);
-            fields.setFlexWrap(FlexLayout.FlexWrap.WRAP);
-            fields.setAlignItems(Alignment.BASELINE);
-            fields.getStyle().setGap(".75rem");
-            add(fields, apply, new Paragraph("Topics: <prefix>/<device id>/climate/state and …/status; "
-                    + "discovery under homeassistant/sensor/…"));
+            // Two columns where there is room, one on a phone: auto-responsive decides
+            add(host, port, username, password, deviceId, topicPrefix, interval);
+            add(apply, 2);
+            add(new Paragraph("Topics: <prefix>/<device id>/climate/state and …/status; "
+                    + "discovery under homeassistant/sensor/…"), 2);
+        }
+
+        void fill(MqttSettings settings) {
+            host.setValue(settings.host() == null ? "" : settings.host());
+            port.setValue(settings.port());
+            username.setValue(settings.username() == null ? "" : settings.username());
+            password.setValue(settings.password() == null ? "" : settings.password());
+            deviceId.setValue(settings.deviceId() == null ? "" : settings.deviceId());
+            topicPrefix.setValue(settings.topicPrefix());
+            interval.setValue((int) settings.interval().toSeconds());
         }
 
         MqttSettings read() {
@@ -247,19 +254,6 @@ public class ClimateSharingCard extends ClimateCard {
                     topicPrefix.getValue().isBlank() ? current.topicPrefix() : topicPrefix.getValue().trim(),
                     current.discoveryPrefix(),
                     interval.getValue() == null ? MqttSettings.DEFAULT_INTERVAL : Duration.ofSeconds(interval.getValue()));
-        }
-
-        void show(MqttSettings settings) {
-            if (editing) {
-                return;
-            }
-            host.setValue(settings.host() == null ? "" : settings.host());
-            port.setValue(settings.port());
-            username.setValue(settings.username() == null ? "" : settings.username());
-            password.setValue(settings.password() == null ? "" : settings.password());
-            deviceId.setValue(settings.deviceId() == null ? "" : settings.deviceId());
-            topicPrefix.setValue(settings.topicPrefix());
-            interval.setValue((int) settings.interval().toSeconds());
         }
     }
 }

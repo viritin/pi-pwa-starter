@@ -4,8 +4,9 @@ import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.card.CardVariant;
 
 /**
- * The cards of the Climate view: outlined, a step above the page, and sized to
- * sit side by side on a wide screen and one per row on a phone.
+ * The reading cards of the Climate view, in its wrapping row: outlined, a step
+ * above the page, and sized to sit side by side on a wide screen and one per
+ * row on a phone. The flex sizing only makes sense inside that row.
  */
 class ClimateCard extends Card {
 
