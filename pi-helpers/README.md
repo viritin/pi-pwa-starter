@@ -153,6 +153,27 @@ Applications using `MqttPublisher` add `com.hivemq:hivemq-mqtt-client`, and
 those using `HomeAssistantFinder` add `org.jmdns:jmdns`. mDNS only reaches the
 local subnet; `starter.mdns.enabled=false` turns the lookup off (tests do this).
 
+## Server error corner
+
+`IncidentReporter` (package `…pihelpers.diagnostics`) is a small development-friendly error safety net that starts with the application. It keeps
+the normal `System.out` and `System.err` destinations working, while watching
+their output for recognizable Java exception stack traces. It also registers a
+default uncaught-exception handler for background threads. A bounded in-memory
+incident list means errors are retained when nobody is looking; the next open
+view shows a corner warning with a **Details** dialog containing the time,
+source, thread and captured stack trace.
+
+This is a diagnostic fallback, not a replacement for structured logging. A
+library that swallows an exception, a scheduled task that keeps its failure in
+a `Future`, or a process that dies before Quarkus starts cannot be made visible
+to this UI automatically. The original streams remain intact, and the capture
+is deliberately bounded so it cannot grow with a noisy device.
+
+`IncidentOverlay` is its UI: add it to the application layout (the example's
+`TopLayout` calls `addNavbarHelper(incidentOverlay)`); it stays hidden until an
+incident arrives. Nothing here is Pi-specific; it needs only Vaadin, CDI and
+Quarkus' startup event.
+
 ## Configuration
 
 ```properties

@@ -1,6 +1,5 @@
-package in.virit.iot;
+package in.virit.iot.pihelpers.diagnostics;
 
-import in.virit.iot.diagnostics.IncidentReporter;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicReference;

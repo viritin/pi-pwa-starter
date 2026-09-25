@@ -8,7 +8,7 @@ import com.vaadin.flow.router.Layout;
 import com.vaadin.flow.theme.aura.Aura;
 import jakarta.inject.Inject;
 import org.vaadin.firitin.appframework.MobileMainLayout;
-import in.virit.iot.diagnostics.IncidentOverlay;
+import in.virit.iot.pihelpers.diagnostics.IncidentOverlay;
 
 /** The application's frame; {@code @Layout} makes it every route's layout, the Proto Tools ones included. */
 @Layout

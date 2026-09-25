@@ -242,19 +242,10 @@ option for `.local` hostnames.
 
 ### Server error corner
 
-The example installs a small development-friendly error safety net. It keeps
-the normal `System.out` and `System.err` destinations working, while watching
-their output for recognizable Java exception stack traces. It also registers a
-default uncaught-exception handler for background threads. A bounded in-memory
-incident list means errors are retained when nobody is looking; the next open
-view shows a corner warning with a **Details** dialog containing the time,
-source, thread and captured stack trace.
-
-This is a diagnostic fallback, not a replacement for structured logging. A
-library that swallows an exception, a scheduled task that keeps its failure in
-a `Future`, or a process that dies before Quarkus starts cannot be made visible
-to this UI automatically. The original streams remain intact, and the capture
-is deliberately bounded so it cannot grow with a noisy device.
+`TopLayout` adds pi-helpers' `IncidentOverlay` to the navbar: a corner warning
+with a **Details** dialog whenever a server-side exception has been captured.
+See [Pi Helpers](../pi-helpers/README.md#server-error-corner) for what it
+catches and what it cannot.
 
 ### Plain HTTP on the LAN: what still works
 

@@ -1,4 +1,4 @@
-package in.virit.iot.diagnostics;
+package in.virit.iot.pihelpers.diagnostics;
 
 import java.time.Instant;
 
