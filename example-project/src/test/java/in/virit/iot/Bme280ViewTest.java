@@ -2,6 +2,7 @@ package in.virit.iot;
 
 import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import in.virit.iot.pihelpers.SimulationBanner;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import org.vaadin.svgvis.SvgSparkLine;
@@ -16,6 +17,7 @@ class Bme280ViewTest extends ViewTest {
     @Test
     void drawsTheSensorCardWithHistory() {
         navigate(Bme280View.class);
+        assertTrue(find(SimulationBanner.class).first().isVisible());
         assertEquals("Simulation · BME280", paragraph("bme280-status"));
         var cards = find(Card.class).all();
         assertEquals(4, cards.size(), "sensor, details, sharing and wiring cards");

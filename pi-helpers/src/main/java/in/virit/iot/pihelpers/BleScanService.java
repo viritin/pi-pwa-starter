@@ -8,7 +8,6 @@ import com.github.hypfvieh.bluetooth.wrapper.BluetoothDevice;
 import com.vaadin.flow.shared.Registration;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.freedesktop.dbus.errors.AccessDenied;
 import org.freedesktop.dbus.errors.NoReply;
 import org.freedesktop.dbus.errors.ServiceUnknown;
@@ -42,8 +41,6 @@ import java.util.concurrent.TimeUnit;
  * BlueZ keeps a device object per address and updates its RSSI while the device
  * advertises; the RSSI disappears when it falls silent. That is what tells a
  * device in range from one BlueZ merely remembers.
- * <p>
- * Simulated mode invents a handful of typical devices.
  */
 @ApplicationScoped
 public class BleScanService {
@@ -82,9 +79,6 @@ public class BleScanService {
         }
     }
 
-    @ConfigProperty(name = "starter.hardware.simulated", defaultValue = "false")
-    boolean simulated;
-
     private final Map<String, Device> devices = new ConcurrentHashMap<>();
     private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(runnable -> {
@@ -103,7 +97,7 @@ public class BleScanService {
     private String lastProblem;
 
     public boolean isSimulated() {
-        return simulated;
+        return false;
     }
 
     public boolean isScanning() {
@@ -156,7 +150,7 @@ public class BleScanService {
         }
         scanning = true;
         failures = 0;
-        status = simulated ? "Simulation · scanning" : "Starting";
+        status = "Starting";
         schedule(Duration.ZERO);
     }
 
@@ -188,14 +182,10 @@ public class BleScanService {
 
     private void poll() {
         try {
-            if (simulated) {
-                simulate();
-            } else {
-                if (adapter == null) {
-                    connect();
-                }
-                collect();
+            if (adapter == null) {
+                connect();
             }
+            collect();
             failures = 0;
             problem = false;
             lastProblem = null;
@@ -376,28 +366,6 @@ public class BleScanService {
         }
         adapter = null;
         manager = null;
-    }
-
-    private void simulate() {
-        Instant now = Instant.now();
-        double t = now.getEpochSecond() / 7.0;
-        devices.put("C3:A1:5E:7B:22:9F", new Device("C3:A1:5E:7B:22:9F", "Ruuvi 229F", wobble(-58, t), 4, false,
-                List.of(company(0x0499)), List.of(), "05 12 FC 53 94 C3 7C 00 04 FF FC 04 0C AC 36 42", now));
-        devices.put("F4:12:FA:3C:81:D0", new Device("F4:12:FA:3C:81:D0", "Thingy", wobble(-71, t + 2), null, false,
-                List.of(company(0x0059)), List.of("ef680100-9b35-4933-9b10-52ffa9740042"), "59 00 01 02", now));
-        devices.put("58:2D:34:0A:11:7C", new Device("58:2D:34:0A:11:7C", null, wobble(-80, t + 4), null, false,
-                List.of(company(0x004C)), List.of(), "4C 00 10 05 0B 1C 3F 8A 21", now));
-        devices.put("E0:5A:1B:67:42:C1", new Device("E0:5A:1B:67:42:C1", "Shelly BLU Button", wobble(-64, t + 1), null, false,
-                List.of(company(0x0397)), List.of("0000fcd2-0000-1000-8000-00805f9b34fb"), "97 03 01 2A", now));
-        if (Math.sin(now.getEpochSecond() / 20.0) > 0) {
-            devices.put("A4:C1:38:9E:20:55", new Device("A4:C1:38:9E:20:55", "LYWSD03MMC", wobble(-88, t + 3), null, false,
-                    List.of(company(0x038F)), List.of("0000181a-0000-1000-8000-00805f9b34fb"), null, now));
-        }
-        status = "Simulation · scanning · " + devices().size() + " in range";
-    }
-
-    private static int wobble(int base, double t) {
-        return base + (int) Math.round(3 * Math.sin(t));
     }
 
     static String company(int id) {

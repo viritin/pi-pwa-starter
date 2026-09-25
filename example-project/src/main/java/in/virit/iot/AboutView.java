@@ -29,7 +29,7 @@ public class AboutView extends VerticalLayout {
                         + "This application gives your project a home on your phone and desktop.")));
         add(new Section("Two examples to build on",
                 new Paragraph(new Name("Blink a LED"), new Span(" is the smallest complete feature: a view, a service "
-                        + "that owns one output through the shared Pi4J context, a simulated mode and error handling. "
+                        + "that owns one output through the shared Pi4J context, a development simulation and error handling. "
                         + "Copy it for a relay, a buzzer or a button.")),
                 new Paragraph(new Name("Climate"), new Span(" reads a BME280 sensor from application start, keeps a day "
                         + "of history and draws it with a gauge and sparklines. Copy it for anything that "

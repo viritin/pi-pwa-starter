@@ -2,14 +2,12 @@ package in.virit.iot.pihelpers;
 
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -62,21 +60,14 @@ public class PwmService {
         }
     }
 
-    @ConfigProperty(name = "starter.hardware.simulated", defaultValue = "false")
-    boolean simulated;
-
-    private final Map<String, State> states = new HashMap<>();
+    private final Map<String, State> states = new java.util.HashMap<>();
 
     public boolean isSimulated() {
-        return simulated;
+        return false;
     }
 
     /** Which GPIOs the channels are routed to right now, from pinctrl and config.txt; see {@link PwmPins}. */
     public PwmPins.Report pins() {
-        if (simulated) {
-            return new PwmPins.Report(Map.of(12, "input", 13, "input", 18, "PWM0_0", 19, "PWM0_1"),
-                    List.of("dtoverlay=pwm-2chan"), "pinctrl");
-        }
         return PwmPins.probe();
     }
 
@@ -87,15 +78,9 @@ public class PwmService {
      * the kernel numbers them in an order that has changed between releases
      * (a Pi 5 had pwmchip2 for PWM0 on 6.6 and pwmchip0 on 6.12), so the block a
      * chip is comes from the order of the devices' addresses, PWM0 being the lower.
-     * The simulation offers a Pi 4 style chip 0.
      */
     public List<Channel> channels() {
         var channels = new ArrayList<Channel>();
-        if (simulated) {
-            channels.add(new Channel(0, 0, 18, "GPIO18"));
-            channels.add(new Channel(0, 1, 19, "GPIO19"));
-            return channels;
-        }
         boolean pi5 = BoardInfo.detect().isPi5();
         var pins = pins();
         var chips = new ArrayList<>(InterfaceStatus.list(SYSFS, "pwmchip"));
@@ -150,9 +135,6 @@ public class PwmService {
         if (remembered != null) {
             return remembered;
         }
-        if (simulated) {
-            return State.OFF;
-        }
         Path dir = channelDir(channel);
         if (!Files.isDirectory(dir)) {
             return State.OFF;
@@ -177,24 +159,22 @@ public class PwmService {
                     + periodNanos / 1000 + " µs at " + frequencyHz + " Hz).");
         }
         var state = new State(true, periodNanos, dutyNanos);
-        if (!simulated) {
-            Path dir = export(channel);
-            try {
-                // The kernel rejects a duty cycle longer than the period, so shrink first, grow after.
-                long currentDuty = parseLong(readTrimmed(dir.resolve("duty_cycle")));
-                if (currentDuty > periodNanos) {
-                    write(dir.resolve("duty_cycle"), "0");
-                }
-                write(dir.resolve("period"), Long.toString(periodNanos));
-                write(dir.resolve("duty_cycle"), Long.toString(dutyNanos));
-                write(dir.resolve("enable"), "1");
-            } catch (IOException e) {
-                throw new IllegalStateException("Could not program " + channel.key() + ": " + e.getMessage()
-                        + ". Check that the user may write to /sys/class/pwm (gpio group / udev rule).", e);
+        Path dir = export(channel);
+        try {
+            // The kernel rejects a duty cycle longer than the period, so shrink first, grow after.
+            long currentDuty = parseLong(readTrimmed(dir.resolve("duty_cycle")));
+            if (currentDuty > periodNanos) {
+                write(dir.resolve("duty_cycle"), "0");
             }
+            write(dir.resolve("period"), Long.toString(periodNanos));
+            write(dir.resolve("duty_cycle"), Long.toString(dutyNanos));
+            write(dir.resolve("enable"), "1");
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not program " + channel.key() + ": " + e.getMessage()
+                    + ". Check that the user may write to /sys/class/pwm (gpio group / udev rule).", e);
         }
         states.put(channel.key(), state);
-        LOG.debugf("PWM %s: %d Hz, %d ns high%s", channel.key(), frequencyHz, dutyNanos, simulated ? " (simulated)" : "");
+        LOG.debugf("PWM %s: %d Hz, %d ns high", channel.key(), frequencyHz, dutyNanos);
         return state;
     }
 
@@ -202,14 +182,12 @@ public class PwmService {
     public synchronized State disable(Channel channel) {
         var previous = state(channel);
         var state = new State(false, previous.periodNanos(), previous.dutyNanos());
-        if (!simulated) {
-            Path dir = channelDir(channel);
-            if (Files.isDirectory(dir)) {
-                try {
-                    write(dir.resolve("enable"), "0");
-                } catch (IOException e) {
-                    throw new IllegalStateException("Could not disable " + channel.key() + ": " + e.getMessage(), e);
-                }
+        Path dir = channelDir(channel);
+        if (Files.isDirectory(dir)) {
+            try {
+                write(dir.resolve("enable"), "0");
+            } catch (IOException e) {
+                throw new IllegalStateException("Could not disable " + channel.key() + ": " + e.getMessage(), e);
             }
         }
         states.put(channel.key(), state);
@@ -268,9 +246,6 @@ public class PwmService {
 
     @PreDestroy
     synchronized void shutdown() {
-        if (simulated) {
-            return;
-        }
         for (var channel : channels()) {
             var state = states.get(channel.key());
             if (state != null && state.enabled()) {

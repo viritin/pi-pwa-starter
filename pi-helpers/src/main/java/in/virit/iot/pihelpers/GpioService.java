@@ -24,9 +24,6 @@ import java.util.function.Consumer;
  * of input changes. Pins configured here are released when the application
  * shuts down. Pins held by other services through {@link Pi4JContext} are
  * reported as external and left alone.
- * <p>
- * In simulated mode nothing touches the hardware; inputs idle at their pull
- * level and can be flipped with {@link #simulateInput}.
  */
 @ApplicationScoped
 public class GpioService {
@@ -51,7 +48,7 @@ public class GpioService {
         Mode mode;
         Pull pull;
         volatile boolean high;
-        IO io; // null when simulated
+        IO io;
     }
 
     @Inject
@@ -61,7 +58,7 @@ public class GpioService {
     private final List<Consumer<Pin>> listeners = new CopyOnWriteArrayList<>();
 
     public boolean isSimulated() {
-        return pi4j.isSimulated();
+        return false;
     }
 
     public synchronized List<Pin> pins() {
@@ -98,9 +95,7 @@ public class GpioService {
         var entry = new Entry();
         entry.mode = mode;
         entry.pull = mode == Mode.INPUT ? pull : Pull.OFF;
-        if (isSimulated()) {
-            entry.high = mode == Mode.INPUT && pull == Pull.UP;
-        } else if (mode == Mode.INPUT) {
+        if (mode == Mode.INPUT) {
             var context = pi4j.context();
             var input = context.create(DigitalInput.newConfigBuilder(context)
                     .id(id(bcm)).name("GPIO " + bcm).bcm(bcm)
@@ -134,19 +129,6 @@ public class GpioService {
         }
         if (entry.io != null) {
             ((DigitalOutput) entry.io).state(high ? DigitalState.HIGH : DigitalState.LOW);
-        }
-        entry.high = high;
-        fire(pin(bcm));
-    }
-
-    /** Changes the level of a simulated input, e.g. to exercise listeners without a button. */
-    public synchronized void simulateInput(int bcm, boolean high) {
-        if (!isSimulated()) {
-            throw new IllegalStateException("Inputs can only be forced in simulated mode.");
-        }
-        var entry = entries.get(bcm);
-        if (entry == null || entry.mode != Mode.INPUT) {
-            throw new IllegalStateException("GPIO " + bcm + " is not configured as an input.");
         }
         entry.high = high;
         fire(pin(bcm));

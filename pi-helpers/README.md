@@ -30,9 +30,10 @@ server push in the application's AppShell for live updates.
 | `OneWirePanel` | `OneWireService` | no | Live readings from `/sys/bus/w1`, e.g. DS18B20 temperature probes |
 | `BlePanel` | `BleScanService` | no (BlueZ) | Live list of nearby Bluetooth LE devices: name, address, RSSI, manufacturer, advertised services and payload |
 
-When the services simulate (`starter.hardware.simulated=true`), each Proto Tools
-panel shows an orange `SimulationBanner` above its data saying what on that
-screen is made up, in addition to the "Simulation" prefix in its status line.
+When a development/test CDI alternative simulates a service, its Proto Tools
+panel shows an orange `SimulationBanner` above the data and a "Simulation"
+prefix in the status line. The helper library's default services always access
+real devices; the starter's fixtures are in `example-project/src/simulation/java`.
 
 Each panel ends with a folded *setup hint*: the commands that enable its bus on
 Raspberry Pi OS, the matching `config.txt` lines, the group and sudo rules the
@@ -155,11 +156,6 @@ local subnet; `starter.mdns.enabled=false` turns the lookup off (tests do this).
 ## Configuration
 
 ```properties
-# Simulate all hardware: in-memory GPIO, a fake I²C bus with a few devices,
-# a fake PWM chip, two 1-Wire probes and a handful of Bluetooth LE devices.
-# For development machines and tests.
-starter.hardware.simulated=false
-
 # Hide and disable the reboot/shutdown buttons.
 starter.power-actions.enabled=true
 ```

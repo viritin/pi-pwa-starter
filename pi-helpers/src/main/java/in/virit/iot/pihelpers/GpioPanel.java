@@ -96,6 +96,7 @@ public class GpioPanel extends VerticalLayout {
     }
 
     private final GpioService service;
+    private final GpioInputSimulator gpioInputSimulator;
     private final HeaderMap header = new HeaderMap();
     private final Paragraph status = new Paragraph();
     private final SimulationBanner simulation = new SimulationBanner(
@@ -106,6 +107,7 @@ public class GpioPanel extends VerticalLayout {
 
     public GpioPanel(GpioService service) {
         this.service = service;
+        this.gpioInputSimulator = service instanceof GpioInputSimulator simulator ? simulator : null;
         addClassName("gpio-panel");
         status.setId("gpio-status");
         var host = BoardInfo.detect();
@@ -278,8 +280,8 @@ public class GpioPanel extends VerticalLayout {
                     perform(() -> service.write(bcm, e.getValue()));
                 }
             });
-            var high = new Button("Simulate HIGH", e -> perform(() -> service.simulateInput(bcm, true)));
-            var low = new Button("Simulate LOW", e -> perform(() -> service.simulateInput(bcm, false)));
+            var high = new Button("Simulate HIGH", e -> perform(() -> gpioInputSimulator.simulateInput(bcm, true)));
+            var low = new Button("Simulate LOW", e -> perform(() -> gpioInputSimulator.simulateInput(bcm, false)));
             high.addThemeVariants(ButtonVariant.LUMO_SMALL);
             low.addThemeVariants(ButtonVariant.LUMO_SMALL);
             simulate.add(high, low);
@@ -300,7 +302,7 @@ public class GpioPanel extends VerticalLayout {
                 pull.setValue(pin.mode() == Mode.INPUT ? pin.pull() : Pull.OFF);
                 drive.setVisible(pin.mode() == Mode.OUTPUT);
                 drive.setValue(pin.mode() == Mode.OUTPUT && pin.high());
-                simulate.setVisible(service.isSimulated() && pin.mode() == Mode.INPUT);
+                simulate.setVisible(gpioInputSimulator != null && pin.mode() == Mode.INPUT);
                 level.setVisible(pin.configured());
                 level.setText("Level: " + (pin.high() ? "HIGH" : "LOW"));
             } finally {

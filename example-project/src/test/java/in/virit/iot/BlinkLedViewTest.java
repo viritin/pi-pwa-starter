@@ -1,6 +1,7 @@
 package in.virit.iot;
 
 import com.vaadin.flow.component.checkbox.Switch;
+import in.virit.iot.pihelpers.SimulationBanner;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +16,7 @@ class BlinkLedViewTest extends ViewTest {
     @Test
     void selectsAPinAndTogglesTheLed() {
         navigate(BlinkLedView.class);
+        assertTrue(find(SimulationBanner.class).first().isVisible());
         var gpio = findIntegerField().withLabel("GPIO number (BCM)");
         var led = find(Switch.class).withLabel("LED on").first();
 

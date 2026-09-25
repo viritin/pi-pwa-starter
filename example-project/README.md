@@ -64,7 +64,7 @@ you administer. The local boot2vm checkout adds `HTTPS=internal` and
 
 Vaadin keeps a pre-compiled frontend bundle in `src/main/bundles/prod.bundle`
 (git-ignored) and reuses it when a build needs no new frontend imports. With
-Vaadin 25.3.0-beta2 that check ignores the per-route chunk keys, so a *new view
+Vaadin 25.3.0 that check ignores the per-route chunk keys, so a *new view
 that only uses components other views already use* gets no chunk in the reused
 bundle and renders as empty elements when opened directly. If a new view looks
 blank after a build, delete `src/main/bundles` (or build with
@@ -78,7 +78,7 @@ Two layers, deliberately unequal in size.
 **Browserless view tests** are the primary UI tests: `./mvnw test`. They use
 Vaadin's [browserless testing](https://vaadin.com/docs/latest/testing/browserless)
 (`browserless-test-quarkus`) inside the Quarkus test container, so the real
-views run with the real CDI services in simulated hardware mode, in a mocked
+views run with development CDI alternatives, in a mocked
 Vaadin environment with no browser and no frontend build. A test navigates to
 a view, finds components with locators, interacts through testers and asserts
 on the component tree, in milliseconds. `ViewTest` is the shared base: it scans
@@ -161,7 +161,7 @@ and reload. Installed PWAs may retain a cached icon until reinstalled.
 
 ## Blink a LED and Pi4J
 
-The example uses Vaadin **25.3.0-beta2** and its Switch component.
+The example uses Vaadin **25.3.0** and its Switch component.
 `BlinkLedView` uses `led/LedService`, which drives one output through the
 `Pi4JContext` shared with the pi-helpers panels; the GPIO screen shows the LED
 pin as taken by the application while the LED is on. Pi4J core and the FFM
@@ -186,12 +186,11 @@ GPIO number. Leaving the view keeps the output as selected; orderly application
 shutdown requests LOW and releases Pi4J. The display reports the last successful
 output command, not an independent measurement of the LED.
 
-To try it on a development machine, set `starter.hardware.simulated=true`.
-Every hardware view then displays “Simulation” and no hardware is accessed:
-GPIOs live in memory, the I²C bus answers with a fake BME280, DS3231, SSD1306
-and ADS1115, PWM has a fake two-channel chip and 1-Wire two drifting probes.
-The browser IT selects this mode through the `it` profile. Normal development
-and production default to real hardware; device/access failures display an
+To try it on a development machine, run with `-Psimulation`. CDI alternatives
+in `src/simulation/java` provide in-memory GPIO, I²C, PWM, 1-Wire and BLE
+devices as well as BME280 readings; the production jar contains none of these
+simulators. Browserless tests use the same alternatives. Normal development
+and production use real device services; device/access failures display an
 error and restore the last successful state.
 
 To remove hardware support, delete `BlinkLedView`, `led/LedService` and the

@@ -25,6 +25,7 @@ import com.vaadin.flow.shared.Registration;
 import in.virit.TemperatureGauge;
 import in.virit.iot.pihelpers.HomeAssistantFinder;
 import in.virit.iot.pihelpers.PiSetup;
+import in.virit.iot.pihelpers.SimulationBanner;
 import in.virit.iot.bme280.Bme280Service;
 import in.virit.iot.bme280.ClimatePublisher;
 import in.virit.iot.bme280.Bme280Service.Reading;
@@ -77,6 +78,8 @@ public class Bme280View extends VerticalLayout {
     private final SensorCard card = new SensorCard();
     private final DetailsCard details = new DetailsCard();
     private final Paragraph status = new Paragraph();
+    private final SimulationBanner simulation = new SimulationBanner(
+            "Climate readings are simulated and do not come from a connected sensor.");
     private Registration listener;
 
     @Inject
@@ -88,7 +91,8 @@ public class Bme280View extends VerticalLayout {
         range.setItemLabelGenerator(r -> r.label);
         range.addValueChangeListener(e -> refresh());
         var cards = new ClimateCards(card, details);
-        add(new H1("Climate"),
+        simulation.setVisible(service.isSimulated());
+        add(new H1("Climate"), simulation,
                 new Paragraph("Temperature, humidity and air pressure from a BME280 on the I²C bus, "
                         + "sampled every few seconds since the application started."),
                 range, cards, status, new ClimateSharingCard(publisher, finder), new WiringPanel());

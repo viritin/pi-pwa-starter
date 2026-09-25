@@ -6,7 +6,6 @@ import com.pi4j.io.IO;
 import com.pi4j.io.IOType;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 /**
@@ -16,29 +15,17 @@ import org.jboss.logging.Logger;
  * application's own services hold, and orderly shutdown releases everything.
  * <p>
  * The context is created on first use, never during startup, so a development
- * machine without GPIO can still run the application. With
- * {@code starter.hardware.simulated=true} the context is never created and
- * services keep their state in memory instead.
+ * machine without GPIO can still run the application. Development simulations
+ * replace the device-facing services and never initialize this context.
  */
 @ApplicationScoped
 public class Pi4JContext {
 
     private static final Logger LOG = Logger.getLogger(Pi4JContext.class);
 
-    @ConfigProperty(name = "starter.hardware.simulated", defaultValue = "false")
-    boolean simulated;
-
     private Context context;
 
-    public boolean isSimulated() {
-        return simulated;
-    }
-
-    /** @throws IllegalStateException when hardware access is simulated */
     public synchronized Context context() {
-        if (simulated) {
-            throw new IllegalStateException("Hardware access is simulated; no Pi4J context is available.");
-        }
         if (context == null) {
             LOG.info("Initializing Pi4J context");
             var created = Pi4J.newAutoContext();

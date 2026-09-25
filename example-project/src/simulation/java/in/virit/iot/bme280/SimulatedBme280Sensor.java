@@ -34,6 +34,11 @@ public class SimulatedBme280Sensor implements Bme280Sensor {
     }
 
     @Override
+    public boolean isSimulated() {
+        return true;
+    }
+
+    @Override
     public List<Bme280Service.Reading> initialHistory() {
         Instant now = Instant.now();
         var readings = new ArrayList<Bme280Service.Reading>();

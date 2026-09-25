@@ -78,6 +78,10 @@ public class Bme280Service {
         return status;
     }
 
+    public boolean isSimulated() {
+        return sensor.isSimulated();
+    }
+
     public Optional<Reading> latest() {
         synchronized (history) {
             return Optional.ofNullable(history.peekLast());

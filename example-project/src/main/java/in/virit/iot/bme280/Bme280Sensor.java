@@ -14,6 +14,11 @@ public interface Bme280Sensor extends AutoCloseable {
     /** Human-readable source/connection status, also shown in the UI. */
     String status();
 
+    /** Whether readings come from a development fixture instead of hardware. */
+    default boolean isSimulated() {
+        return false;
+    }
+
     /** Previously collected readings, oldest first, to load when sampling starts. */
     default List<Bme280Service.Reading> initialHistory() {
         return List.of();

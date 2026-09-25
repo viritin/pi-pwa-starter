@@ -15,6 +15,7 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.component.card.Card;
 import in.virit.iot.led.LedService;
 import in.virit.iot.pihelpers.PiSetup;
+import in.virit.iot.pihelpers.SimulationBanner;
 import in.virit.iot.pihelpers.SetupHint;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -23,8 +24,8 @@ import org.jboss.logging.Logger;
  * An example view to build your own application on. It shows the pieces a
  * typical Pi feature needs: a route with a menu entry, a small CDI service
  * ({@link LedService}) that owns the hardware through the shared
- * {@code Pi4JContext}, form fields bound to that service, a simulated mode for
- * development without a Pi, and error handling that restores the last known
+ * {@code Pi4JContext}, form fields bound to that service, a development-only
+ * CDI simulation for machines without a Pi, and error handling that restores the last known
  * good state. Copy it, rename it and replace the LED with your sensor or
  * actuator. The generic screens under "Proto Tools" are for checking wiring
  * and are not meant as a starting point for application code.
@@ -38,6 +39,8 @@ public class BlinkLedView extends VerticalLayout {
     private final GpioField gpio = new GpioField();
     private final Switch led = new Switch("LED on");
     private final Paragraph status = new Paragraph();
+    private final SimulationBanner simulation = new SimulationBanner(
+            "The LED state is simulated; no GPIO pin changes.");
     private final SetupHint setup = PiSetup.gpio();
     private boolean editingGpio;
     private Registration poll;
@@ -66,7 +69,7 @@ public class BlinkLedView extends VerticalLayout {
             }
         });
 
-        add(new H1("Blink a LED"),
+        add(new H1("Blink a LED"), simulation,
                 new Paragraph("Choose a GPIO and switch your LED on or off."),
                 new Paragraph("Connect the GPIO through a current-limiting resistor to the LED, "
                         + "and the LED’s cathode to GND. HIGH is 3.3 V; LOW is 0 V."),
@@ -114,6 +117,7 @@ public class BlinkLedView extends VerticalLayout {
 
     private void refresh() {
         var state = service.state();
+        simulation.setVisible(state.simulated());
         gpio.setValue(state.pin());
         gpio.setEnabled(!state.on());
         gpio.setInvalid(false);

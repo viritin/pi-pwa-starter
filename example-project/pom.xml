@@ -10,9 +10,9 @@
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <quarkus.version>3.37.2</quarkus.version>
-        <vaadin.version>25.3.0-beta2</vaadin.version>
+        <vaadin.version>25.3.0</vaadin.version>
         <pi4j.version>4.0.2</pi4j.version>
-        <viritin.version>3.8.1</viritin.version>
+        <viritin.version>3.9.0-SNAPSHOT</viritin.version>
         <pi-helpers.version>1.0.0-SNAPSHOT</pi-helpers.version>
         <jairosvg.version>1.0.14</jairosvg.version>
         <simulation.skipTestSources>false</simulation.skipTestSources>
@@ -150,7 +150,6 @@
                         <configuration>
                             <!-- Dev-mode defaults for the helpers that still use in-service simulation. -->
                             <systemProperties>
-                                <starter.hardware.simulated>true</starter.hardware.simulated>
                                 <starter.power-actions.enabled>false</starter.power-actions.enabled>
                                 <starter.mdns.enabled>false</starter.mdns.enabled>
                                 <starter.data-dir>${project.build.directory}/dev-data</starter.data-dir>

@@ -13,7 +13,7 @@ import com.vaadin.flow.component.html.Span;
 @StyleSheet("styles/pi-helpers-simulation.css")
 public class SimulationBanner extends Div {
 
-    public static final String HOW_TO_LEAVE = "Set starter.hardware.simulated=false to work with the Pi's real devices.";
+    public static final String HOW_TO_LEAVE = "Run without the simulation profile to use the Pi's real devices.";
 
     /** @param what one sentence on which part of this screen is made up */
     public SimulationBanner(String what) {

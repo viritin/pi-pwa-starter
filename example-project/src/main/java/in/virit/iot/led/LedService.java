@@ -25,7 +25,7 @@ public class LedService {
     public record State(int pin, boolean on, boolean simulated) {}
 
     public synchronized State state() {
-        return new State(pin, on, pi4j.isSimulated());
+        return new State(pin, on, false);
     }
 
     public synchronized void selectPin(int pin) {
@@ -47,19 +47,17 @@ public class LedService {
         if (expectedPin != pin) {
             throw new IllegalStateException("GPIO selection changed. Please try again.");
         }
-        if (!pi4j.isSimulated()) {
-            if (output == null) {
-                if (pi4j.isGpioInUse(pin)) {
-                    throw new IllegalStateException("GPIO " + pin + " is in use elsewhere, e.g. on the GPIO screen.");
-                }
-                var context = pi4j.context();
-                output = context.create(DigitalOutput.newConfigBuilder(context)
-                        .id("starter-led").name("Blink a LED")
-                        .bcm(pin).provider("ffm-digital-output")
-                        .initial(DigitalState.LOW).shutdown(DigitalState.LOW).build());
+        if (output == null) {
+            if (pi4j.isGpioInUse(pin)) {
+                throw new IllegalStateException("GPIO " + pin + " is in use elsewhere, e.g. on the GPIO screen.");
             }
-            output.state(on ? DigitalState.HIGH : DigitalState.LOW);
+            var context = pi4j.context();
+            output = context.create(DigitalOutput.newConfigBuilder(context)
+                    .id("starter-led").name("Blink a LED")
+                    .bcm(pin).provider("ffm-digital-output")
+                    .initial(DigitalState.LOW).shutdown(DigitalState.LOW).build());
         }
+        output.state(on ? DigitalState.HIGH : DigitalState.LOW);
         // Publish the new value only after the write succeeds.
         this.on = on;
     }
