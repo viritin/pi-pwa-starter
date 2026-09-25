@@ -4,11 +4,14 @@ import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.dom.Style;
+import com.vaadin.flow.router.Layout;
 import com.vaadin.flow.theme.aura.Aura;
 import jakarta.inject.Inject;
 import org.vaadin.firitin.appframework.MobileMainLayout;
 import in.virit.iot.diagnostics.IncidentOverlay;
 
+/** The application's frame; {@code @Layout} makes it every route's layout, the Proto Tools ones included. */
+@Layout
 @StyleSheet(Aura.STYLESHEET)
 @StyleSheet("styles/starter.css")
 public class TopLayout extends MobileMainLayout {

@@ -1,4 +1,4 @@
-package in.virit.iot;
+package in.virit.iot.pihelpers.tools;
 
 import com.vaadin.flow.component.icon.VaadinIcon;
 import org.vaadin.firitin.appframework.MenuItem;

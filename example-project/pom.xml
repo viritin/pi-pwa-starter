@@ -26,7 +26,7 @@
         <dependency>
             <groupId>in.virit</groupId>
             <artifactId>viritin</artifactId>
-            <version>3.8.1</version>
+            <version>${viritin.version}</version>
         </dependency>
         <!-- Hardware dependencies are used only by the LED example. -->
         <dependency>
@@ -55,17 +55,6 @@
             <groupId>in.virit</groupId>
             <artifactId>svg-visualizations</artifactId>
             <version>1.1.0</version>
-        </dependency>
-        <!-- The Bluetooth LE scanner talks to BlueZ over the system D-Bus. -->
-        <dependency>
-            <groupId>com.github.hypfvieh</groupId>
-            <artifactId>bluez-dbus</artifactId>
-            <version>0.3.2</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.hypfvieh</groupId>
-            <artifactId>dbus-java-transport-native-unixsocket</artifactId>
-            <version>5.1.1</version>
         </dependency>
         <!-- Publishing to Home Assistant: MQTT client and mDNS lookup of the instance. -->
         <dependency>

@@ -15,8 +15,8 @@ import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.Component;
 
-@Route(value = "", layout = TopLayout.class)
-@RouteAlias(value = "about", layout = TopLayout.class)
+@Route("")
+@RouteAlias("about")
 @Menu(title = "About", icon = "vaadin:info-circle", order = 1)
 @PageTitle("About | Pi Starter")
 public class AboutView extends VerticalLayout {
@@ -41,8 +41,9 @@ public class AboutView extends VerticalLayout {
                         + "GPIOs, scan the I²C bus and poke registers, position a servo with PWM, "
                         + "read 1-Wire probes and see which Bluetooth LE devices are around.")),
                 new Paragraph("They are meant for prototyping on a trusted network. In a finished application you "
-                        + "will most likely remove them from the menu, or put them behind a login: delete the "
-                        + "views in this project or drop the pi-helpers dependency.")));
+                        + "will most likely remove them or put them behind a login: Proto Tools come from pi-helpers "
+                        + "and are switched off with starter.proto-tools.enabled=false, System is SystemView in "
+                        + "this project.")));
         add(new Section("Keep it close",
                 new Paragraph("Add this app to your home screen using your browser’s install or share menu. "
                         + "Live views need a connection to this device.")));

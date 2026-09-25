@@ -1,5 +1,6 @@
 package in.virit.iot;
 
+import in.virit.iot.pihelpers.tools.I2cView;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.details.Details;
 import in.virit.iot.pihelpers.SimulationBanner;

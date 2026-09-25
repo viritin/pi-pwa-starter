@@ -18,7 +18,9 @@ import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouterLink;
+import in.virit.iot.pihelpers.tools.I2cView;
 import com.vaadin.flow.shared.Registration;
 import in.virit.TemperatureGauge;
 import in.virit.iot.pihelpers.HomeAssistantFinder;
@@ -48,7 +50,7 @@ import java.util.function.Function;
  * readings to Home Assistant over MQTT, and wiring instructions make the screen
  * useful before the sensor is connected.
  */
-@Route(value = "bme280", layout = TopLayout.class)
+@Route
 @Menu(title = "Climate", icon = "vaadin:cloud-o", order = 4)
 @PageTitle("Climate | Pi Starter")
 public class Bme280View extends VerticalLayout {
@@ -268,9 +270,12 @@ public class Bme280View extends VerticalLayout {
         }
 
         private Paragraph intro() {
-            var link = new RouterLink("I²C tool under Proto Tools", I2cView.class);
+            // The I²C tool exists only when Proto Tools are switched on (starter.proto-tools.enabled)
+            Component tool = RouteConfiguration.forApplicationScope().isRouteRegistered(I2cView.class)
+                    ? new RouterLink("I²C tool under Proto Tools", I2cView.class)
+                    : new Span("I²C tool under Proto Tools, or i2cdetect -y 1 on the Pi,");
             return new Paragraph(new Span("The sensor speaks I²C, which is off on a fresh Pi; the steps below turn it "
-                    + "on. A scan with the "), link, new Span(" should then list the sensor at 0x76 or 0x77."));
+                    + "on. A scan with the "), tool, new Span(" should then list the sensor at 0x76 or 0x77."));
         }
     }
 }

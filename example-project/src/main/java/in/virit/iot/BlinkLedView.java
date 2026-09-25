@@ -29,7 +29,7 @@ import org.jboss.logging.Logger;
  * actuator. The generic screens under "Proto Tools" are for checking wiring
  * and are not meant as a starting point for application code.
  */
-@Route(value = "blink-led", layout = TopLayout.class)
+@Route("blink-led")
 @Menu(title = "Blink a LED", icon = "vaadin:lightbulb", order = 3)
 @PageTitle("Blink a LED | Pi Starter")
 public class BlinkLedView extends VerticalLayout {
