@@ -9,6 +9,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.shared.Registration;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
@@ -29,10 +30,15 @@ public class IncidentOverlay extends Div {
     @Inject
     public IncidentOverlay(IncidentReporter reporter) {
         this.reporter = reporter;
-        addClassName("incident-overlay");
         status = new Span();
+        // fixed in the corner, above the page, red so it is not mistaken for content
+        getStyle()
+                .setPosition(Style.Position.FIXED).setZIndex(20).setRight("1rem").setBottom("1rem")
+                .setAlignItems(Style.AlignItems.CENTER).setGap(".75rem").setPadding(".7rem .85rem")
+                .setColor("#fff").setBackground("#a32929").setBorderRadius(".75rem")
+                .setBoxShadow("0 .4rem 1.5rem #0004");
         var details = new Button("Details", event -> openDetails());
-        details.addClassName("incident-details");
+        details.getStyle().setColor("#fff").setBackground("transparent").setBorder("1px solid #fff8");
         add(status, details);
     }
 
@@ -57,7 +63,8 @@ public class IncidentOverlay extends Div {
 
     private void refresh() {
         var count = reporter.pendingCount();
-        setVisible(count > 0);
+        // display rather than setVisible: an inline display would win over the hidden attribute
+        getStyle().setDisplay(count > 0 ? Style.Display.FLEX : Style.Display.NONE);
         status.setText(count + (count == 1 ? " server error" : " server errors"));
     }
 
@@ -80,7 +87,7 @@ public class IncidentOverlay extends Div {
         content.setPadding(false);
         for (var incident : reporter.recent()) {
             var title = new Span(TIME.format(incident.time()) + " · " + incident.source() + " · " + incident.thread());
-            title.getStyle().setFontWeight("600");
+            title.getStyle().setFontWeight(600);
             var text = new TextArea();
             text.setReadOnly(true);
             text.setWidthFull();

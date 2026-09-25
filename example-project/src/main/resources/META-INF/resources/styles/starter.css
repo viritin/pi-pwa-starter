@@ -26,22 +26,6 @@ body::before {
 .page { max-width: 68rem; margin-inline: auto; padding: clamp(1rem, 4vw, 3rem); gap: 1.25rem; }
 .page h1 { font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1.15; margin: 0; }
 .page h2, .page h4 { margin-top: 0; }
-.brand { display: grid; gap: .4rem; padding: 2rem 1rem; text-align: center; }
-.brand-title { font-size: 1.5rem; font-weight: 700; }
-.eyebrow { font-size: .75rem; letter-spacing: .12em; font-weight: 700; }
-.about-hero { display: flex; align-items: center; gap: clamp(1rem, 3vw, 2rem); width: 100%; }
-.about-logo { display: block; width: 8rem; height: 8rem; flex-shrink: 0; border-radius: 1.75rem; }
-.about-heading { display: grid; gap: .75rem; min-width: 0; }
-.about-heading p { margin: 0; }
-.incident-overlay { position: fixed; z-index: 20; right: 1rem; bottom: 1rem; display: flex; align-items: center;
-  gap: .75rem; padding: .7rem .85rem; color: #fff; background: #a32929; border-radius: .75rem;
-  box-shadow: 0 .4rem 1.5rem #0004; }
-.incident-overlay[hidden] { display: none; }
-.incident-details { color: #fff; background: transparent; border: 1px solid #fff8; }
-@media (max-width: 600px) {
-  .about-hero { flex-direction: column; align-items: flex-start; }
-  .about-logo { width: 6rem; height: 6rem; border-radius: 1.25rem; }
-}
 
 /* MobileMainLayout flattens these surfaces on small/short screens.
    Keep Aura's root gradient visible instead, including behind long views.

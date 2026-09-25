@@ -6,6 +6,7 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.dom.Style;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
@@ -22,17 +23,7 @@ public class AboutView extends VerticalLayout {
 
     public AboutView() {
         addClassName("page");
-        var eyebrow = new Span("YOUR NEXT WEEKEND PROJECT");
-        eyebrow.addClassName("eyebrow");
-        var logo = new Image("icons/pi-starter.svg", "Pi Starter logo");
-        logo.addClassName("about-logo");
-        logo.getElement().setAttribute("width", "128").setAttribute("height", "128");
-        var heading = new Div(eyebrow, new H1("Small device. Big possibilities."),
-                new Paragraph("A starting point for the things you want to measure, automate and make your own."));
-        heading.addClassName("about-heading");
-        var hero = new Div(logo, heading);
-        hero.addClassName("about-hero");
-        add(hero);
+        add(new Hero());
         add(new Section("Make yourself at home",
                 new Paragraph("Connect a sensor, automate a light or keep an eye on your home. "
                         + "This application gives your project a home on your phone and desktop.")));
@@ -55,6 +46,49 @@ public class AboutView extends VerticalLayout {
         add(new Section("Keep it close",
                 new Paragraph("Add this app to your home screen using your browser’s install or share menu. "
                         + "Live views need a connection to this device.")));
+    }
+
+    /** Logo next to the headline; on a narrow screen the headline wraps below it. */
+    static class Hero extends FlexLayout {
+        Hero() {
+            setWidthFull();
+            setFlexWrap(FlexWrap.WRAP);
+            setAlignItems(Alignment.CENTER);
+            getStyle().setGap("clamp(1rem, 3vw, 2rem)");
+            add(new Logo(), new Heading());
+        }
+    }
+
+    static class Logo extends Image {
+        Logo() {
+            super("icons/pi-starter.svg", "Pi Starter logo");
+            // intrinsic size, so the page does not jump while the SVG loads
+            getElement().setAttribute("width", "128").setAttribute("height", "128");
+            getStyle()
+                    .setWidth("clamp(6rem, 20vw, 8rem)")
+                    .setHeight("auto")
+                    .setFlexShrink("0")
+                    .setBorderRadius("22%");
+        }
+    }
+
+    static class Heading extends Div {
+        Heading() {
+            getStyle().setDisplay(Style.Display.GRID).setGap(".75rem").setMinWidth("0").setFlexBasis("20rem")
+                    .setFlexGrow("1");
+            var tagline = new Paragraph("A starting point for the things you want to measure, automate and make your own.");
+            tagline.getStyle().setMargin("0");
+            add(new Eyebrow("YOUR NEXT WEEKEND PROJECT"), new H1("Small device. Big possibilities."), tagline);
+        }
+    }
+
+    /** The small spaced-out caps line above a headline. */
+    static class Eyebrow extends Span {
+        Eyebrow(String text) {
+            super(text);
+            getStyle().setFontSize(".75rem").setFontWeight(Style.FontWeight.BOLD)
+                    .set("letter-spacing", ".12em"); // no Style method for it
+        }
     }
 
     /** One titled block of the page. */
