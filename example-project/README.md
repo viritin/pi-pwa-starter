@@ -18,7 +18,7 @@ the parent and `pi-helpers`, then use the wrapper in this directory:
 ./mvnw quarkus:dev
 ```
 
-Open http://localhost:8080. About is at `/` (also `/about`), System at `/system` and Blink a LED at `/blink-led`.
+Open http://localhost:8080. About is at `/` (also `/about`), System at `/system` and Blink a LED at `/blinkled`.
 
 Build and run the production application:
 
