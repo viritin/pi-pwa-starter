@@ -1,5 +1,6 @@
 package in.virit.iot;
 
+import org.vaadin.firitin.components.SecondaryText;
 import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import in.virit.iot.pihelpers.SimulationBanner;
@@ -23,8 +24,8 @@ class Bme280ViewTest extends ViewTest {
         assertEquals(4, cards.size(), "sensor, details, sharing and wiring cards");
         assertEquals("BME280", cards.get(0).getTitleAsText());
         assertEquals("Humidity and pressure", cards.get(1).getTitleAsText());
-        assertTrue(find(SecondaryLine.class).withTextContaining("Humidity ").exists());
-        assertTrue(find(SecondaryLine.class).withTextContaining("Pressure ").exists());
+        assertTrue(find(SecondaryText.class).withTextContaining("Humidity ").exists());
+        assertTrue(find(SecondaryText.class).withTextContaining("Pressure ").exists());
         assertEquals(3, find(SvgSparkLine.class).all().stream().filter(SvgSparkLine::isVisible).count(),
                 "temperature, humidity and pressure curves from the seeded history");
 

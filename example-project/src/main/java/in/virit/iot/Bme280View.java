@@ -1,5 +1,6 @@
 package in.virit.iot;
 
+import org.vaadin.firitin.components.SecondaryText;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.Component;
@@ -137,9 +138,9 @@ public class Bme280View extends VerticalLayout {
     class SensorCard extends ClimateCard {
         private final TemperatureGauge gauge = new TemperatureGauge();
         private final Span subtitle = new Span();
-        private final SecondaryLine humidity = new SecondaryLine();
-        private final SecondaryLine pressure = new SecondaryLine();
-        private final SecondaryLine updated = new SecondaryLine();
+        private final SecondaryText humidity = new SecondaryText();
+        private final SecondaryText pressure = new SecondaryText();
+        private final SecondaryText updated = new SecondaryText();
         private final ClimateSparkLine temperature = new ClimateSparkLine("Temperature °C");
 
         SensorCard() {
