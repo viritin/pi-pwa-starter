@@ -20,7 +20,7 @@ class Bme280ViewTest extends ViewTest {
         navigate(Bme280View.class);
         assertTrue(find(SimulationBanner.class).first().isVisible());
         assertEquals("Simulation · BME280", paragraph("bme280-status"));
-        var cards = find(Card.class).all();
+        var cards = find(Card.class).all().stream().filter(c -> !(c instanceof SimulationBanner)).toList();
         assertEquals(4, cards.size(), "sensor, details, sharing and wiring cards");
         assertEquals("BME280", cards.get(0).getTitleAsText());
         assertEquals("Humidity and pressure", cards.get(1).getTitleAsText());

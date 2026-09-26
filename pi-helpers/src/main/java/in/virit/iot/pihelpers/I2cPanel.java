@@ -7,7 +7,7 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Pre;
 import com.vaadin.flow.component.html.Span;
@@ -246,7 +246,7 @@ public class I2cPanel extends VerticalLayout {
             add(expander,
                     new Paragraph("Register dumps assume the device auto-increments its register pointer, "
                             + "as most sensors do. Writes change the device state; keep the datasheet open."),
-                    readRow, dump, new H4("Write one register"), writeRow);
+                    readRow, dump, new H3("Write one register"), writeRow);
         }
 
         void show(Integer bus, int address) {
@@ -332,7 +332,7 @@ public class I2cPanel extends VerticalLayout {
             write.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_PRIMARY);
             var buttons = new FlexLayout(read, write, value);
             buttons.addClassName("i2c-row-fields");
-            add(new H4("Pins"),
+            add(new H3("Pins"),
                     new Paragraph("A PCF8574 has no registers: a read returns its eight pins and a written byte "
                             + "sets them, high by default. Ticked is high. A LED between 3.3 V and a pin lights when "
                             + "the pin is low, as with the Pioneer600's second LED on P4; its buzzer on P7 sounds "

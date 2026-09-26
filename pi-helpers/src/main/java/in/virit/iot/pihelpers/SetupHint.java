@@ -29,7 +29,7 @@ public class SetupHint extends Details {
     public SetupHint(String summary) {
         setSummaryText(summary);
         addClassName("setup-hint");
-        addThemeVariants(DetailsVariant.SMALL, DetailsVariant.FILLED);
+        addThemeVariants(DetailsVariant.FILLED);
         // Aura indents the content to the summary text and gives it almost no padding on
         // the right or below; its no-padding variant steps aside so the stylesheet can
         // give the content one even inset instead.

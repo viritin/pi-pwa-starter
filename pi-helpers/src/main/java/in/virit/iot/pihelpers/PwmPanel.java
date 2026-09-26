@@ -84,6 +84,7 @@ public class PwmPanel extends VerticalLayout {
 
         pins.show(service.pins(), all.size() - channels.size());
         var controls = new Card();
+        controls.setTitle("Output");
         controls.setWidthFull();
         controls.add(channel, pins, mode, servo, duty, enabled, status);
         add(new H1("PWM & servo"),

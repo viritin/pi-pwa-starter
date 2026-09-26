@@ -7,7 +7,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.card.CardVariant;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
@@ -256,7 +256,7 @@ public class Bme280View extends VerticalLayout {
             setWidthFull();
             add(intro(),
                     PiSetup.i2c(),
-                    new H4("BME280 or BMP280 breakout board"),
+                    new H3("BME280 or BMP280 breakout board"),
                     new UnorderedList(
                             new ListItem("VIN or VCC → 3V3, header pin 1 (never 5 V on a 3.3 V board)"),
                             new ListItem("GND → GND, header pin 6 or 9"),
@@ -264,7 +264,7 @@ public class Bme280View extends VerticalLayout {
                             new ListItem("SDA → GPIO2 / SDA1, header pin 3"),
                             new ListItem("Leave CSB unconnected or tie it to VCC for I²C. SDO to GND gives address 0x76, "
                                     + "SDO to VCC gives 0x77; this view tries both.")),
-                    new H4("Waveshare Pioneer600 expansion board"),
+                    new H3("Waveshare Pioneer600 expansion board"),
                     new Paragraph("Power the Pi down, push the Pioneer600 onto the 40-pin header and power up; there is "
                             + "nothing to wire. Its sensor is a BMP280 at address 0x76, so this view shows temperature and "
                             + "pressure but no humidity. The same scan also lists the board's other I²C chips: the PCF8574 "

@@ -51,7 +51,7 @@ class I2cViewTest extends ViewTest {
         navigate(I2cView.class);
         findButton().withText("Scan bus").click();
         findSpan().withId("i2c-0x20").click();
-        assertTrue(findH4().withText("Pins").exists(), "a PCF8574 address gets pin toggles");
+        assertTrue(findH3().withText("Pins").exists(), "a PCF8574 address gets pin toggles");
         var p4 = find(com.vaadin.flow.component.checkbox.Checkbox.class).withId("i2c-pin-4").first();
         assertTrue(Boolean.TRUE.equals(p4.getValue()), "pins start high");
         test(p4).click();
@@ -67,7 +67,7 @@ class I2cViewTest extends ViewTest {
         navigate(I2cView.class);
         var banner = find(SimulationBanner.class).first();
         assertTrue(banner.isVisible(), "the tests run against simulated hardware, so the banner shows");
-        assertTrue(textOf(banner).startsWith("Simulation"), "the word is the badge");
+        assertEquals("Simulated hardware", banner.getTitleAsText());
     }
 
     @Test

@@ -79,6 +79,8 @@ public class BlinkLedView extends VerticalLayout {
     /** The pin, the switch and what the LED is doing, stacked in one card. */
     class LedControls extends Card {
         LedControls() {
+            setTitle("LED");
+            setWidthFull();
             var stack = new VerticalLayout(gpio, led, status);
             stack.setPadding(false);
             add(stack);

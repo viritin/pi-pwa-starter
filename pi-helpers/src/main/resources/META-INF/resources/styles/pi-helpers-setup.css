@@ -14,3 +14,8 @@
   border: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
 .setup-hint .setup-links { display: flex; flex-wrap: wrap; gap: .25rem .75rem; font-size: .85rem; }
 .setup-hint .setup-links span { opacity: .75; }
+/* Next to a panel's cards the summary reads as a card title; inside a card it stays body text. */
+:not(vaadin-card) > .setup-hint > [slot=summary] { font-size: var(--vaadin-card-title-font-size);
+  font-weight: var(--vaadin-card-title-font-weight); line-height: var(--vaadin-card-title-line-height); }
+/* Inside a card nothing spaces the hint from the grid or buttons above it. */
+vaadin-card > .setup-hint { margin-top: .75rem; }
