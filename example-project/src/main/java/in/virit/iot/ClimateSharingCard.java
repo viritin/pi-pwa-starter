@@ -58,7 +58,6 @@ public class ClimateSharingCard extends Card {
         setTitle("Share with Home Assistant");
         addThemeVariants(CardVariant.OUTLINED);
         setWidthFull();
-        getStyle().setMaxWidth("44rem");
         found.setId("ha-found");
         status.setId("ha-status");
         connect.setId("ha-connect");
@@ -219,7 +218,8 @@ public class ClimateSharingCard extends Card {
             setAutoResponsive(true);
             setAutoRows(true); // fields flow into the columns instead of one per row
             setMaxColumns(2);
-            setExpandFields(true);
+            setExpandColumns(true); // spread the spare width over the columns
+            setExpandFields(true);  // and let the fields fill their columns
             host.setPlaceholder("homeassistant.local or 192.168.1.10");
             port.setMin(1);
             port.setMax(65535);
