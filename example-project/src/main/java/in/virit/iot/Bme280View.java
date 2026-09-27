@@ -5,7 +5,6 @@ import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.card.Card;
-import com.vaadin.flow.component.card.CardVariant;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.ListItem;
@@ -144,10 +143,9 @@ public class Bme280View extends VerticalLayout {
 
         SensorCard() {
             super("Climate sensor");
-            addClassName("climate-gauge-card"); // the gauge's media slot needs ::part styling, see theme.css
-            addThemeVariants(CardVariant.COVER_MEDIA);
             setSubtitle(subtitle);
-            gauge.setWidthFull();
+            gauge.setMaxWidth("20rem");
+            gauge.getStyle().setMargin("0 auto");
             setMedia(gauge);
             add(humidity, pressure, updated, temperature);
         }

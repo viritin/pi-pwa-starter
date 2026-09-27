@@ -50,11 +50,7 @@ vaadin-card h3 + :is(p, ul, ol) { margin-top: .25em; }
   }
 }
 
-/* Climate view: what Java cannot set. The gauge sits centred in the card's 2:1 media slot
-   (a shadow part), and the sparklines' SVG strokes follow the theme. */
-.climate-gauge-card::part(media) { aspect-ratio: 2 / 1; display: flex; align-items: center; justify-content: center;
-  box-sizing: border-box; padding: 1px 1px 0; background-clip: content-box; }
-.climate-gauge-card react-gauge { max-width: min(20rem, 84%); margin: 0 auto; padding-bottom: .5rem; }
+/* Climate view: the sparklines' SVG strokes follow the theme. */
 .climate-sparkline path { stroke: var(--aura-accent-color, #4f39f6); stroke-width: 1.25; }
 .climate-sparkline line { stroke: currentColor; opacity: .25; }
 .climate-sparkline text { fill: currentColor; opacity: .65; }
