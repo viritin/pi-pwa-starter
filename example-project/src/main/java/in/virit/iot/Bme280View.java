@@ -193,13 +193,13 @@ public class Bme280View extends VerticalLayout {
     /**
      * A time series that fits on a card. The same sparkline pi-reader draws; both
      * ends of the axis carry their time so a curve of ten minutes cannot pass for a
-     * day. Long histories are thinned to what a card-wide curve can show.
+     * day. Long histories need no thinning here: the sparkline keeps the readings
+     * that preserve the curve's shape, and always the latest one.
      */
     static class ClimateSparkLine extends SvgSparkLine {
         static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT);
         static final DateTimeFormatter CLOCK_SECONDS = DateTimeFormatter.ofPattern("HH:mm:ss", Locale.ROOT);
         static final DateTimeFormatter CLOCK_WITH_DATE = DateTimeFormatter.ofPattern("MMM d HH:mm", Locale.ROOT);
-        private static final int MAX_POINTS = 300;
 
         ClimateSparkLine(String title) {
             super(100);
@@ -220,26 +220,13 @@ public class Bme280View extends VerticalLayout {
                 return;
             }
             setVisible(true);
-            var points = thin(measured);
-            setData(points.stream().map(Reading::at).toArray(Instant[]::new),
-                    points.stream().mapToDouble(r -> value.apply(r)).toArray());
+            setData(measured.stream().map(Reading::at).toArray(Instant[]::new),
+                    measured.stream().mapToDouble(r -> value.apply(r)).toArray());
             var zone = ZoneId.systemDefault();
-            Instant first = points.getFirst().at();
-            Instant last = points.getLast().at();
+            Instant first = measured.getFirst().at();
+            Instant last = measured.getLast().at();
             var format = LocalDate.ofInstant(first, zone).equals(LocalDate.ofInstant(last, zone)) ? CLOCK : CLOCK_WITH_DATE;
             setTimeScale(format.format(first.atZone(zone)), format.format(last.atZone(zone)));
-        }
-
-        private static List<Reading> thin(List<Reading> readings) {
-            if (readings.size() <= MAX_POINTS) {
-                return readings;
-            }
-            var thinned = new ArrayList<Reading>(MAX_POINTS + 1);
-            double step = (double) (readings.size() - 1) / (MAX_POINTS - 1);
-            for (int i = 0; i < MAX_POINTS; i++) {
-                thinned.add(readings.get((int) Math.round(i * step)));
-            }
-            return thinned;
         }
     }
 
