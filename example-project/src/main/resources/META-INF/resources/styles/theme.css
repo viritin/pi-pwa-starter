@@ -50,7 +50,5 @@ vaadin-card h3 + :is(p, ul, ol) { margin-top: .25em; }
   }
 }
 
-/* Climate view: the sparklines' SVG strokes follow the theme. */
-.climate-sparkline path { stroke: var(--aura-accent-color, #4f39f6); stroke-width: 1.25; }
-.climate-sparkline line { stroke: currentColor; opacity: .25; }
-.climate-sparkline text { fill: currentColor; opacity: .65; }
+/* Sparklines draw in the text colour; their curve takes the accent colour instead. */
+.sparkline-line { stroke: var(--aura-accent-color); }

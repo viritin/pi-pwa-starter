@@ -193,7 +193,7 @@ public class Bme280View extends VerticalLayout {
     /**
      * A time series that fits on a card. The same sparkline pi-reader draws; both
      * ends of the axis carry their time so a curve of ten minutes cannot pass for a
-     * day. Long histories are thinned to what a 400 unit wide curve can show.
+     * day. Long histories are thinned to what a card-wide curve can show.
      */
     static class ClimateSparkLine extends SvgSparkLine {
         static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT);
@@ -202,9 +202,7 @@ public class Bme280View extends VerticalLayout {
         private static final int MAX_POINTS = 300;
 
         ClimateSparkLine(String title) {
-            super(400, 100);
-            addClassName("climate-sparkline"); // SVG strokes and fills follow the theme, see theme.css
-            setWidthFull();
+            super(100);
             getStyle().setMarginTop(".5rem");
             setTitle(title);
         }
@@ -230,8 +228,6 @@ public class Bme280View extends VerticalLayout {
             Instant last = points.getLast().at();
             var format = LocalDate.ofInstant(first, zone).equals(LocalDate.ofInstant(last, zone)) ? CLOCK : CLOCK_WITH_DATE;
             setTimeScale(format.format(first.atZone(zone)), format.format(last.atZone(zone)));
-            // setData only stores; draw() renders and then drops the data to save session memory
-            draw();
         }
 
         private static List<Reading> thin(List<Reading> readings) {
