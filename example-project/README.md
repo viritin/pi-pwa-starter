@@ -139,17 +139,16 @@ small hardware, big possibilities. Its indigo and mint palette matches the UI.
 The SVG uses paths and gradients, with no fonts or external assets. The solid
 square background and generous padding leave room for launcher icon masks.
 
-During `generate-resources`, Maven Exec runs `src/build/GeneratePwaIcon.java`
-with [JairoSVG](https://github.com/brunoborges/jairosvg) as a build-only dependency.
-It renders a 512 × 512 PNG into
-`target/generated-resources/pwa/META-INF/resources/icons/icon.png`, which Maven
-copies into the application resources. `AppShell` selects `icons/icon.png`;
+During `generate-resources`, the `svg-render-maven-plugin` renders the SVG to a
+512 × 512 PNG with [JairoSVG](https://github.com/brunoborges/jairosvg), in pure
+Java, and packages it as `META-INF/resources/icons/icon.png`. `AppShell` selects
+`icons/icon.png`;
 [Vaadin generates the other PWA icon sizes](https://vaadin.com/docs/latest/flow/configuration/pwa).
 No image tools beyond the project's JDK 25 are needed.
 
-The generator skips rendering if the PNG exists and the SVG, generator source
-and JairoSVG version have not changed (SHA-256 fingerprint). A missing PNG or
-`clean` rebuild generates it again. Generated PNGs are not committed.
+The plugin skips rendering if the PNG exists and neither the SVG nor the
+settings have changed (SHA-256 fingerprint). A missing PNG or `clean` rebuild
+renders it again. Generated PNGs are not committed.
 To refresh the icon without packaging, run this in `example-project`:
 
 ```sh

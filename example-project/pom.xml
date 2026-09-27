@@ -14,7 +14,6 @@
         <pi4j.version>4.0.2</pi4j.version>
         <viritin.version>3.9.0-SNAPSHOT</viritin.version>
         <pi-helpers.version>1.0.0-SNAPSHOT</pi-helpers.version>
-        <jairosvg.version>1.0.14</jairosvg.version>
         <simulation.skipTestSources>false</simulation.skipTestSources>
     </properties>
     <dependencyManagement>
@@ -114,6 +113,15 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <pluginRepositories>
+        <!-- svg-render-maven-plugin is only published as a snapshot so far. -->
+        <pluginRepository>
+            <id>central-snapshots</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+            <releases><enabled>false</enabled></releases>
+            <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+    </pluginRepositories>
     <profiles>
         <!-- Build against a locally installed Pi4J from the fork's my-main branch. -->
         <profile>
@@ -161,14 +169,6 @@
         </profile>
     </profiles>
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-            <resource>
-                <directory>${project.build.directory}/generated-resources/pwa</directory>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -233,45 +233,25 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.6.3</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>io.brunoborges</groupId>
-                        <artifactId>jairosvg</artifactId>
-                        <version>${jairosvg.version}</version>
-                    </dependency>
-                </dependencies>
+                <!-- The PWA icon, rendered from the logo SVG and packaged as a resource. -->
+                <groupId>in.virit</groupId>
+                <artifactId>svg-render-maven-plugin</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
                 <executions>
                     <execution>
-                        <id>generate-pwa-icon</id>
-                        <phase>generate-resources</phase>
-                        <goals><goal>exec</goal></goals>
+                        <goals><goal>render</goal></goals>
                         <configuration>
-                            <executable>${java.home}/bin/java</executable>
-                            <includePluginDependencies>true</includePluginDependencies>
-                            <addOutputToClasspath>false</addOutputToClasspath>
-                            <arguments>
-                                <argument>-Djava.awt.headless=true</argument>
-                                <argument>--class-path</argument>
-                                <classpath>
-                                    <dependency>io.brunoborges:jairosvg</dependency>
-                                    <dependency>in.virit:color</dependency>
-                                </classpath>
-                                <argument>${project.basedir}/src/build/GeneratePwaIcon.java</argument>
-                                <argument>${project.basedir}/src/main/resources/META-INF/resources/icons/pi-starter.svg</argument>
-                                <argument>${project.build.directory}/generated-resources/pwa/META-INF/resources/icons/icon.png</argument>
-                                <argument>${project.build.directory}/pwa-icon.sha256</argument>
-                                <argument>${project.basedir}/src/build/GeneratePwaIcon.java</argument>
-                                <argument>${jairosvg.version}</argument>
-                            </arguments>
+                            <images>
+                                <image>
+                                    <source>src/main/resources/META-INF/resources/icons/pi-starter.svg</source>
+                                    <output>META-INF/resources/icons/icon.png</output>
+                                    <width>512</width>
+                                    <height>512</height>
+                                </image>
+                            </images>
                         </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <classpathScope>test</classpathScope>
-                </configuration>
             </plugin>
         </plugins>
     </build>
