@@ -265,7 +265,7 @@
                         <configuration>
                             <images>
                                 <image>
-                                    <source>src/main/resources/META-INF/resources/icons/pi-starter.svg</source>
+                                    <source>src/main/resources/META-INF/resources/icons/logo.svg</source>
                                     <output>META-INF/resources/icons/icon.png</output>
                                     <width>512</width>
                                     <height>512</height>

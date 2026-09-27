@@ -61,7 +61,7 @@ public class AboutView extends VerticalLayout {
 
     static class Logo extends Image {
         Logo() {
-            super("icons/pi-starter.svg", "Pi Starter logo");
+            super("icons/logo.svg", "Pi Starter logo");
             // intrinsic size, so the page does not jump while the SVG loads
             getElement().setAttribute("width", "128").setAttribute("height", "128");
             getStyle()

@@ -13,7 +13,7 @@ import in.virit.iot.pihelpers.diagnostics.IncidentOverlay;
 /** The application's frame; {@code @Layout} makes it every route's layout, the Proto Tools ones included. */
 @Layout
 @StyleSheet(Aura.STYLESHEET)
-@StyleSheet("styles/starter.css")
+@StyleSheet("styles/theme.css")
 public class TopLayout extends MobileMainLayout {
 
     @Inject

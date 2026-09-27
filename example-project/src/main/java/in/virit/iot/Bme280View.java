@@ -144,7 +144,7 @@ public class Bme280View extends VerticalLayout {
 
         SensorCard() {
             super("Climate sensor");
-            addClassName("climate-gauge-card"); // the gauge's media slot needs ::part styling, see starter.css
+            addClassName("climate-gauge-card"); // the gauge's media slot needs ::part styling, see theme.css
             addThemeVariants(CardVariant.COVER_MEDIA);
             setSubtitle(subtitle);
             gauge.setWidthFull();
@@ -205,7 +205,7 @@ public class Bme280View extends VerticalLayout {
 
         ClimateSparkLine(String title) {
             super(400, 100);
-            addClassName("climate-sparkline"); // SVG strokes and fills follow the theme, see starter.css
+            addClassName("climate-sparkline"); // SVG strokes and fills follow the theme, see theme.css
             setWidthFull();
             getStyle().setMarginTop(".5rem");
             setTitle(title);

@@ -109,11 +109,11 @@ Reports land in `target/surefire-reports` and `target/failsafe-reports`.
   and mobile navigation, populated from `@Menu` annotations.
 - `AboutView` is a small starting page. Add another view with `@Route`,
   `layout = TopLayout.class` and `@Menu`.
-- `styles/starter.css` configures Aura with a palette inspired by Screwcloud's
+- `styles/theme.css` configures Aura with a palette inspired by Screwcloud's
   Sunset Glass. It follows the device's light/dark preference and uses local
   system fonts. Metric cards wrap down to a single column on small screens.
 - `AppShell` enables server push and PWA installation with the Pi Starter icon.
-  Edit `src/main/resources/META-INF/resources/icons/pi-starter.svg` to rebrand it.
+  Edit `src/main/resources/META-INF/resources/icons/logo.svg` to rebrand it.
 - `SystemView` adds the route and navigation to `pi-helpers`’ reusable
   `SystemPanel`. That module also contains `WifiInfo` and `SystemControl`,
   adapted from Heisala Jetty’s System screen. Metrics refresh every two seconds while attached; WiFi link details
