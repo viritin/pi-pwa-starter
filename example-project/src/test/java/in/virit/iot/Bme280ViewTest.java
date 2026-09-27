@@ -26,11 +26,11 @@ class Bme280ViewTest extends ViewTest {
         assertEquals("Humidity and pressure", cards.get(1).getTitleAsText());
         assertTrue(find(SecondaryText.class).withTextContaining("Humidity ").exists());
         assertTrue(find(SecondaryText.class).withTextContaining("Pressure ").exists());
-        assertEquals(3, find(SvgSparkLine.class).all().stream().filter(SvgSparkLine::isVisible).count(),
-                "temperature, humidity and pressure curves from the seeded history");
+        assertEquals(2, find(SvgSparkLine.class).all().stream().filter(SvgSparkLine::isVisible).count(),
+                "temperature, and humidity with pressure in one chart, from the seeded history");
 
         test(find(RadioButtonGroup.class).withLabel("History").first()).selectItem("24 h");
-        assertEquals(3, find(SvgSparkLine.class).all().stream().filter(SvgSparkLine::isVisible).count());
+        assertEquals(2, find(SvgSparkLine.class).all().stream().filter(SvgSparkLine::isVisible).count());
     }
 
     /** The sharing card starts idle; with lookup off in tests, it points at the manual form. */

@@ -37,7 +37,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Function;
@@ -139,7 +138,7 @@ public class Bme280View extends VerticalLayout {
         private final SecondaryText humidity = new SecondaryText();
         private final SecondaryText pressure = new SecondaryText();
         private final SecondaryText updated = new SecondaryText();
-        private final ClimateSparkLine temperature = new ClimateSparkLine("Temperature °C");
+        private final ClimateSparkLine temperature = new ClimateSparkLine();
 
         SensorCard() {
             super("Climate sensor");
@@ -159,23 +158,29 @@ public class Bme280View extends VerticalLayout {
             pressure.setText("Pressure " + format(latest == null ? null : latest.pressure(), "%.1f hPa"));
             updated.setText(latest == null ? "Waiting for the first reading"
                     : "Updated " + ClimateSparkLine.CLOCK_SECONDS.format(latest.at().atZone(ZoneId.systemDefault())));
-            temperature.setHistory(history, Reading::temperature);
+            temperature.setHistory(history, Reading::temperature, " °C");
         }
     }
 
-    /** The two secondary quantities as their own curves; humidity disappears with a BMP280. */
+    /**
+     * The two secondary quantities in one chart, each against its own scale:
+     * humidity at the left, pressure at the right. A BMP280 measures no humidity,
+     * and then pressure has the chart to itself.
+     */
     class DetailsCard extends ClimateCard {
-        private final ClimateSparkLine humidity = new ClimateSparkLine("Humidity % RH");
-        private final ClimateSparkLine pressure = new ClimateSparkLine("Pressure hPa");
+        private final ClimateSparkLine chart = new ClimateSparkLine();
 
         DetailsCard() {
             super("Humidity and pressure");
-            add(humidity, pressure);
+            add(chart);
         }
 
         void update(List<Reading> history) {
-            humidity.setHistory(history, Reading::humidity);
-            pressure.setHistory(history, Reading::pressure);
+            if (chart.setHistory(history, Reading::humidity, " % RH")) {
+                chart.addHistory(history, Reading::pressure, " hPa");
+            } else {
+                chart.setHistory(history, Reading::pressure, " hPa");
+            }
         }
     }
 
@@ -201,25 +206,23 @@ public class Bme280View extends VerticalLayout {
         static final DateTimeFormatter CLOCK_SECONDS = DateTimeFormatter.ofPattern("HH:mm:ss", Locale.ROOT);
         static final DateTimeFormatter CLOCK_WITH_DATE = DateTimeFormatter.ofPattern("MMM d HH:mm", Locale.ROOT);
 
-        ClimateSparkLine(String title) {
+        ClimateSparkLine() {
             super(100);
             getStyle().setMarginTop(".5rem");
-            setTitle(title);
         }
 
-        void setHistory(List<Reading> history, Function<Reading, Double> value) {
-            var measured = new ArrayList<Reading>();
-            for (var reading : history) {
-                if (value.apply(reading) != null) {
-                    measured.add(reading);
-                }
+        /**
+         * The chart's curve, its scale at the left labelled with the unit. With
+         * fewer than two readings there is no curve, only a dot, so the chart
+         * hides instead and this returns false.
+         */
+        boolean setHistory(List<Reading> history, Function<Reading, Double> value, String unit) {
+            var measured = measured(history, value);
+            setVisible(measured.size() >= 2);
+            if (!isVisible()) {
+                return false;
             }
-            // One point is a dot, not a curve; hide the whole thing instead
-            if (measured.size() < 2) {
-                setVisible(false);
-                return;
-            }
-            setVisible(true);
+            setUnit(unit);
             setData(measured.stream().map(Reading::at).toArray(Instant[]::new),
                     measured.stream().mapToDouble(r -> value.apply(r)).toArray());
             var zone = ZoneId.systemDefault();
@@ -227,6 +230,20 @@ public class Bme280View extends VerticalLayout {
             Instant last = measured.getLast().at();
             var format = LocalDate.ofInstant(first, zone).equals(LocalDate.ofInstant(last, zone)) ? CLOCK : CLOCK_WITH_DATE;
             setTimeScale(format.format(first.atZone(zone)), format.format(last.atZone(zone)));
+            return true;
+        }
+
+        /** A second quantity after setHistory, against its own scale at the right. */
+        void addHistory(List<Reading> history, Function<Reading, Double> value, String unit) {
+            var measured = measured(history, value);
+            if (measured.size() >= 2) {
+                addSeriesWithOwnScale(measured.stream().map(r -> DataPoint.of(r.at(), value.apply(r))).toList(),
+                        null, unit);
+            }
+        }
+
+        private static List<Reading> measured(List<Reading> history, Function<Reading, Double> value) {
+            return history.stream().filter(reading -> value.apply(reading) != null).toList();
         }
     }
 

@@ -50,5 +50,9 @@ vaadin-card h3 + :is(p, ul, ol) { margin-top: .25em; }
   }
 }
 
-/* Sparklines draw in the text colour; their curve takes the accent colour instead. */
+/* Sparklines draw in the text colour; their curves take accent colours instead, and each
+   scale's labels the colour of its curve, so a chart of two quantities says which is which. */
 .sparkline-line { stroke: var(--aura-accent-color); }
+.sparkline-line-label { fill: var(--aura-accent-color); }
+.sparkline-series { stroke: var(--aura-orange); }
+.sparkline-series-label { fill: var(--aura-orange); }
