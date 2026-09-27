@@ -2,6 +2,7 @@ package in.virit.iot.bme280;
 
 import com.vaadin.flow.shared.Registration;
 import io.quarkus.runtime.StartupEvent;
+import in.virit.iot.pihelpers.Simulated;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -78,8 +79,9 @@ public class Bme280Service {
         return status;
     }
 
+    /** Whether the readings come from a simulated sensor rather than hardware. */
     public boolean isSimulated() {
-        return sensor.isSimulated();
+        return Simulated.is(sensor);
     }
 
     public Optional<Reading> latest() {

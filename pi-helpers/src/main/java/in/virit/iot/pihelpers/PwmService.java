@@ -62,9 +62,6 @@ public class PwmService {
 
     private final Map<String, State> states = new java.util.HashMap<>();
 
-    public boolean isSimulated() {
-        return false;
-    }
 
     /** Which GPIOs the channels are routed to right now, from pinctrl and config.txt; see {@link PwmPins}. */
     public PwmPins.Report pins() {

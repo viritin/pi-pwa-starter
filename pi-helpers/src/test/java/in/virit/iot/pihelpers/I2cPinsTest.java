@@ -1,7 +1,5 @@
-package in.virit.iot;
+package in.virit.iot.pihelpers;
 
-import in.virit.iot.pihelpers.I2cPins;
-import in.virit.iot.pihelpers.Pinctrl;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;

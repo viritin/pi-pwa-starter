@@ -122,7 +122,7 @@ public class GpioPanel extends VerticalLayout {
                         + "pin 1 at the top left with the SD card slot facing up."),
                 new Paragraph("Outputs give 3.3 V and a few milliamps at most. Never connect 5 V to a GPIO."),
                 simulation, header, status, new Actions(), setup);
-        simulation.setVisible(service.isSimulated());
+        simulation.setVisible(Simulated.is(service));
         refresh();
     }
 
@@ -151,7 +151,7 @@ public class GpioPanel extends VerticalLayout {
         var pins = service.pins();
         header.update(pins);
         long configured = pins.stream().filter(Pin::configured).count();
-        status.setText((service.isSimulated() ? "Simulation · " : "")
+        status.setText(Simulated.prefix(service)
                 + configured + (configured == 1 ? " pin configured" : " pins configured"));
         if (openDialog != null && openDialog.isOpened()) {
             openDialog.update(service.pin(openDialog.bcm));

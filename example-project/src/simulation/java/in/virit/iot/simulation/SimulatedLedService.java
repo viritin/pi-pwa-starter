@@ -1,6 +1,7 @@
 package in.virit.iot.simulation;
 
 import in.virit.iot.led.LedService;
+import in.virit.iot.pihelpers.Simulated;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
@@ -8,14 +9,14 @@ import jakarta.enterprise.inject.Alternative;
 @Alternative
 @Priority(1)
 @ApplicationScoped
-public class SimulatedLedService extends LedService {
+public class SimulatedLedService extends LedService implements Simulated {
 
     private int pin = 26;
     private boolean on;
 
     @Override
     public synchronized State state() {
-        return new State(pin, on, true);
+        return new State(pin, on);
     }
 
     @Override

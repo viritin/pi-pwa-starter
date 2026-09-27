@@ -30,11 +30,6 @@ server push in the application's AppShell for live updates.
 | `OneWirePanel` | `OneWireService` | no | Live readings from `/sys/bus/w1`, e.g. DS18B20 temperature probes |
 | `BlePanel` | `BleScanService` | no (BlueZ) | Live list of nearby Bluetooth LE devices: name, address, RSSI, manufacturer, advertised services and payload |
 
-When a development/test CDI alternative simulates a service, its Proto Tools
-panel shows an orange `SimulationBanner` above the data and a "Simulation"
-prefix in the status line. The helper library's default services always access
-real devices; the starter's fixtures are in `example-project/src/simulation/java`.
-
 Each panel ends with a folded *setup hint*: the commands that enable its bus on
 Raspberry Pi OS, the matching `config.txt` lines, the group and sudo rules the
 application needs, a check to run and links to the documentation. The commands
@@ -58,6 +53,22 @@ builds its Home Assistant card on them):
 | `MqttConfig` | nothing | The same settings from `starter.mqtt.*` as a typed SmallRye `@ConfigMapping`; when a host is set there, it wins over the UI |
 | `MqttConfig` | nothing | The same settings from `application.properties` (`starter.mqtt.*`); when a host is set there, configuration overrides the UI |
 | `Json` | nothing | The shared Jackson 3 mapper (Vaadin 25 brings Jackson 3); payloads and settings are annotated records |
+
+## Simulation
+
+The services here always access real devices. The sibling module
+`pi-helpers-simulation` has in-memory replacements for GPIO, I²C, PWM, 1-Wire and
+BLE as CDI alternatives with priority: they take over just by being on the
+classpath, so add that artifact for development (e.g. in a Maven profile) and in
+test scope, never to a production build. A simulated service implements the
+`Simulated` marker interface; its panel then shows an orange `SimulationBanner`
+above the data and a "Simulation" prefix in the status line
+(`Simulated.is(service)`, `Simulated.prefix(service)`). An application's own
+simulations implement it too.
+
+The Proto Tools panels are tested in `pi-helpers-simulation`, browserless
+against those simulations. Its test jar has the `ViewTest` base the tests use,
+for applications testing their own views the same way.
 
 ## Pi4J and the shared context
 

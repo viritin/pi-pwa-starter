@@ -57,9 +57,6 @@ public class GpioService {
     private final Map<Integer, Entry> entries = new TreeMap<>();
     private final List<Consumer<Pin>> listeners = new CopyOnWriteArrayList<>();
 
-    public boolean isSimulated() {
-        return false;
-    }
 
     public synchronized List<Pin> pins() {
         var pins = new ArrayList<Pin>(MAX_BCM + 1);

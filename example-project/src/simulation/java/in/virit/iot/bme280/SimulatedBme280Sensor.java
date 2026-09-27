@@ -1,5 +1,6 @@
 package in.virit.iot.bme280;
 
+import in.virit.iot.pihelpers.Simulated;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
@@ -16,7 +17,7 @@ import java.util.List;
 @Alternative
 @Priority(1)
 @ApplicationScoped
-public class SimulatedBme280Sensor implements Bme280Sensor {
+public class SimulatedBme280Sensor implements Bme280Sensor, Simulated {
 
     @Override
     public Bme280Service.Reading read() {
@@ -31,11 +32,6 @@ public class SimulatedBme280Sensor implements Bme280Sensor {
     @Override
     public String status() {
         return "Simulation · BME280";
-    }
-
-    @Override
-    public boolean isSimulated() {
-        return true;
     }
 
     @Override

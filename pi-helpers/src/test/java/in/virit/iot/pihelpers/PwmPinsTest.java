@@ -1,6 +1,5 @@
-package in.virit.iot;
+package in.virit.iot.pihelpers;
 
-import in.virit.iot.pihelpers.PwmPins;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

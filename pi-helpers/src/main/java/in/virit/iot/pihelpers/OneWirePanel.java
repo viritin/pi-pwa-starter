@@ -44,7 +44,7 @@ public class OneWirePanel extends VerticalLayout {
                         + "that order; follow the silkscreen, because a DS18B20 the wrong way round gets hot and "
                         + "stays silent."),
                 simulation, card, status, setup);
-        simulation.setVisible(service.isSimulated());
+        simulation.setVisible(Simulated.is(service));
         if (!service.isBusPresent()) {
             status.setText("No 1-Wire bus. The driver is not enabled on this host; the steps below fix that.");
             setup.setOpened(true);
@@ -86,7 +86,7 @@ public class OneWirePanel extends VerticalLayout {
     private void show(List<Sensor> sensors) {
         card.update(sensors);
         if (service.isBusPresent()) {
-            status.setText((service.isSimulated() ? "Simulation · " : "")
+            status.setText(Simulated.prefix(service)
                     + sensors.size() + (sensors.size() == 1 ? " device" : " devices") + " · updated "
                     + java.time.LocalTime.now().withNano(0)
                     + (service.phantoms() > 0 ? " · " + service.phantoms() + " phantom entries (family 0x00) ignored: "

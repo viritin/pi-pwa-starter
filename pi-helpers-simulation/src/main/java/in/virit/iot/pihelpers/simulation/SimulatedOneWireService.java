@@ -1,6 +1,7 @@
-package in.virit.iot.simulation;
+package in.virit.iot.pihelpers.simulation;
 
 import in.virit.iot.pihelpers.OneWireService;
+import in.virit.iot.pihelpers.Simulated;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
@@ -10,12 +11,7 @@ import java.util.List;
 @Alternative
 @Priority(1)
 @ApplicationScoped
-public class SimulatedOneWireService extends OneWireService {
-
-    @Override
-    public boolean isSimulated() {
-        return true;
-    }
+public class SimulatedOneWireService extends OneWireService implements Simulated {
 
     @Override
     public boolean isBusPresent() {

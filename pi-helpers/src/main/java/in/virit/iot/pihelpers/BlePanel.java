@@ -78,7 +78,7 @@ public class BlePanel extends VerticalLayout {
                         + "signal updates; Sort by signal puts the strongest first. Devices that fall silent drop "
                         + "off the list after a minute."),
                 simulation, toolbar, status, list, setup);
-        simulation.setVisible(service.isSimulated());
+        simulation.setVisible(Simulated.is(service));
     }
 
     @Override

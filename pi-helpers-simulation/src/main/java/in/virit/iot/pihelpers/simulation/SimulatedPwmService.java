@@ -1,7 +1,8 @@
-package in.virit.iot.simulation;
+package in.virit.iot.pihelpers.simulation;
 
 import in.virit.iot.pihelpers.PwmPins;
 import in.virit.iot.pihelpers.PwmService;
+import in.virit.iot.pihelpers.Simulated;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
@@ -13,15 +14,10 @@ import java.util.Map;
 @Alternative
 @Priority(1)
 @ApplicationScoped
-public class SimulatedPwmService extends PwmService {
+public class SimulatedPwmService extends PwmService implements Simulated {
 
     private static final long NANOS_PER_SECOND = 1_000_000_000L;
     private final Map<String, State> states = new HashMap<>();
-
-    @Override
-    public boolean isSimulated() {
-        return true;
-    }
 
     @Override
     public PwmPins.Report pins() {

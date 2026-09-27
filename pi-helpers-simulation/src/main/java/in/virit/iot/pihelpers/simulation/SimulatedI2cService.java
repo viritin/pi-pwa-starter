@@ -1,6 +1,7 @@
-package in.virit.iot.simulation;
+package in.virit.iot.pihelpers.simulation;
 
 import in.virit.iot.pihelpers.I2cService;
+import in.virit.iot.pihelpers.Simulated;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
@@ -15,7 +16,7 @@ import java.util.Map;
 @Alternative
 @Priority(1)
 @ApplicationScoped
-public class SimulatedI2cService extends I2cService {
+public class SimulatedI2cService extends I2cService implements Simulated {
 
     private static final int MAX_BYTES = 256;
     private final Map<Integer, byte[]> devices = new HashMap<>();
@@ -26,11 +27,6 @@ public class SimulatedI2cService extends I2cService {
         devices.put(0x3C, filled((byte) 0x43));
         devices.put(0x48, ads1115());
         devices.put(0x20, filled((byte) 0xFF));
-    }
-
-    @Override
-    public boolean isSimulated() {
-        return true;
     }
 
     @Override

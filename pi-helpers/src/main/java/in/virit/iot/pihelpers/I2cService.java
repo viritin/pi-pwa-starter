@@ -57,9 +57,6 @@ public class I2cService {
         return (address >= 0x20 && address <= 0x27) || (address >= 0x38 && address <= 0x3F);
     }
 
-    public boolean isSimulated() {
-        return false;
-    }
 
     /** Best-effort description of what usually sits at an address. */
     public static String hint(int address) {

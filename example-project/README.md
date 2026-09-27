@@ -185,10 +185,14 @@ GPIO number. Leaving the view keeps the output as selected; orderly application
 shutdown requests LOW and releases Pi4J. The display reports the last successful
 output command, not an independent measurement of the LED.
 
-To try it on a development machine, run with `-Psimulation`. CDI alternatives
-in `src/simulation/java` provide in-memory GPIO, I²C, PWM, 1-Wire and BLE
-devices as well as BME280 readings; the production jar contains none of these
-simulators. Browserless tests use the same alternatives. Normal development
+To try it on a development machine, run with `-Psimulation`. The profile adds
+`pi-helpers-simulation` with in-memory GPIO, I²C, PWM, 1-Wire and BLE devices,
+and the CDI alternatives in `src/simulation/java` simulate this application's
+own LED and BME280. They implement `Simulated` from pi-helpers, which is how the
+views know to show their simulation banner; do the same for a simulation of
+your own. The production jar contains none of these. Browserless tests use the
+same alternatives and extend the test base from the `pi-helpers-simulation`
+test jar. Normal development
 and production use real device services; device/access failures display an
 error and restore the last successful state.
 

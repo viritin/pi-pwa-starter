@@ -1,4 +1,4 @@
-package in.virit.iot.testing;
+package in.virit.iot.pihelpers.testing.testers;
 
 import com.vaadin.browserless.ComponentTester;
 import com.vaadin.browserless.Tests;

@@ -55,7 +55,7 @@ public class I2cPanel extends VerticalLayout {
         bus.setItemLabelGenerator(n -> "i2c-" + n);
         var buses = service.buses();
         bus.setItems(buses);
-        bus.addValueChangeListener(e -> wiring.show(e.getValue(), service.isSimulated()));
+        bus.addValueChangeListener(e -> wiring.show(e.getValue(), Simulated.is(service)));
         if (!buses.isEmpty()) {
             // the header bus first when it exists; otherwise whatever the kernel has, and the wiring line explains
             bus.setValue(buses.contains(1) ? 1 : buses.get(0));
@@ -76,16 +76,16 @@ public class I2cPanel extends VerticalLayout {
                         + "lists those that acknowledge. A device that only accepts writes, or holds the bus while "
                         + "busy, can stay invisible here as it would there; its datasheet address is the one to try."),
                 simulation, toolbar, wiring, grid, status, tools, setup);
-        simulation.setVisible(service.isSimulated());
+        simulation.setVisible(Simulated.is(service));
         tools.setVisible(false);
         if (buses.isEmpty()) {
             status.setText("No /dev/i2c-* device found. The bus is not enabled on this host; the steps below fix that.");
             setup.setOpened(true);
-        } else if (!service.isSimulated() && !buses.contains(1)) {
+        } else if (!Simulated.is(service) && !buses.contains(1)) {
             status.setText("Only internal buses found; the header's bus i2c-1 is not enabled. The steps below turn it on.");
             setup.setOpened(true);
         } else {
-            status.setText((service.isSimulated() ? "Simulation · " : "") + "Not scanned yet");
+            status.setText(Simulated.prefix(service) + "Not scanned yet");
         }
     }
 
@@ -98,7 +98,7 @@ public class I2cPanel extends VerticalLayout {
             var scan = service.scan(selected);
             found = new TreeSet<>(scan.found());
             grid.update(found);
-            String summary = (service.isSimulated() ? "Simulation · " : "")
+            String summary = Simulated.prefix(service)
                     + found.size() + (found.size() == 1 ? " device" : " devices") + " on i2c-" + selected;
             if (!scan.inUse().isEmpty()) {
                 summary += " · " + scan.inUse().stream().map(I2cService::hex).collect(java.util.stream.Collectors.joining(", "))

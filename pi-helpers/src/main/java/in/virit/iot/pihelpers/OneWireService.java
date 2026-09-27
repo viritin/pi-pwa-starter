@@ -24,9 +24,6 @@ public class OneWireService {
 
     private volatile int phantoms;
 
-    public boolean isSimulated() {
-        return false;
-    }
 
     /**
      * How many entries the last {@link #read()} left out as noise. With the driver

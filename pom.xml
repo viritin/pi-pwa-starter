@@ -9,6 +9,7 @@
     <name>Pi Starter Reactor</name>
     <modules>
         <module>pi-helpers</module>
+        <module>pi-helpers-simulation</module>
         <module>example-project</module>
     </modules>
 </project>

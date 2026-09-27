@@ -1,6 +1,7 @@
-package in.virit.iot;
+package in.virit.iot.pihelpers.tools;
 
-import in.virit.iot.pihelpers.tools.GpioView;
+import in.virit.iot.pihelpers.testing.ViewTest;
+
 import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;

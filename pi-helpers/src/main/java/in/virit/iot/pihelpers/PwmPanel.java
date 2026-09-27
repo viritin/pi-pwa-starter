@@ -95,7 +95,7 @@ public class PwmPanel extends VerticalLayout {
                         + "on the signal wire is fine. A servo uses one channel; the second channel of pwm-2chan is "
                         + "only for a second device."),
                 simulation, controls, setup);
-        simulation.setVisible(service.isSimulated());
+        simulation.setVisible(Simulated.is(service));
         if (channels.isEmpty()) {
             enabled.setEnabled(false);
             status.setText("No PWM chip found under /sys/class/pwm. Hardware PWM is not enabled on this host; "
@@ -185,7 +185,7 @@ public class PwmPanel extends VerticalLayout {
         String signal = state.periodNanos() <= 0 ? "no signal programmed"
                 : String.format(Locale.ROOT, "%d Hz · %d µs high (%.1f %%)",
                         state.frequencyHz(), state.pulseMicros(), state.dutyPercent());
-        status.setText((service.isSimulated() ? "Simulation · " : "") + selected.key() + " · "
+        status.setText(Simulated.prefix(service) + selected.key() + " · "
                 + (state.enabled() ? "on · " : "off · ") + signal);
     }
 

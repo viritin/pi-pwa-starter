@@ -96,9 +96,6 @@ public class BleScanService {
     private int failures;
     private String lastProblem;
 
-    public boolean isSimulated() {
-        return false;
-    }
 
     public boolean isScanning() {
         return scanning;

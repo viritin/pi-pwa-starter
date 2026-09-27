@@ -5,7 +5,9 @@ Maven projects:
 
 - **example-project**: runnable PWA, theme, navigation, browserless view tests and a browser smoke test.
 - **pi-helpers**: reusable prototyping panels: System (host diagnostics, interfaces,
-  power), GPIO, I²C, PWM/servo and 1-Wire, plus the shared Pi4J context.
+  power), GPIO, I²C, PWM/servo, 1-Wire and Bluetooth LE, plus the shared Pi4J context.
+- **pi-helpers-simulation**: in-memory hardware for the pi-helpers services, for
+  development and tests, and the browserless tests of the Proto Tools panels.
 
 Requires JDK 25. Build both modules, run the browserless view tests and the Playwright smoke test:
 
@@ -21,18 +23,16 @@ cd example-project
 ./mvnw -Psimulation quarkus:dev
 ```
 
-The BME280 simulation lives in `example-project/src/simulation/java` and is
-only added by the `simulation` Maven profile (or to test sources for tests).
-It is a CDI alternative for the measurement source, so the regular sampling,
-history and view code still runs. Its deterministic values and history can be
-edited without changing production code. The profile uses its own build output
-directory and disables host power actions.
+The `simulation` Maven profile adds `pi-helpers-simulation` (GPIO, I²C, PWM,
+1-Wire and BLE) and the example's own simulations in
+`example-project/src/simulation/java` (the LED and the BME280). Both are CDI
+alternatives for the device-facing services, so the regular sampling, history and
+view code still runs, and both implement pi-helpers' `Simulated` marker, which
+makes the views say that their data is made up. Tests use the same alternatives.
+The profile uses its own build output directory and disables host power actions;
+the production jar contains no simulation code.
 
-The simulation currently covers the climate sensor. Other helper panels have
-their existing simulated behavior, enabled by the profile for local
-development.
-
-The root POM only aggregates both projects. Build everything with
+The root POM only aggregates the projects. Build everything with
 `./mvnw verify`, or install just the reusable library with
 `./mvnw -pl pi-helpers install`. The example has its own POM and wrapper and
 resolves `pi-helpers` as a normal versioned dependency, so it can be opened and

@@ -16,6 +16,7 @@ import com.vaadin.flow.component.card.Card;
 import in.virit.iot.led.LedService;
 import in.virit.iot.pihelpers.PiSetup;
 import in.virit.iot.pihelpers.SimulationBanner;
+import in.virit.iot.pihelpers.Simulated;
 import in.virit.iot.pihelpers.SetupHint;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -118,13 +119,13 @@ public class BlinkLedView extends VerticalLayout {
 
     private void refresh() {
         var state = service.state();
-        simulation.setVisible(state.simulated());
+        simulation.setVisible(Simulated.is(service));
         gpio.setValue(state.pin());
         gpio.setEnabled(!state.on());
         gpio.setInvalid(false);
         led.setEnabled(true);
         led.setValue(state.on());
-        status.setText((state.simulated() ? "Simulation · " : "")
+        status.setText(Simulated.prefix(service)
                 + "GPIO " + state.pin() + (state.on() ? " · LED on (HIGH)" : " · LED off"));
     }
 

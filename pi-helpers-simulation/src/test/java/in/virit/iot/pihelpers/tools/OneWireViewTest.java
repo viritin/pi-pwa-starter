@@ -1,6 +1,7 @@
-package in.virit.iot;
+package in.virit.iot.pihelpers.tools;
 
-import in.virit.iot.pihelpers.tools.OneWireView;
+import in.virit.iot.pihelpers.testing.ViewTest;
+
 import com.vaadin.flow.component.html.Div;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;

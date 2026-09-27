@@ -1,7 +1,8 @@
-package in.virit.iot.simulation;
+package in.virit.iot.pihelpers.simulation;
 
 import in.virit.iot.pihelpers.BleScanService;
 import com.vaadin.flow.shared.Registration;
+import in.virit.iot.pihelpers.Simulated;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
@@ -15,18 +16,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Alternative
 @Priority(1)
 @ApplicationScoped
-public class SimulatedBleScanService extends BleScanService {
+public class SimulatedBleScanService extends BleScanService implements Simulated {
 
     private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
     private volatile List<Device> nearby = List.of();
     private volatile String status = "Not scanning";
     private boolean scanning;
     private int watchers;
-
-    @Override
-    public boolean isSimulated() {
-        return true;
-    }
 
     @Override
     public synchronized boolean isScanning() {

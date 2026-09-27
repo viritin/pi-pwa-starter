@@ -98,6 +98,20 @@
             <artifactId>quarkus-junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Tests run against simulated hardware; the test jar has the browserless test base. -->
+        <dependency>
+            <groupId>in.virit.iot</groupId>
+            <artifactId>pi-helpers-simulation</artifactId>
+            <version>${pi-helpers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>in.virit.iot</groupId>
+            <artifactId>pi-helpers-simulation</artifactId>
+            <version>${pi-helpers.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
         <!-- Browserless UI tests: real views in a mocked Vaadin environment inside the
              Quarkus test container, no browser and no frontend build. -->
         <dependency>
@@ -134,6 +148,14 @@
                 <!-- These sources are already compiled as application classes in this profile. -->
                 <simulation.skipTestSources>true</simulation.skipTestSources>
             </properties>
+            <dependencies>
+                <!-- Simulated GPIO, I2C, PWM, 1-Wire and BLE for the pi-helpers services. -->
+                <dependency>
+                    <groupId>in.virit.iot</groupId>
+                    <artifactId>pi-helpers-simulation</artifactId>
+                    <version>${pi-helpers.version}</version>
+                </dependency>
+            </dependencies>
             <build>
                 <!-- Never leave simulated application classes in the production output tree. -->
                 <directory>target/simulation</directory>

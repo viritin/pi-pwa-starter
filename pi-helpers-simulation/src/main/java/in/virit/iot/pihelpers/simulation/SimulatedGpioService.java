@@ -1,4 +1,4 @@
-package in.virit.iot.simulation;
+package in.virit.iot.pihelpers.simulation;
 
 import in.virit.iot.pihelpers.GpioService;
 import in.virit.iot.pihelpers.GpioInputSimulator;
@@ -23,11 +23,6 @@ public class SimulatedGpioService extends GpioService implements GpioInputSimula
 
     private final Map<Integer, Entry> entries = new TreeMap<>();
     private final List<Consumer<Pin>> listeners = new CopyOnWriteArrayList<>();
-
-    @Override
-    public boolean isSimulated() {
-        return true;
-    }
 
     @Override
     public synchronized List<Pin> pins() {

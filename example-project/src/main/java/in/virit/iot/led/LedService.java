@@ -22,10 +22,10 @@ public class LedService {
     private int pin = 26;
     private boolean on;
 
-    public record State(int pin, boolean on, boolean simulated) {}
+    public record State(int pin, boolean on) {}
 
     public synchronized State state() {
-        return new State(pin, on, false);
+        return new State(pin, on);
     }
 
     public synchronized void selectPin(int pin) {
