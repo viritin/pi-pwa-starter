@@ -235,4 +235,81 @@ sudo usermod -aG gpio,i2c,spi,dialout,bluetooth $USER
 ```
 
 There is no authentication in these panels. Add access control before exposing
-them beyond a trusted network: they can drive pins and write to devices.
+them beyond a trusted network: they can drive pins and write to devices — the
+optional passkey login below is one way to do it.
+
+## Optional passkey authentication
+
+An **optional, passwordless login with passkeys (WebAuthn)**, in the `…pihelpers.auth`
+package. It is **off by default**: with `starter.auth.enabled=false` nothing is
+enforced and an application behaves exactly as without it. It builds on the
+first-party [`quarkus-security-webauthn`](https://quarkus.io/guides/security-webauthn)
+extension (bundled by this module) for the WebAuthn crypto, challenge handling and
+session cookie; all the UI is plain Vaadin views here, and users and passkeys are
+stored as one JSON file per record — no database — under `starter.users-dir`
+(default `~/.pipwa/users`).
+
+Turn it on with:
+
+```properties
+starter.auth.enabled=true
+```
+
+With auth on and no passkey registered yet, the **Sign in** menu entry opens a
+one-time screen to enroll the **first administrator**. Afterwards an admin uses
+the **Users** view to create people and hand each a **single-use, expiring
+registration link** (`/register?token=…`); there is no mail server, so the link is
+copied and shared by hand (add `quarkus-mailer` to send it). Sign-in is
+usernameless: the browser offers whichever passkey is registered on the device.
+
+**The application wires the gate.** Which routes are public is application-specific,
+so this module provides the building blocks and the app enforces access in its
+`@Layout`, keyed off the same flag. For example:
+
+```java
+public class TopLayout extends MobileMainLayout implements BeforeEnterObserver {
+    @Inject AuthConfig auth;                       // from pihelpers.auth
+
+    @Override public void beforeEnter(BeforeEnterEvent e) {
+        if (!auth.authEnabled()) return;           // off → app unchanged
+        captureIdentity();                         // read SecurityIdentity → CurrentUser
+        if (e.getNavigationTarget() == LandingView.class) return; // your public pages
+        if (CurrentUser.get().isEmpty()) e.rerouteTo(LoginView.class);
+    }
+
+    @Override protected boolean checkAccess(NavigationItem item) {
+        // Show LoginView/LogoutView by auth state; hide RegisterView; etc.
+    }
+}
+```
+
+`AuthConfig`, `CurrentUser`, `LoginView`, `LogoutView`, `RegisterView` and
+`UsersView` are what the gate refers to (see the example project's `TopLayout` for a
+complete, working gate). The identity is read once on a real HTTP request and cached
+in the `VaadinSession`, so navigation still works over server push.
+
+**Passkeys need a secure context:** HTTPS, or `localhost` during development —
+`navigator.credentials` is unavailable over `http://…local` or a LAN IP. Set the
+relying party for production:
+
+```properties
+quarkus.webauthn.relying-party.id=pi.example.org
+quarkus.webauthn.origins=https://pi.example.org
+```
+
+| Concern | Class |
+| --- | --- |
+| The on/off flag and bootstrap window | `AuthConfig` |
+| File storage of users, passkeys, invites | `UserStore` |
+| Extension ↔ storage bridge, roles | `FileWebAuthnUserProvider` |
+| Invite-/bootstrap-gated registration endpoints | `PasskeyRoutes` |
+| Browser side of the ceremony | `PasskeyClient` |
+| The signed-in user in the session | `CurrentUser` |
+| Sign-in / first-admin setup, sign-out, invite enrollment | `LoginView`, `LogoutView`, `RegisterView` |
+| Manage users, hand out invite links | `UsersView` |
+
+Storage is plain files, so recovery is too: to reset a lost administrator, stop the
+app and delete `~/.pipwa/users/users/`; the next start is back in bootstrap mode.
+`UserStore`, the invite lifecycle and the impersonation guard are covered by unit
+tests; the registration endpoint and the full browser ceremony (with a virtual
+authenticator) are covered in the example project's tests.

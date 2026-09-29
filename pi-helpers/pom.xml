@@ -53,9 +53,22 @@
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-core</artifactId>
         </dependency>
+        <!-- VaadinSession's API references the servlet types; the runtime container
+             (quarkus-undertow in the application) provides them. -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
+        </dependency>
+        <!-- Optional passwordless login with passkeys; the auth package builds on it.
+             Dormant in a consuming app until starter.auth.enabled=true. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-security-webauthn</artifactId>
         </dependency>
         <!-- Optional: only the GPIO and I2C helpers need Pi4J. Applications that use
              them add the same two artifacts; the other panels work without Pi4J. -->
