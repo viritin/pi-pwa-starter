@@ -5,6 +5,12 @@ target/
 .idea/
 *.iml
 
+# Local checkouts of libraries/tools developed alongside the starter, and
+# presentation material; not part of the starter distribution.
+/pi4j/
+/pi4j-drivers/
+/devoxx-presentation/
+
 # Local bug report drafts for upstream projects; not part of the starter.
 /bugreports/
 
