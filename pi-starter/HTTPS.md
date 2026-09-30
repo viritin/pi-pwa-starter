@@ -125,14 +125,12 @@ the owned-domain DNS-01 approach is usually easier for end users.
 
 ### boot2vm and installing the root on phones
 
-The local [boot2vm](https://github.com/mstahv/boot2vm) changes add `HTTPS=internal`
-and `Deploy root-cert [file]`. Until published, run the modified checkout:
-
-```sh
-# From example-project; keep existing host/user settings and choose internal HTTPS.
-jbang ../related-projects-and-examples/boot2vm/Deploy.java init
-jbang ../related-projects-and-examples/boot2vm/Deploy.java root-cert ~/Downloads/pwatest-root.crt
-```
+[boot2vm](https://github.com/mstahv/boot2vm) is a small jbang tool that provisions
+a Raspberry Pi (or a local test VM) with Caddy and deploys the packaged app. With
+internal HTTPS it also serves Caddy's root certificate for you to install on
+clients. See its repository for the current commands; in outline you run its
+`init` once to provision the host and write the Caddy site, choosing internal
+HTTPS, and a `root-cert` command to fetch the CA certificate onto a phone.
 
 `init` provisions the server and rewrites the Caddy site; it is not just a local
 config edit. Internal TLS is preserved during blue-green updates too. No Quarkus

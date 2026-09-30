@@ -3,7 +3,7 @@
 A small Quarkus + Vaadin IoT application, split into independently buildable
 Maven projects:
 
-- **example-project**: runnable PWA, theme, navigation, browserless view tests and a browser smoke test.
+- **pi-starter**: runnable PWA, theme, navigation, browserless view tests and a browser smoke test.
 - **pi-helpers**: reusable prototyping panels: System (host diagnostics, interfaces,
   power), GPIO, I²C, PWM/servo, 1-Wire and Bluetooth LE, plus the shared Pi4J context.
 - **pi-helpers-simulation**: in-memory hardware for the pi-helpers services, for
@@ -19,13 +19,13 @@ Start the example directly from its own directory with simulated BME280 data
 and the other hardware helpers in simulation mode:
 
 ```sh
-cd example-project
+cd pi-starter
 ./mvnw -Psimulation quarkus:dev
 ```
 
 The `simulation` Maven profile adds `pi-helpers-simulation` (GPIO, I²C, PWM,
 1-Wire and BLE) and the example's own simulations in
-`example-project/src/simulation/java` (the LED and the BME280). Both are CDI
+`pi-starter/src/simulation/java` (the LED and the BME280). Both are CDI
 alternatives for the device-facing services, so the regular sampling, history and
 view code still runs, and both implement pi-helpers' `Simulated` marker, which
 makes the views say that their data is made up. Tests use the same alternatives.
@@ -39,5 +39,5 @@ resolves `pi-helpers` as a normal versioned dependency, so it can be opened and
 run on its own after that library version is available locally or from Maven
 Central.
 
-See [the example README](example-project/README.md) for application details and
+See [the example README](pi-starter/README.md) for application details and
 [Pi Helpers](pi-helpers/README.md) for the reusable component.

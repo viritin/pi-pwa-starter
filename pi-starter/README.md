@@ -5,14 +5,14 @@ This is the runnable example that a future Maven archetype will generate.
 
 ## Run
 
-Use JDK 25. `example-project` is a standalone Maven project. Install the local
+Use JDK 25. `pi-starter` is a standalone Maven project. Install the local
 helper library once from the repository root if it is not already available
 from Maven Central:
 
 ```sh
 cd ..
 ./mvnw -pl pi-helpers install
-cd example-project
+cd pi-starter
 ```
 
 Then start the app with this directory's Maven wrapper:
@@ -22,7 +22,7 @@ Then start the app with this directory's Maven wrapper:
 ```
 
 In IntelliJ, use a **Maven** run configuration for this standalone project:
-set the working directory to `example-project` and the command line to
+set the working directory to `pi-starter` and the command line to
 `-Psimulation quarkus:dev`. This activates the simulation Maven profile for
 that run. You can also run `quarkus:dev` from the Maven tool window after
 activating `simulation` in its Profiles panel.
@@ -45,7 +45,7 @@ The Quarkus Vaadin extension builds the frontend as part of packaging.
 Quarkus app to a Debian-based VM or Raspberry Pi OS. It uses SSH/rsync, systemd
 and Caddy as the reverse proxy, and installs the JDK on the target.
 Install the helper module first with `./mvnw -pl pi-helpers install` at the
-repository root, then run boot2vm from `example-project`, selecting
+repository root, then run boot2vm from `pi-starter`, selecting
 `APP_TYPE=quarkus`:
 
 ```sh
@@ -149,7 +149,7 @@ No image tools beyond the project's JDK 25 are needed.
 The plugin skips rendering if the PNG exists and neither the SVG nor the
 settings have changed (SHA-256 fingerprint). A missing PNG or `clean` rebuild
 renders it again. Generated PNGs are not committed.
-To refresh the icon without packaging, run this in `example-project`:
+To refresh the icon without packaging, run this in `pi-starter`:
 
 ```sh
 ./mvnw process-resources
@@ -223,7 +223,7 @@ reconnects if the sensor disappears. The screen itself explains the wiring for
 a breakout board and for the Waveshare Pioneer600 expansion board, whose BMP280
 sits at 0x77. Nothing is sampled on a host without `/dev/i2c-1`; the status line
 says so. For local UI work, run `./mvnw -Psimulation quarkus:dev` from the
-`example-project` directory. The profile substitutes the
+`pi-starter` directory. The profile substitutes the
 deterministic source in `src/simulation/java`, which supplies three hours of
 initial history so curves are visible immediately. The normal production build
 does not include that source; tests use it as an alternative.

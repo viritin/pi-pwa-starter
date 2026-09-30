@@ -10,6 +10,6 @@
     <modules>
         <module>pi-helpers</module>
         <module>pi-helpers-simulation</module>
-        <module>example-project</module>
+        <module>pi-starter</module>
     </modules>
 </project>
