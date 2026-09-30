@@ -45,20 +45,24 @@ The Quarkus Vaadin extension builds the frontend as part of packaging.
 Quarkus app to a Debian-based VM or Raspberry Pi OS. It uses SSH/rsync, systemd
 and Caddy as the reverse proxy, and installs the JDK on the target.
 Install the helper module first with `./mvnw -pl pi-helpers install` at the
-repository root, then run boot2vm from `pi-starter`, selecting
-`APP_TYPE=quarkus`:
+repository root. Install the boot2vm command once per machine, then run it from
+`pi-starter`:
 
 ```sh
-jbang app install https://github.com/mstahv/boot2vm/blob/main/Deploy.java
-Deploy init
-Deploy
+jbang app install https://github.com/mstahv/boot2vm/blob/main/Deploy.java  # once per user
+Deploy init   # prompts for host, users and settings, then provisions and deploys
+Deploy        # re-run to push later updates
 ```
 
-Review `vmhosting.conf` for your own host and users. For PWA installation, choose
-an HTTPS setup from [the HTTPS guide](HTTPS.md): Cloudflare Tunnel for remote
-access, DNS-01 for LAN-only public certificates, or Caddy's internal CA on devices
-you administer. The local boot2vm checkout adds `HTTPS=internal` and
-`Deploy root-cert`; use that checkout until those changes are published upstream.
+`Deploy init` is interactive: it asks for the target host, the users and the other
+settings (saved to a generated `vmhosting.*.conf`), provisions the server with
+`APP_TYPE=quarkus`, and performs the first deployment. Afterwards, `Deploy` alone
+packages and pushes an update to the same host.
+
+For PWA installation, choose an HTTPS setup from [the HTTPS guide](HTTPS.md):
+Cloudflare Tunnel for remote access, DNS-01 for LAN-only public certificates, or
+Caddy's internal CA on devices you administer — boot2vm's `HTTPS=internal` and
+`Deploy root-cert` serve and fetch that CA certificate.
 
 ### A note on the cached production bundle
 
