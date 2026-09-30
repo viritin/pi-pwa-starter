@@ -61,13 +61,14 @@ repository root. Install the boot2vm command once per machine, then run it from
 ```sh
 jbang app install https://github.com/mstahv/boot2vm/blob/main/Deploy.java  # once per user
 Deploy init   # prompts for host, users and settings, then provisions and deploys
-Deploy        # re-run to push later updates
+Deploy        # re-run to push later updates (rsyncs only the changes, so it's fast)
 ```
 
 `Deploy init` is interactive: it asks for the target host, the users and the other
 settings (saved to a generated `vmhosting.*.conf`), provisions the server with
 `APP_TYPE=quarkus`, and performs the first deployment. Afterwards, `Deploy` alone
-packages and pushes an update to the same host.
+packages and pushes an update to the same host — much faster than the first run,
+since rsync transfers only the changed files rather than the whole application.
 
 For PWA installation, choose an HTTPS setup from [the HTTPS guide](HTTPS.md):
 Cloudflare Tunnel for remote access, DNS-01 for LAN-only public certificates, or
