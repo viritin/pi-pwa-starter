@@ -15,17 +15,27 @@ cd ..
 cd pi-starter
 ```
 
-Then start the app with this directory's Maven wrapper:
+You can run this on the Raspberry Pi to talk to real hardware, but for most
+development it is easier — and recommended — to run it **on your normal
+workstation or in a container**. Off the Pi there simply is no GPIO, I²C or
+sensor, so start it with the **`simulation`** profile, which swaps in in-memory
+hardware and this app's own simulated services:
+
+```sh
+./mvnw -Psimulation quarkus:dev
+```
+
+On a Raspberry Pi with the hardware wired up, run it without the profile to use
+the real devices:
 
 ```sh
 ./mvnw quarkus:dev
 ```
 
-In IntelliJ, use a **Maven** run configuration for this standalone project:
-set the working directory to `pi-starter` and the command line to
-`-Psimulation quarkus:dev`. This activates the simulation Maven profile for
-that run. You can also run `quarkus:dev` from the Maven tool window after
-activating `simulation` in its Profiles panel.
+In IntelliJ, use a **Maven** run configuration for this standalone project: set
+the working directory to `pi-starter` and the command line to
+`-Psimulation quarkus:dev`, or activate the `simulation` profile in the Maven
+tool window's Profiles panel and run `quarkus:dev` from there.
 
 Open http://localhost:8080. About is at `/` (also `/about`), System at `/system` and Blink a LED at `/blinkled`.
 
