@@ -96,9 +96,14 @@ class PasskeyLoginIT {
     public static class AuthOnFreshStore implements QuarkusTestProfile {
         @Override
         public Map<String, String> getConfigOverrides() {
+            // Pin the relying party to localhost so the ceremony is independent of any
+            // production relying-party.id/origins left in application.properties.
             return Map.of(
                     "starter.auth.enabled", "true",
-                    "starter.users-dir", IT_USERS_DIR);
+                    "starter.users-dir", IT_USERS_DIR,
+                    "quarkus.http.test-port", "8081",
+                    "quarkus.webauthn.relying-party.id", "localhost",
+                    "quarkus.webauthn.origins", "http://localhost:8081");
         }
     }
 }
