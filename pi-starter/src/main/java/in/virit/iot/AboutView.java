@@ -39,7 +39,10 @@ public class AboutView extends VerticalLayout {
                 new Paragraph(new Name("Home Assistant"), new Span(" integration is kept out of the starter to keep it "
                         + "lean. For an example of sending data to another system, the "
                         + "example/home-assistant-integration-via-mqtt branch publishes the Climate readings over MQTT, "
-                        + "picked up by Home Assistant's discovery."))));
+                        + "picked up by Home Assistant's discovery.")),
+                new Paragraph(new Name("Web Push"), new Span(" notifications are what this branch adds: set a "
+                        + "min and/or max on the Climate view and get an alert on your phone or desktop, without any "
+                        + "third-party service. See WEB-PUSH.md."))));
         add(new Section("Tools for the workbench",
                 new Paragraph(new Name("System"), new Span(" shows how the device is doing and which interfaces are "
                         + "enabled, and can reboot or shut it down. ")),
