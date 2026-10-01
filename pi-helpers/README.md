@@ -111,8 +111,9 @@ that address fails with `IOAlreadyExistsException`. `release` goes through
 
 PWM is driven through `/sys/class/pwm` directly rather than Pi4J, because the
 released Pi4J API (4.0.x) only accepts whole-percent duty cycles, too coarse for
-a servo. The helpers also carry a few small workarounds for Pi4J 4.0.2 bugs; both
-are documented in [DEV-NOTES.md](../DEV-NOTES.md).
+a servo — to be fixed in the next Pi4J ([Pi4J/pi4j#613](https://github.com/Pi4J/pi4j/issues/613)).
+The helpers also carry a few small workarounds for Pi4J 4.0.2 bugs; both are
+documented in [DEV-NOTES.md](../DEV-NOTES.md).
 
 ## Bluetooth LE and BlueZ
 

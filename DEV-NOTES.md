@@ -32,8 +32,9 @@ drop it when `pi4j.version` reaches a release that contains the fix. The
 
 PWM is driven through `/sys/class/pwm` directly rather than Pi4J. The released
 Pi4J API (4.0.x) only accepts whole-percent duty cycles, too coarse for a servo;
-the fix (fractional duty cycles) is in Pi4J's main branch and will arrive with
-5.0. Switch `PwmService` over then if you prefer one API.
+the fix (fractional duty cycles) is in Pi4J's main branch and will arrive in the
+next release ([Pi4J/pi4j#613](https://github.com/Pi4J/pi4j/issues/613)). Switch
+`PwmService` over then if you prefer one API.
 
 Running the module without Pi4J on the classpath while its Pi4J-backed beans are
 present has not been verified; if Quarkus' build-time bean processing complains,
