@@ -14,6 +14,9 @@ target/
 # Local bug report drafts for upstream projects; not part of the starter.
 /bugreports/
 
+# Draft texts for future GitHub issues; local scratch, filed when the repo is public.
+/issues/
+
 # Runtime settings written by the application (broker credentials etc.)
 /pi-starter/data/
 

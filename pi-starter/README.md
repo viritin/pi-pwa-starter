@@ -1,7 +1,6 @@
 # Pi Starter
 
 A small Quarkus + Vaadin Flow PWA for IoT and home automation projects.
-This is the runnable example that a future Maven archetype will generate.
 
 ## Run
 
@@ -75,17 +74,6 @@ Cloudflare Tunnel for remote access, DNS-01 for LAN-only public certificates, or
 Caddy's internal CA on devices you administer — boot2vm's `HTTPS=internal` and
 `Deploy root-cert` serve and fetch that CA certificate.
 
-### A note on the cached production bundle
-
-Vaadin keeps a pre-compiled frontend bundle in `src/main/bundles/prod.bundle`
-(git-ignored) and reuses it when a build needs no new frontend imports. With
-Vaadin 25.3.0 that check ignores the per-route chunk keys, so a *new view
-that only uses components other views already use* gets no chunk in the reused
-bundle and renders as empty elements when opened directly. If a new view looks
-blank after a build, delete `src/main/bundles` (or build with
-`-Dvaadin.force.production.build=true`). The Playwright smoke test opens every
-route in a fresh browser to catch this.
-
 ## Testing
 
 Two layers, deliberately unequal in size.
@@ -105,8 +93,9 @@ Add a test per view; `GpioViewTest` and `I2cViewTest` show the pattern.
 starts the packaged application under the `it` profile, headless Chromium
 fetches the PWA manifest and service worker, renders the front page, navigates
 once over the live connection and opens every route directly in a fresh
-browser to catch a bundle that lacks a route's chunk (see the note above).
-It checks that the server delivers a working PWA to a browser, nothing more;
+browser to catch a bundle that lacks a route's chunk (see
+[DEV-NOTES.md](../DEV-NOTES.md)). It checks that the server delivers a working
+PWA to a browser, nothing more;
 what the views do is the browserless tests' job.
 
 Playwright downloads its browser on first use. On Linux CI images missing
@@ -299,19 +288,12 @@ Host reboot/shutdown are enabled by default. The explicit setting
 `starter.power-actions.enabled=true` is in `application.properties`; set it to
 `false` to disable both the buttons and service calls. Execution requires an
 appropriately configured Linux host with passwordless sudo permissions. The UI asks
-for confirmation before either action. There is no authentication in this
-starter; add access control before exposing diagnostics or power actions to
-untrusted users. “Run GC” requests JVM garbage collection for diagnostics.
-
-Native-image builds and memory tuning are future work; verify the target Pi
-architecture and JDK availability before deploying with boot2vm.
-The application has not yet been validated on a Pi. In particular, do not assume
-the original ARMv6 Pi Zero can run this Java 25 stack; validate the target JVM
-and architecture first. Pi Zero 2 W is a different hardware target.
+for confirmation before either action. The optional passkey login (see
+[AUTH.md](AUTH.md)) can gate these; otherwise add access control before exposing
+diagnostics or power actions to untrusted users. “Run GC” requests JVM garbage
+collection for diagnostics.
 
 ## References
 
 - [Vaadin + Quarkus](https://vaadin.com/docs/latest/flow/integrations/quarkus)
 - [Pi4J](https://www.pi4j.com/getting-started/)
-- Local references: `../related-projects-and-examples/heisala-jetty/heisala-jetty-server`
-  and `../related-projects-and-examples/screwcloud/server`.
