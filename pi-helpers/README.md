@@ -41,8 +41,9 @@ are static factories on `PiSetup` (`PiSetup.i2c()`, `oneWire()`, `pwm()`,
 `SetupHint`, so an application can add its own with
 `new SetupHint("…").text(…).commands(caption, lines…).link(text, url)`.
 
-Publishing helpers without a panel of their own (the example's Climate view
-builds its Home Assistant card on them):
+Publishing helpers without a panel of their own (the starter's
+`example/home-assistant-integration-via-mqtt` branch builds its Home Assistant
+card on them):
 
 | Class | Needs | What it does |
 |---|---|---|
@@ -51,7 +52,6 @@ builds its Home Assistant card on them):
 | `HomeAssistantFinder` | JmDNS (optional) | Finds Home Assistant (`_home-assistant._tcp`) and MQTT brokers on the local network, checks whether port 1883 answers |
 | `MqttSettings`, `SettingsStore` | nothing | Broker settings as a record, persisted as a JSON file under `starter.data-dir` |
 | `MqttConfig` | nothing | The same settings from `starter.mqtt.*` as a typed SmallRye `@ConfigMapping`; when a host is set there, it wins over the UI |
-| `MqttConfig` | nothing | The same settings from `application.properties` (`starter.mqtt.*`); when a host is set there, configuration overrides the UI |
 | `Json` | nothing | The shared Jackson 3 mapper (Vaadin 25 brings Jackson 3); payloads and settings are annotated records |
 
 ## Simulation

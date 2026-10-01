@@ -78,17 +78,6 @@
             <artifactId>svg-visualizations</artifactId>
             <version>1.2.0</version>
         </dependency>
-        <!-- Publishing to Home Assistant: MQTT client and mDNS lookup of the instance. -->
-        <dependency>
-            <groupId>com.hivemq</groupId>
-            <artifactId>hivemq-mqtt-client</artifactId>
-            <version>1.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jmdns</groupId>
-            <artifactId>jmdns</artifactId>
-            <version>3.6.3</version>
-        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-validator</artifactId>
@@ -172,8 +161,6 @@
                             <!-- Dev-mode defaults for the helpers that still use in-service simulation. -->
                             <systemProperties>
                                 <starter.power-actions.enabled>false</starter.power-actions.enabled>
-                                <starter.mdns.enabled>false</starter.mdns.enabled>
-                                <starter.data-dir>${project.build.directory}/dev-data</starter.data-dir>
                             </systemProperties>
                         </configuration>
                     </plugin>
