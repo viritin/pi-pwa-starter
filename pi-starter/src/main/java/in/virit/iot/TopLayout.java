@@ -51,6 +51,9 @@ public class TopLayout extends MobileMainLayout implements BeforeEnterObserver {
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         if (!auth.authEnabled()) {
+            if (event.getNavigationTarget() == UsersView.class) {
+                event.rerouteTo(AboutView.class); // no users to manage without sign-in
+            }
             return;
         }
         captureIdentity();
@@ -88,7 +91,8 @@ public class TopLayout extends MobileMainLayout implements BeforeEnterObserver {
     /**
      * Shapes the menu around the auth state: Register is never an entry; Sign in /
      * Sign out appear only when relevant; and while signed out only About is
-     * offered. With auth off the menu is exactly as before.
+     * offered. With auth off the menu is as without authentication: no Users,
+     * sign-in or sign-out entries.
      */
     @Override
     protected boolean checkAccess(NavigationItem item) {
@@ -104,7 +108,7 @@ public class TopLayout extends MobileMainLayout implements BeforeEnterObserver {
             return auth.authEnabled() && loggedIn;
         }
         if (!auth.authEnabled()) {
-            return true;
+            return target != UsersView.class;
         }
         if (!loggedIn) {
             return target == AboutView.class;
