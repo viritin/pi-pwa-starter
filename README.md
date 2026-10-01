@@ -46,5 +46,12 @@ resolves `pi-helpers` as a normal versioned dependency, so it can be opened and
 run on its own after that library version is available locally or from Maven
 Central.
 
+Two integration examples live on branches of their own, to keep `main` lean:
+
+- **`example/web-push-notifications`**: min/max temperature alerts from the Climate
+  view to a phone or desktop with Web Push.
+- **`example/home-assistant-integration-via-mqtt`**: the Climate readings published
+  to Home Assistant over MQTT discovery.
+
 See [the example README](pi-starter/README.md) for application details and
 [Pi Helpers](pi-helpers/README.md) for the reusable component.

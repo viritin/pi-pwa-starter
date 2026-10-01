@@ -235,6 +235,15 @@ deterministic source in `src/simulation/java`, which supplies three hours of
 initial history so curves are visible immediately. The normal production build
 does not include that source; tests use it as an alternative.
 
+## Temperature alerts with Web Push
+
+Also kept out of `main`: the `example/web-push-notifications` branch adds a card to
+the Climate view where each phone or desktop sets a minimum and/or maximum
+temperature and gets a push notification when the reading leaves that range. It
+uses standard Web Push through Vaadin's `flow-webpush`, keeps the subscriptions and
+the server's VAPID key as plain files (no database), and its `WEB-PUSH.md` covers
+configuration and the HTTPS and iPhone requirements.
+
 ## Sharing readings with Home Assistant
 
 Kept out of `main` so the starter stays lean: the
