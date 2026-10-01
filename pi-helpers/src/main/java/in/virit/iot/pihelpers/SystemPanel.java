@@ -89,6 +89,7 @@ public class SystemPanel extends VerticalLayout {
 
         private final StatBadge board = new StatBadge("Board");
         private final StatBadge os = new StatBadge("OS");
+        private final StatBadge jdk = new StatBadge("JDK");
         private final StatBadge uptime = new StatBadge("Uptime");
         private final StatBadge version = new StatBadge("Version");
         private final StatBadge heapUsage = new StatBadge("Heap", "%s / %s");
@@ -111,6 +112,7 @@ public class SystemPanel extends VerticalLayout {
             var host = BoardInfo.detect();
             board.setValue(host.describe());
             os.setValue(host.describeOs());
+            jdk.setValue(describeJdk());
 
             var gcButton = new Button("Run GC", e -> {
                 System.gc();
@@ -118,7 +120,7 @@ public class SystemPanel extends VerticalLayout {
             });
             gcButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
 
-            add(new StatGrid(board, os, uptime, version, heapUsage, processMemory,
+            add(new StatGrid(board, os, jdk, uptime, version, heapUsage, processMemory,
                     osMemory, cpuUsage, cpuTemp, diskUsage,
                     network, wifiLink, wifiSignal, wifiBitrate), gcButton);
         }
@@ -242,6 +244,19 @@ public class SystemPanel extends VerticalLayout {
             } catch (Exception ignored) {
             }
             return "N/A";
+        }
+
+        /**
+         * The running Java: the distribution's own version string when it sets one
+         * (e.g. "Temurin-25+36"), otherwise vendor and version, plus the VM, which
+         * tells HotSpot builds from OpenJ9 ones such as IBM Semeru.
+         */
+        static String describeJdk() {
+            String vendorVersion = System.getProperty("java.vendor.version");
+            String release = vendorVersion != null && !vendorVersion.isBlank()
+                    ? vendorVersion
+                    : System.getProperty("java.vendor") + " " + System.getProperty("java.version");
+            return release + " · " + System.getProperty("java.vm.name");
         }
 
         private static String duration(long seconds) {

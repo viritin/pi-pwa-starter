@@ -18,6 +18,9 @@ class SystemViewTest extends ViewTest {
         assertTrue(cardTitled("Host & process"));
         assertTrue(findSpan().withText("Board").exists(), "the host's model is a badge");
         assertTrue(findSpan().withTextContaining("Raspberry Pi").exists(), "either the model or the note that this is not a Pi");
+        assertTrue(findSpan().withText("JDK").exists(), "the running Java is a badge");
+        assertTrue(findSpan().withTextContaining(System.getProperty("java.vm.name")).exists(),
+                "it names the VM, so e.g. an OpenJ9-based Semeru is recognisable");
         assertTrue(cardTitled("Interfaces"));
         assertTrue(findSpan().withText("I²C").exists(), "the interface badges are labelled");
         findButton().withText("Run GC").click();

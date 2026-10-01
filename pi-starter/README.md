@@ -124,6 +124,7 @@ Reports land in `target/surefire-reports` and `target/failsafe-reports`.
   and the Interfaces card (which of GPIO, I²C, SPI, UART, 1-Wire and PWM the
   host exposes) every 15 seconds. Leaving the view shuts down its worker.
   Missing Linux files or the optional `iw` tool produce `N/A`.
+  “JDK” names the running Java distribution and VM (e.g. HotSpot or OpenJ9).
   “Uptime” shows how long the application (JVM) and the host OS have been up;
   “Version” is the application artifact timestamp.
 - The **Proto Tools** screens come from `pi-helpers` and need no code here:
