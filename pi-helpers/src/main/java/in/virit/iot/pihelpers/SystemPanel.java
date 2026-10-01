@@ -129,13 +129,9 @@ public class SystemPanel extends VerticalLayout {
         }
 
         void update() {
-            long uptimeSec = (System.currentTimeMillis() - startTimeMillis) / 1000;
-            long days = uptimeSec / 86400;
-            long hours = (uptimeSec % 86400) / 3600;
-            long minutes = (uptimeSec % 3600) / 60;
-            uptime.setValue(days > 0 ? "%dd %dh %dm".formatted(days, hours, minutes)
-                    : hours > 0 ? "%dh %dm".formatted(hours, minutes)
-                    : "%dm".formatted(minutes));
+            String app = duration((System.currentTimeMillis() - startTimeMillis) / 1000) + " app";
+            long osSec = readOsUptimeSeconds();
+            uptime.setValue(osSec >= 0 ? app + " / " + duration(osSec) + " OS" : app);
 
             Runtime rt = Runtime.getRuntime();
             heapUsage.setValue(mb(rt.totalMemory() - rt.freeMemory()), mb(rt.maxMemory()));
@@ -246,6 +242,25 @@ public class SystemPanel extends VerticalLayout {
             } catch (Exception ignored) {
             }
             return "N/A";
+        }
+
+        private static String duration(long seconds) {
+            long days = seconds / 86400;
+            long hours = (seconds % 86400) / 3600;
+            long minutes = (seconds % 3600) / 60;
+            return days > 0 ? "%dd %dh %dm".formatted(days, hours, minutes)
+                    : hours > 0 ? "%dh %dm".formatted(hours, minutes)
+                    : "%dm".formatted(minutes);
+        }
+
+        /** Seconds since the host booted, from the first field of /proc/uptime; -1 off Linux. */
+        private long readOsUptimeSeconds() {
+            try {
+                String first = Files.readString(Path.of("/proc/uptime")).trim().split("\\s+")[0];
+                return (long) Double.parseDouble(first);
+            } catch (Exception ignored) {
+                return -1;
+            }
         }
 
         private long readRssBytes() {
