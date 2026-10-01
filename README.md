@@ -9,6 +9,13 @@ Maven projects:
 - **pi-helpers-simulation**: in-memory hardware for the pi-helpers services, for
   development and tests, and the browserless tests of the Proto Tools panels.
 
+<p align="center">
+  <img src="docs/screenshots/system-monitor-desktop.png" height="380"
+       alt="System Monitor in a desktop browser, served from a Raspberry Pi 5 running IBM Semeru (OpenJ9)">
+  <img src="docs/screenshots/climate-pwa-iphone.png" height="380"
+       alt="Climate view installed as a PWA on an iPhone: BME280 temperature gauge and history">
+</p>
+
 Requires JDK 25. Build both modules, run the browserless view tests and the Playwright smoke test:
 
 ```sh
