@@ -2,6 +2,7 @@ package in.virit.iot;
 
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.progressbar.ProgressBar;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
@@ -21,6 +22,8 @@ class SystemViewTest extends ViewTest {
         assertTrue(findSpan().withText("JDK").exists(), "the running Java is a badge");
         assertTrue(findSpan().withTextContaining(System.getProperty("java.vm.name")).exists(),
                 "it names the VM, so e.g. an OpenJ9-based Semeru is recognisable");
+        assertTrue(find(ProgressBar.class).all().stream().anyMatch(ProgressBar::isVisible),
+                "memory and disk usage show as bars");
         assertTrue(cardTitled("Interfaces"));
         assertTrue(findSpan().withText("I²C").exists(), "the interface badges are labelled");
         findButton().withText("Run GC").click();

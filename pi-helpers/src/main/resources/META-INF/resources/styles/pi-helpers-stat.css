@@ -1,5 +1,5 @@
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: .75rem; }
-.stat-grid .stat { min-width: 0; display: grid; gap: .5rem; padding: 1rem; border-radius: .75rem;
+.stat-grid .stat { min-width: 0; display: grid; gap: .5rem; align-content: start; padding: 1rem; border-radius: .75rem;
   background: color-mix(in srgb, currentColor 4%, transparent); }
 .stat-grid .stat-label { font-size: .8rem; opacity: .7; overflow-wrap: anywhere; }
 .stat-grid .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }

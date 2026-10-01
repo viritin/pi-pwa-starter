@@ -14,7 +14,11 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.card.Card;
 
+import com.vaadin.flow.component.progressbar.ProgressBar;
+import org.vaadin.svgvis.SvgSparkLine;
+
 import java.io.File;
+import java.util.ArrayDeque;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -104,6 +108,10 @@ public class SystemPanel extends VerticalLayout {
         private final StatBadge wifiBitrate = new StatBadge("Bitrate");
         private final long startTimeMillis = ManagementFactory.getRuntimeMXBean().getStartTime();
         private WifiInfo.Link wifi = WifiInfo.Link.UNAVAILABLE;
+        private final Trend cpuTrend = new Trend("%");
+        private final Trend tempTrend = new Trend("°C");
+        private final UsageBar memoryBar = new UsageBar();
+        private final UsageBar diskBar = new UsageBar();
 
         SystemStats() {
             setTitle("Host & process");
@@ -113,6 +121,10 @@ public class SystemPanel extends VerticalLayout {
             board.setValue(host.describe());
             os.setValue(host.describeOs());
             jdk.setValue(describeJdk());
+            cpuUsage.withVisual(cpuTrend);
+            cpuTemp.withVisual(tempTrend);
+            osMemory.withVisual(memoryBar);
+            diskUsage.withVisual(diskBar);
 
             var gcButton = new Button("Run GC", e -> {
                 System.gc();
@@ -145,11 +157,15 @@ public class SystemPanel extends VerticalLayout {
 
             double temp = readCpuTemperature();
             cpuTemp.setValue(temp >= 0 ? "%.0f°C".formatted(temp) : "N/A");
+            if (temp >= 0) {
+                tempTrend.add(temp);
+            }
 
             wifiSignal.setValue(readWifiSignal());
 
             File root = new File("/");
             diskUsage.setValue(gb(root.getUsableSpace()), gb(root.getTotalSpace()));
+            diskBar.setUsage(root.getTotalSpace() - root.getUsableSpace(), root.getTotalSpace());
 
             network.setValue(wifi.ssid() != null ? wifi.ssid() : "N/A");
             wifiLink.setValue(wifi.band() != null
@@ -174,13 +190,58 @@ public class SystemPanel extends VerticalLayout {
                 var osMx = (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
                 long totalOs = osMx.getTotalMemorySize();
                 osMemory.setValue(mb(totalOs - osMx.getFreeMemorySize()), mb(totalOs));
+                memoryBar.setUsage(totalOs - osMx.getFreeMemorySize(), totalOs);
                 double proc = osMx.getProcessCpuLoad();
                 double sys = osMx.getCpuLoad();
                 cpuUsage.setValue((proc < 0 ? "N/A" : "%.0f%%".formatted(proc * 100))
                         + " proc / " + (sys < 0 ? "N/A" : "%.0f%%".formatted(sys * 100)) + " sys");
+                if (sys >= 0) {
+                    cpuTrend.add(sys * 100);
+                }
             } catch (Exception e) {
                 osMemory.setValue("N/A", "N/A");
                 cpuUsage.setValue("N/A");
+            }
+        }
+
+        /**
+         * The last few minutes of a reading as a small line under its badge. The
+         * history lives as long as the panel is open; with fewer than two readings
+         * there is no line to draw, so it stays hidden.
+         */
+        static class Trend extends SvgSparkLine {
+            private static final int SAMPLES = 150; // five minutes at the panel's two-second tick
+            private final ArrayDeque<Double> values = new ArrayDeque<>();
+
+            Trend(String unit) {
+                super(48);
+                setUnit(unit);
+                setVisible(false);
+            }
+
+            void add(double value) {
+                if (values.size() == SAMPLES) {
+                    values.removeFirst();
+                }
+                values.addLast(value);
+                setVisible(values.size() >= 2);
+                if (isVisible()) {
+                    setData(values.stream().mapToDouble(Double::doubleValue).toArray());
+                }
+            }
+        }
+
+        /** How full something is, as a slim bar under its badge; hidden while unknown. */
+        static class UsageBar extends ProgressBar {
+            UsageBar() {
+                setVisible(false);
+            }
+
+            void setUsage(long used, long total) {
+                setVisible(total > 0);
+                if (total > 0) {
+                    setValue((double) used / total);
+                }
             }
         }
 

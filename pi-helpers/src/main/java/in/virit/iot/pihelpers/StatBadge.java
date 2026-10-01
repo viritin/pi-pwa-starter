@@ -1,5 +1,6 @@
 package in.virit.iot.pihelpers;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 
@@ -27,5 +28,11 @@ class StatBadge extends Div {
 
     void setValue(Object... args) {
         setValue(format.formatted(args));
+    }
+
+    /** Adds a small visual of the reading under it, e.g. a trend line or a usage bar. */
+    StatBadge withVisual(Component visual) {
+        add(visual);
+        return this;
     }
 }
