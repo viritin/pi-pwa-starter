@@ -56,7 +56,7 @@ public class SystemPanel extends VerticalLayout {
         lastWifiRead = 0;
         executor.scheduleAtFixedRate(() -> {
             try {
-                // Link details change rarely and involve spawning iw/nmcli,
+                // Link details change rarely and involve spawning iw,
                 // so refresh them (and the interface nodes) off the UI lock and less often
                 if (System.currentTimeMillis() - lastWifiRead > 15000) {
                     lastWifiRead = System.currentTimeMillis();
@@ -101,7 +101,6 @@ public class SystemPanel extends VerticalLayout {
         private final StatBadge wifiLink = new StatBadge("WiFi link");
         private final StatBadge wifiSignal = new StatBadge("Signal");
         private final StatBadge wifiBitrate = new StatBadge("Bitrate");
-        private final StatBadge hotspot = new StatBadge("Hotspot");
         private final long startTimeMillis = ManagementFactory.getRuntimeMXBean().getStartTime();
         private WifiInfo.Link wifi = WifiInfo.Link.UNAVAILABLE;
 
@@ -121,7 +120,7 @@ public class SystemPanel extends VerticalLayout {
 
             add(new StatGrid(board, os, uptime, version, heapUsage, processMemory,
                     osMemory, cpuUsage, cpuTemp, diskUsage,
-                    network, wifiLink, wifiSignal, wifiBitrate, hotspot), gcButton);
+                    network, wifiLink, wifiSignal, wifiBitrate), gcButton);
         }
 
         void update(WifiInfo.Link wifiDetails) {
@@ -161,7 +160,6 @@ public class SystemPanel extends VerticalLayout {
             wifiBitrate.setValue(wifi.rxBitrate() != null || wifi.txBitrate() != null
                     ? "↓%s ↑%s Mbit/s".formatted(rateOf(wifi.rxBitrate()), rateOf(wifi.txBitrate()))
                     : "N/A");
-            hotspot.setValue(hotspotGuess(wifi.metered()));
         }
 
         private String rateOf(String iwBitrate) {
@@ -170,15 +168,6 @@ public class SystemPanel extends VerticalLayout {
             }
             int idx = iwBitrate.indexOf(" MBit/s");
             return idx > 0 ? iwBitrate.substring(0, idx) : iwBitrate;
-        }
-
-        // Android hotspots advertise themselves as metered via DHCP;
-        // iPhones don't, so those show up as "unlikely"
-        private String hotspotGuess(String metered) {
-            if (metered == null) {
-                return "N/A";
-            }
-            return metered.startsWith("yes") ? "likely (metered)" : "unlikely (not metered)";
         }
 
         // com.sun.management beans may be unavailable or partial in native image
