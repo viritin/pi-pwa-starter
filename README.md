@@ -16,6 +16,10 @@ Maven projects:
        alt="Climate view installed as a PWA on an iPhone: BME280 temperature gauge and history">
 </p>
 
+▶ [Watch it on an iPhone](https://youtube.com/shorts/877Wl0i_BTY) (1:18): passkey
+sign-in, adding the app to the home screen and a Web Push temperature alert from the
+`example/web-push-notifications` branch.
+
 Requires JDK 25. Build both modules, run the browserless view tests and the Playwright smoke test:
 
 ```sh
