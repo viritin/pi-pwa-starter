@@ -21,7 +21,8 @@ class Bme280ViewTest extends ViewTest {
         assertTrue(find(SimulationBanner.class).first().isVisible());
         assertEquals("Simulation · BME280", paragraph("bme280-status"));
         var cards = find(Card.class).all().stream().filter(c -> !(c instanceof SimulationBanner)).toList();
-        assertEquals(3, cards.size(), "sensor, details and wiring cards");
+        assertEquals(4, cards.size(), "sensor, details, alerts and wiring cards");
+        assertTrue(cardTitled("Temperature alerts"));
         assertEquals("BME280", cards.get(0).getTitleAsText());
         assertEquals("Humidity and pressure", cards.get(1).getTitleAsText());
         assertTrue(find(SecondaryText.class).withTextContaining("Humidity ").exists());

@@ -235,6 +235,16 @@ deterministic source in `src/simulation/java`, which supplies three hours of
 initial history so curves are visible immediately. The normal production build
 does not include that source; tests use it as an alternative.
 
+## Temperature alerts with Web Push
+
+The Climate view's **Temperature alerts** card notifies a phone or desktop when the
+temperature goes below a minimum or above a maximum that each device sets for
+itself. It uses standard Web Push through Vaadin's `flow-webpush`, with the
+subscriptions and the server's VAPID key kept as plain files under `~/.pipwa/push`;
+no database and no third-party service. Push needs HTTPS (or localhost), and on
+iPhone the app installed to the home screen. Details and how to try it are in
+[WEB-PUSH.md](WEB-PUSH.md).
+
 ## Sharing readings with Home Assistant
 
 Kept out of `main` so the starter stays lean: the
