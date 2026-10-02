@@ -65,6 +65,20 @@ vaadin-card h3 + :is(p, ul, ol) { margin-top: .25em; }
   }
 }
 
+/* WORKAROUND for Vaadin 25.3 Switch on iOS: only the left end of the switch took a tap.
+   The tap goes to an invisible native checkbox in the switch's grid cell, but WebKit keeps
+   that checkbox at its natural 16 × 16 px instead of stretching it over the track, so a tap
+   on the right half, where the marker of a switched-on switch is, hit the marker instead and
+   did nothing. Size the input to its cell, and lift it above the marker, which paints on top
+   because it is transformed. Light-DOM rules beat the component's ::slotted(input) ones; only
+   its margins are !important. */
+vaadin-switch > input[slot="input"] {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
 /* Sparklines draw in the text colour; their curves take accent colours instead, and each
    scale's labels the colour of its curve, so a chart of two quantities says which is which. */
 .sparkline-line { stroke: var(--aura-accent-color); }
