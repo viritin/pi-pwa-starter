@@ -23,13 +23,10 @@ import jakarta.inject.Inject;
 @Route(value = "login", autoLayout = false)
 @Menu(title = "Sign in", icon = "vaadin:sign-in", order = 90)
 @PageTitle("Sign in")
-public class LoginView extends VerticalLayout {
+public class LoginView extends StandalonePage {
 
     @Inject
     public LoginView(AuthConfig auth) {
-        setSizeFull();
-        setAlignItems(Alignment.CENTER);
-        setJustifyContentMode(JustifyContentMode.CENTER);
         add(auth.bootstrapMode() ? new FirstAdminCard() : new SignInCard());
     }
 
