@@ -12,7 +12,7 @@
         <quarkus.version>3.37.2</quarkus.version>
         <vaadin.version>25.3.0</vaadin.version>
         <pi4j.version>4.0.2</pi4j.version>
-        <viritin.version>3.9.1-SNAPSHOT</viritin.version>
+        <viritin.version>3.9.1</viritin.version>
     </properties>
     <dependencyManagement>
         <dependencies>
