@@ -5,7 +5,9 @@ import in.virit.iot.pihelpers.tools.I2cView;
 import in.virit.iot.pihelpers.tools.PwmView;
 import in.virit.iot.pihelpers.tools.OneWireView;
 import in.virit.iot.pihelpers.tools.BleView;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.H1;
+import in.virit.iot.pihelpers.auth.UsersView;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
@@ -34,6 +36,13 @@ class NavigationTest extends ViewTest {
         var view = navigate("about", AboutView.class);
         assertInstanceOf(AboutView.class, view);
         assertEquals(view, getCurrentView());
+    }
+
+    /** Without starter.auth.enabled there are no users to manage, so the Users route is diverted. */
+    @Test
+    void usersIsUnavailableWhileAuthIsOff() {
+        UI.getCurrent().navigate(UsersView.class);
+        assertInstanceOf(AboutView.class, getCurrentView());
     }
 
     private void assertHeading(Class<? extends com.vaadin.flow.component.Component> view, String heading) {

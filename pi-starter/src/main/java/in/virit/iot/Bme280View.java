@@ -22,12 +22,11 @@ import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouterLink;
 import in.virit.iot.pihelpers.tools.I2cView;
 import com.vaadin.flow.shared.Registration;
+import in.virit.Gauge;
 import in.virit.TemperatureGauge;
-import in.virit.iot.pihelpers.HomeAssistantFinder;
 import in.virit.iot.pihelpers.PiSetup;
 import in.virit.iot.pihelpers.SimulationBanner;
 import in.virit.iot.bme280.Bme280Service;
-import in.virit.iot.bme280.ClimatePublisher;
 import in.virit.iot.bme280.Bme280Service.Reading;
 import jakarta.inject.Inject;
 import org.vaadin.svgvis.SvgSparkLine;
@@ -46,9 +45,8 @@ import java.util.function.Function;
  * way ScrewCloud's pi-reader shows its tags. A gauge for the headline value, the
  * other readings as secondary lines, and the recent history as a curve, with the
  * period selectable. Everything is pushed from {@link Bme280Service}; the view
- * only draws. Below the cards, {@link ClimateSharingCard} publishes the same
- * readings to Home Assistant over MQTT, and wiring instructions make the screen
- * useful before the sensor is connected.
+ * only draws. Below the cards, wiring instructions make the screen useful before
+ * the sensor is connected.
  */
 @Route
 @Menu(title = "Climate", icon = "vaadin:cloud-o", order = 4)
@@ -82,7 +80,7 @@ public class Bme280View extends VerticalLayout {
     private Registration listener;
 
     @Inject
-    public Bme280View(Bme280Service service, ClimatePublisher publisher, HomeAssistantFinder finder) {
+    public Bme280View(Bme280Service service) {
         this.service = service;
         status.setId("bme280-status");
         range.setValue(Range.HOUR);
@@ -93,7 +91,7 @@ public class Bme280View extends VerticalLayout {
         add(new H1("Climate"), simulation,
                 new Paragraph("Temperature, humidity and air pressure from a BME280 on the I²C bus, "
                         + "sampled every few seconds since the application started."),
-                range, cards, status, new ClimateSharingCard(publisher, finder), new WiringPanel());
+                range, cards, status, new WiringPanel());
         refresh();
     }
 
@@ -143,6 +141,10 @@ public class Bme280View extends VerticalLayout {
         SensorCard() {
             super("Climate sensor");
             setSubtitle(subtitle);
+            // A new reading every few seconds: the dial jumps to it instead of sweeping,
+            // which would keep the page changing most of the time (and on iOS turns taps
+            // elsewhere into hovers)
+            gauge.setPointer(new Gauge.GaugePointer().setAnimate(false));
             gauge.setMaxWidth("20rem");
             gauge.getStyle().setMargin("0 auto");
             setMedia(gauge);

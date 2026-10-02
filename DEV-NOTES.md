@@ -40,16 +40,17 @@ Running the module without Pi4J on the classpath while its Pi4J-backed beans are
 present has not been verified; if Quarkus' build-time bean processing complains,
 add the two Pi4J artifacts anyway.
 
-## Viritin 3.9.0 safe-area workaround
+## Vaadin 25.3 Switch workaround (iOS)
 
-`pi-starter`'s `styles/theme.css` re-adds `env(safe-area-inset-top)` to
-`.mobile-content`, because Viritin 3.9.0's `MobileMainLayout` collapses its
-in-content header with `display: none` when the view title is disabled, and that
-header was the only thing keeping the view heading clear of the status bar /
-dynamic island in an installed PWA. The fix is on Viritin's
-`fix/mobile-header-safe-area` branch (the collapsed header becomes a safe-area
-spacer). **Remove the workaround when bumping `viritin.version` to a release that
-contains it** — with both in place the heading is inset twice.
+`pi-starter`'s `styles/theme.css` sizes `vaadin-switch`'s slotted input to its grid
+cell and lifts it above the marker. The tap goes to that invisible native
+checkbox, and WebKit keeps it at its natural 16 × 16 px instead of stretching it
+over the track (measured on an iPhone: input 16×16, track 42×20), so on iOS only
+the left end of a switch toggled it; a tap on the marker of a switched-on switch
+did nothing. It applies to every switch in the app, pi-helpers' panels included.
+Fixed in Vaadin ([vaadin/web-components#12957](https://github.com/vaadin/web-components/issues/12957)):
+**remove the rule when bumping to a Vaadin release that contains the fix**, likely
+the next one, and check on an iPhone that the marker end of a switch toggles.
 
 ## Local reference projects
 

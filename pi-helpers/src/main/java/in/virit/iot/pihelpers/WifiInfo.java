@@ -6,17 +6,15 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Reads the host's WiFi link details using `iw` and NetworkManager (nmcli).
+ * Reads the host's WiFi link details using `iw`.
  * Fields are null when not available (wired hosts, dev machines, missing tools).
- * The metered flag doubles as a phone-hotspot hint: Android hotspots advertise
- * themselves as metered via DHCP (iPhones do not, so those go undetected).
  */
 public class WifiInfo {
 
     public record Link(String iface, String ssid, Integer freqMhz, String band,
-                       String generation, String rxBitrate, String txBitrate, String metered) {
+                       String generation, String rxBitrate, String txBitrate) {
 
-        public static final Link UNAVAILABLE = new Link(null, null, null, null, null, null, null, null);
+        public static final Link UNAVAILABLE = new Link(null, null, null, null, null, null, null);
     }
 
     public static Link read() {
@@ -45,7 +43,7 @@ public class WifiInfo {
             }
         }
 
-        return new Link(iface, ssid, freq, band(freq), generation(rx, tx), rx, tx, readMetered(iface));
+        return new Link(iface, ssid, freq, band(freq), generation(rx, tx), rx, tx);
     }
 
     private static String band(Integer freqMhz) {
@@ -78,15 +76,6 @@ public class WifiInfo {
         }
         if (!all.isBlank()) {
             return "legacy (a/b/g)";
-        }
-        return null;
-    }
-
-    private static String readMetered(String iface) {
-        for (String line : run("nmcli", "-t", "-f", "GENERAL.METERED", "device", "show", iface)) {
-            if (line.startsWith("GENERAL.METERED:")) {
-                return line.substring("GENERAL.METERED:".length()).trim();
-            }
         }
         return null;
     }

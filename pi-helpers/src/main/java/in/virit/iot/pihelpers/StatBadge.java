@@ -1,11 +1,13 @@
 package in.virit.iot.pihelpers;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 
 /** A label and a separately updated value; shared by the system metrics. */
 class StatBadge extends Div {
-    private final Span value = new Span("N/A");
+    // An ellipsis until the first reading arrives
+    private final Span value = new Span("…");
     private final String format;
 
     StatBadge(String title) {
@@ -27,5 +29,11 @@ class StatBadge extends Div {
 
     void setValue(Object... args) {
         setValue(format.formatted(args));
+    }
+
+    /** Adds a small visual of the reading under it, e.g. a trend line or a usage bar. */
+    StatBadge withVisual(Component visual) {
+        add(visual);
+        return this;
     }
 }

@@ -26,13 +26,23 @@ public class AboutView extends VerticalLayout {
         add(new Section("Make yourself at home",
                 new Paragraph("Connect a sensor, automate a light or keep an eye on your home. "
                         + "This application gives your project a home on your phone and desktop.")));
-        add(new Section("Two examples to build on",
+        add(new Section("Examples and building blocks",
                 new Paragraph(new Name("Blink a LED"), new Span(" is the smallest complete feature: a view, a service "
                         + "that owns one output through the shared Pi4J context, a development simulation and error handling. "
                         + "Copy it for a relay, a buzzer or a button.")),
                 new Paragraph(new Name("Climate"), new Span(" reads a BME280 sensor from application start, keeps a day "
                         + "of history and draws it with a gauge and sparklines. Copy it for anything that "
-                        + "produces a stream of numbers."))));
+                        + "produces a stream of numbers.")),
+                new Paragraph(new Name("Passkey sign-in"), new Span(" is built in and off by default: set "
+                        + "starter.auth.enabled=true for passwordless access with passkeys, and invite more people "
+                        + "from Users. See AUTH.md.")),
+                new Paragraph(new Name("Home Assistant"), new Span(" integration is kept out of the starter to keep it "
+                        + "lean. For an example of sending data to another system, the "
+                        + "example/home-assistant-integration-via-mqtt branch publishes the Climate readings over MQTT, "
+                        + "picked up by Home Assistant's discovery.")),
+                new Paragraph(new Name("Web Push"), new Span(" notifications live on a branch of their own too: "
+                        + "example/web-push-notifications adds min and max temperature alerts to the Climate view, "
+                        + "delivered to a phone or desktop without any third-party service."))));
         add(new Section("Tools for the workbench",
                 new Paragraph(new Name("System"), new Span(" shows how the device is doing and which interfaces are "
                         + "enabled, and can reboot or shut it down. ")),
@@ -40,9 +50,9 @@ public class AboutView extends VerticalLayout {
                         + "GPIOs, scan the I²C bus and poke registers, position a servo with PWM, "
                         + "read 1-Wire probes and see which Bluetooth LE devices are around.")),
                 new Paragraph("They are meant for prototyping on a trusted network. In a finished application you "
-                        + "will most likely remove them or put them behind a login: Proto Tools come from pi-helpers "
-                        + "and are switched off with starter.proto-tools.enabled=false, System is SystemView in "
-                        + "this project.")));
+                        + "will most likely remove them or put them behind a login (passkey sign-in above): Proto "
+                        + "Tools come from pi-helpers and are switched off with starter.proto-tools.enabled=false, "
+                        + "System is SystemView in this project.")));
         add(new Section("Keep it close",
                 new Paragraph("Add this app to your home screen using your browser’s install or share menu. "
                         + "Live views need a connection to this device.")));

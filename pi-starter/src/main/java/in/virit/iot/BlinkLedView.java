@@ -44,8 +44,7 @@ public class BlinkLedView extends VerticalLayout {
             "The LED state is simulated; no GPIO pin changes.");
     private final SetupHint setup = PiSetup.gpio();
     private boolean editingGpio;
-    private Registration poll;
-    private int previousPollInterval;
+    private Registration listener;
 
     @Inject
     public BlinkLedView(LedService service) {
@@ -132,19 +131,20 @@ public class BlinkLedView extends VerticalLayout {
     @Override
     protected void onAttach(AttachEvent event) {
         super.onAttach(event);
-        // Keep multiple browsers in sync with the application's single output.
-        previousPollInterval = event.getUI().getPollInterval();
-        poll = event.getUI().addPollListener(e -> {
+        // Keep multiple browsers in sync with the application's single output, over @Push.
+        var ui = event.getUI();
+        listener = service.addListener(state -> ui.access(() -> {
             if (!editingGpio && !gpio.isInvalid() && gpio.getValue() != null) refresh();
-        });
-        event.getUI().setPollInterval(1000);
+        }));
         refresh();
     }
 
     @Override
     protected void onDetach(DetachEvent event) {
-        if (poll != null) poll.remove();
-        event.getUI().setPollInterval(previousPollInterval);
+        if (listener != null) {
+            listener.remove();
+            listener = null;
+        }
         super.onDetach(event);
     }
 }

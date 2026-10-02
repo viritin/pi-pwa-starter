@@ -14,7 +14,11 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.card.Card;
 
+import com.vaadin.flow.component.progressbar.ProgressBar;
+import org.vaadin.svgvis.SvgSparkLine;
+
 import java.io.File;
+import java.util.ArrayDeque;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +40,13 @@ public class SystemPanel extends VerticalLayout {
     private volatile InterfaceStatus.Status interfaceStatus = InterfaceStatus.Status.UNAVAILABLE;
     private long lastWifiRead;
 
+    /**
+     * Only the frame is built here: the heading and the cards with their labels.
+     * The readings come from a background thread once the panel is attached and
+     * reach the browser over push, so opening the view never waits for the host
+     * to answer; spawning iw for the WiFi details in particular takes a moment on
+     * a Pi.
+     */
     public SystemPanel(SystemControl systemControl) {
         addClassName("system-panel");
         add(new H1("System Monitor"));
@@ -56,25 +67,29 @@ public class SystemPanel extends VerticalLayout {
         lastWifiRead = 0;
         executor.scheduleAtFixedRate(() -> {
             try {
-                // Link details change rarely and involve spawning iw/nmcli,
-                // so refresh them (and the interface nodes) off the UI lock and less often
+                // Everything is read here, off the UI lock; ui.access only shows it
+                interfaceStatus = InterfaceStatus.read();
+                show(ui, SystemStats.Reading.now(wifiDetails), interfaceStatus);
+                // Link details change rarely and involve spawning iw, so refresh them
+                // less often, and after the cheap readings are already on screen
                 if (System.currentTimeMillis() - lastWifiRead > 15000) {
                     lastWifiRead = System.currentTimeMillis();
                     wifiDetails = WifiInfo.read();
-                    interfaceStatus = InterfaceStatus.read();
+                    show(ui, SystemStats.Reading.now(wifiDetails), interfaceStatus);
                 }
-                var wifi = wifiDetails;
-                var status = interfaceStatus;
-                ui.access(() -> {
-                    if (isAttached() && getUI().orElse(null) == ui) {
-                        stats.update(wifi);
-                        interfaces.update(status);
-                    }
-                });
             } catch (Exception ignored) {
                 // UI gone or transient read failure; next tick retries
             }
         }, 0, 2, TimeUnit.SECONDS);
+    }
+
+    private void show(com.vaadin.flow.component.UI ui, SystemStats.Reading reading, InterfaceStatus.Status status) {
+        ui.access(() -> {
+            if (isAttached() && getUI().orElse(null) == ui) {
+                stats.show(reading);
+                interfaces.update(status);
+            }
+        });
     }
 
     @Override
@@ -89,6 +104,7 @@ public class SystemPanel extends VerticalLayout {
 
         private final StatBadge board = new StatBadge("Board");
         private final StatBadge os = new StatBadge("OS");
+        private final StatBadge jdk = new StatBadge("JDK");
         private final StatBadge uptime = new StatBadge("Uptime");
         private final StatBadge version = new StatBadge("Version");
         private final StatBadge heapUsage = new StatBadge("Heap", "%s / %s");
@@ -101,59 +117,104 @@ public class SystemPanel extends VerticalLayout {
         private final StatBadge wifiLink = new StatBadge("WiFi link");
         private final StatBadge wifiSignal = new StatBadge("Signal");
         private final StatBadge wifiBitrate = new StatBadge("Bitrate");
-        private final StatBadge hotspot = new StatBadge("Hotspot");
-        private final long startTimeMillis = ManagementFactory.getRuntimeMXBean().getStartTime();
+        private final Trend cpuTrend = new Trend("%");
+        private final Trend tempTrend = new Trend("°C");
+        private final UsageBar memoryBar = new UsageBar();
+        private final UsageBar diskBar = new UsageBar();
         private WifiInfo.Link wifi = WifiInfo.Link.UNAVAILABLE;
 
         SystemStats() {
             setTitle("Host & process");
             setWidthFull();
-            version.setValue(readAppVersion());
-            var host = BoardInfo.detect();
-            board.setValue(host.describe());
-            os.setValue(host.describeOs());
+            cpuUsage.withVisual(cpuTrend);
+            cpuTemp.withVisual(tempTrend);
+            osMemory.withVisual(memoryBar);
+            diskUsage.withVisual(diskBar);
 
             var gcButton = new Button("Run GC", e -> {
                 System.gc();
-                update();
+                show(Reading.now(wifi));
             });
             gcButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
 
-            add(new StatGrid(board, os, uptime, version, heapUsage, processMemory,
+            add(new StatGrid(board, os, jdk, uptime, version, heapUsage, processMemory,
                     osMemory, cpuUsage, cpuTemp, diskUsage,
-                    network, wifiLink, wifiSignal, wifiBitrate, hotspot), gcButton);
+                    network, wifiLink, wifiSignal, wifiBitrate), gcButton);
         }
 
-        void update(WifiInfo.Link wifiDetails) {
-            this.wifi = wifiDetails;
-            update();
+        /**
+         * One round of the host's readings, taken off the UI thread: files under
+         * /proc and /sys, the management beans and the disk. Negative numbers
+         * mean the reading is not available here.
+         */
+        record Reading(BoardInfo.Board host, String version, String jdk, long appUptimeSeconds,
+                       long osUptimeSeconds, long heapUsed, long heapMax, long rss,
+                       long osMemoryUsed, long osMemoryTotal, double processCpu, double systemCpu,
+                       double cpuTemperature, String wifiSignal, long diskUsable, long diskTotal,
+                       WifiInfo.Link wifi) {
+
+            private static final long START = ManagementFactory.getRuntimeMXBean().getStartTime();
+            private static String appVersion;
+
+            static Reading now(WifiInfo.Link wifi) {
+                if (appVersion == null) {
+                    appVersion = readAppVersion();
+                }
+                Runtime rt = Runtime.getRuntime();
+                long osUsed = -1, osTotal = -1;
+                double proc = -1, sys = -1;
+                // com.sun.management beans may be unavailable or partial in native image
+                try {
+                    var osMx = (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+                    osTotal = osMx.getTotalMemorySize();
+                    osUsed = osTotal - osMx.getFreeMemorySize();
+                    proc = osMx.getProcessCpuLoad();
+                    sys = osMx.getCpuLoad();
+                } catch (Exception ignored) {
+                }
+                File root = new File("/");
+                return new Reading(BoardInfo.detect(), appVersion, describeJdk(),
+                        (System.currentTimeMillis() - START) / 1000, readOsUptimeSeconds(),
+                        rt.totalMemory() - rt.freeMemory(), rt.maxMemory(), readRssBytes(),
+                        osUsed, osTotal, proc, sys, readCpuTemperature(), readWifiSignal(),
+                        root.getUsableSpace(), root.getTotalSpace(), wifi);
+            }
         }
 
-        void update() {
-            long uptimeSec = (System.currentTimeMillis() - startTimeMillis) / 1000;
-            long days = uptimeSec / 86400;
-            long hours = (uptimeSec % 86400) / 3600;
-            long minutes = (uptimeSec % 3600) / 60;
-            uptime.setValue(days > 0 ? "%dd %dh %dm".formatted(days, hours, minutes)
-                    : hours > 0 ? "%dh %dm".formatted(hours, minutes)
-                    : "%dm".formatted(minutes));
+        void show(Reading r) {
+            this.wifi = r.wifi();
+            board.setValue(r.host().describe());
+            os.setValue(r.host().describeOs());
+            jdk.setValue(r.jdk());
+            version.setValue(r.version());
 
-            Runtime rt = Runtime.getRuntime();
-            heapUsage.setValue(mb(rt.totalMemory() - rt.freeMemory()), mb(rt.maxMemory()));
+            String app = duration(r.appUptimeSeconds()) + " app";
+            uptime.setValue(r.osUptimeSeconds() >= 0 ? app + " / " + duration(r.osUptimeSeconds()) + " OS" : app);
+            heapUsage.setValue(mb(r.heapUsed()), mb(r.heapMax()));
+            processMemory.setValue(r.rss() > 0 ? mb(r.rss()) : "N/A");
 
-            long rss = readRssBytes();
-            processMemory.setValue(rss > 0 ? mb(rss) : "N/A");
+            if (r.osMemoryTotal() > 0) {
+                osMemory.setValue(mb(r.osMemoryUsed()), mb(r.osMemoryTotal()));
+                memoryBar.setUsage(r.osMemoryUsed(), r.osMemoryTotal());
+            } else {
+                osMemory.setValue("N/A", "N/A");
+            }
+            cpuUsage.setValue((r.processCpu() < 0 ? "N/A" : "%.0f%%".formatted(r.processCpu() * 100))
+                    + " proc / " + (r.systemCpu() < 0 ? "N/A" : "%.0f%%".formatted(r.systemCpu() * 100)) + " sys");
+            if (r.systemCpu() >= 0) {
+                cpuTrend.add(r.systemCpu() * 100);
+            }
 
-            updateOsStats();
+            cpuTemp.setValue(r.cpuTemperature() >= 0 ? "%.0f°C".formatted(r.cpuTemperature()) : "N/A");
+            if (r.cpuTemperature() >= 0) {
+                tempTrend.add(r.cpuTemperature());
+            }
 
-            double temp = readCpuTemperature();
-            cpuTemp.setValue(temp >= 0 ? "%.0f°C".formatted(temp) : "N/A");
+            wifiSignal.setValue(r.wifiSignal());
+            diskUsage.setValue(gb(r.diskUsable()), gb(r.diskTotal()));
+            diskBar.setUsage(r.diskTotal() - r.diskUsable(), r.diskTotal());
 
-            wifiSignal.setValue(readWifiSignal());
-
-            File root = new File("/");
-            diskUsage.setValue(gb(root.getUsableSpace()), gb(root.getTotalSpace()));
-
+            var wifi = r.wifi();
             network.setValue(wifi.ssid() != null ? wifi.ssid() : "N/A");
             wifiLink.setValue(wifi.band() != null
                     ? wifi.band() + (wifi.generation() != null ? " · " + wifi.generation() : "")
@@ -161,10 +222,9 @@ public class SystemPanel extends VerticalLayout {
             wifiBitrate.setValue(wifi.rxBitrate() != null || wifi.txBitrate() != null
                     ? "↓%s ↑%s Mbit/s".formatted(rateOf(wifi.rxBitrate()), rateOf(wifi.txBitrate()))
                     : "N/A");
-            hotspot.setValue(hotspotGuess(wifi.metered()));
         }
 
-        private String rateOf(String iwBitrate) {
+        private static String rateOf(String iwBitrate) {
             if (iwBitrate == null) {
                 return "?";
             }
@@ -172,40 +232,56 @@ public class SystemPanel extends VerticalLayout {
             return idx > 0 ? iwBitrate.substring(0, idx) : iwBitrate;
         }
 
-        // Android hotspots advertise themselves as metered via DHCP;
-        // iPhones don't, so those show up as "unlikely"
-        private String hotspotGuess(String metered) {
-            if (metered == null) {
-                return "N/A";
+        /**
+         * The last few minutes of a reading as a small line under its badge. The
+         * history lives as long as the panel is open; with fewer than two readings
+         * there is no line to draw, so it stays hidden.
+         */
+        static class Trend extends SvgSparkLine {
+            private static final int SAMPLES = 150; // five minutes at the panel's two-second tick
+            private final ArrayDeque<Double> values = new ArrayDeque<>();
+
+            Trend(String unit) {
+                super(48);
+                setUnit(unit);
+                setVisible(false);
             }
-            return metered.startsWith("yes") ? "likely (metered)" : "unlikely (not metered)";
+
+            void add(double value) {
+                if (values.size() == SAMPLES) {
+                    values.removeFirst();
+                }
+                values.addLast(value);
+                setVisible(values.size() >= 2);
+                if (isVisible()) {
+                    setData(values.stream().mapToDouble(Double::doubleValue).toArray());
+                }
+            }
         }
 
-        // com.sun.management beans may be unavailable or partial in native image
-        private void updateOsStats() {
-            try {
-                var osMx = (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-                long totalOs = osMx.getTotalMemorySize();
-                osMemory.setValue(mb(totalOs - osMx.getFreeMemorySize()), mb(totalOs));
-                double proc = osMx.getProcessCpuLoad();
-                double sys = osMx.getCpuLoad();
-                cpuUsage.setValue((proc < 0 ? "N/A" : "%.0f%%".formatted(proc * 100))
-                        + " proc / " + (sys < 0 ? "N/A" : "%.0f%%".formatted(sys * 100)) + " sys");
-            } catch (Exception e) {
-                osMemory.setValue("N/A", "N/A");
-                cpuUsage.setValue("N/A");
+        /** How full something is, as a slim bar under its badge; hidden while unknown. */
+        static class UsageBar extends ProgressBar {
+            UsageBar() {
+                setVisible(false);
+            }
+
+            void setUsage(long used, long total) {
+                setVisible(total > 0);
+                if (total > 0) {
+                    setValue((double) used / total);
+                }
             }
         }
 
-        private String mb(long bytes) {
+        private static String mb(long bytes) {
             return "%dM".formatted(bytes / (1024 * 1024));
         }
 
-        private String gb(long bytes) {
+        private static String gb(long bytes) {
             return "%.1fG".formatted(bytes / (1024.0 * 1024 * 1024));
         }
 
-        private String readAppVersion() {
+        private static String readAppVersion() {
             try {
                 var jarPath = SystemPanel.class.getProtectionDomain().getCodeSource().getLocation().toURI();
                 var modified = Files.getLastModifiedTime(Path.of(jarPath));
@@ -220,7 +296,7 @@ public class SystemPanel extends VerticalLayout {
          * Reads CPU temperature from the Linux thermal zone.
          * @return temperature in degrees Celsius, or -1 if not available
          */
-        private double readCpuTemperature() {
+        private static double readCpuTemperature() {
             try {
                 Path zone = Path.of("/sys/class/thermal/thermal_zone0/temp");
                 if (Files.exists(zone)) {
@@ -236,7 +312,7 @@ public class SystemPanel extends VerticalLayout {
          * Format: "iface: status link level noise ..."
          * Level is typically in dBm (e.g. -45).
          */
-        private String readWifiSignal() {
+        private static String readWifiSignal() {
             try {
                 for (String line : Files.readAllLines(Path.of("/proc/net/wireless"))) {
                     line = line.trim();
@@ -259,7 +335,39 @@ public class SystemPanel extends VerticalLayout {
             return "N/A";
         }
 
-        private long readRssBytes() {
+        /**
+         * The running Java: the distribution's own version string when it sets one
+         * (e.g. "Temurin-25+36"), otherwise vendor and version, plus the VM, which
+         * tells HotSpot builds from OpenJ9 ones such as IBM Semeru.
+         */
+        static String describeJdk() {
+            String vendorVersion = System.getProperty("java.vendor.version");
+            String release = vendorVersion != null && !vendorVersion.isBlank()
+                    ? vendorVersion
+                    : System.getProperty("java.vendor") + " " + System.getProperty("java.version");
+            return release + " · " + System.getProperty("java.vm.name");
+        }
+
+        private static String duration(long seconds) {
+            long days = seconds / 86400;
+            long hours = (seconds % 86400) / 3600;
+            long minutes = (seconds % 3600) / 60;
+            return days > 0 ? "%dd %dh %dm".formatted(days, hours, minutes)
+                    : hours > 0 ? "%dh %dm".formatted(hours, minutes)
+                    : "%dm".formatted(minutes);
+        }
+
+        /** Seconds since the host booted, from the first field of /proc/uptime; -1 off Linux. */
+        private static long readOsUptimeSeconds() {
+            try {
+                String first = Files.readString(Path.of("/proc/uptime")).trim().split("\\s+")[0];
+                return (long) Double.parseDouble(first);
+            } catch (Exception ignored) {
+                return -1;
+            }
+        }
+
+        private static long readRssBytes() {
             try {
                 for (String line : Files.readAllLines(Path.of("/proc/self/status"))) {
                     if (line.startsWith("VmRSS:")) {

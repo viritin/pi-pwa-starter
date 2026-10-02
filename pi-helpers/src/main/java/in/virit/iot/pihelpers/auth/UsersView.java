@@ -23,9 +23,8 @@ import java.util.Set;
 
 /**
  * Administration of passkey users: who exists, handing out registration links for
- * new people, and removing accounts. Reachable by admins once sign-in is on; it
- * is also visible (with a hint) while sign-in is still off, so an operator can
- * prepare accounts before flipping {@code starter.auth.enabled}.
+ * new people, and removing accounts. Only meaningful with
+ * {@code starter.auth.enabled=true}; the application's gate keeps it for admins.
  */
 @Route("users")
 @Menu(title = "Users", icon = "vaadin:users", order = 5)
@@ -43,10 +42,7 @@ public class UsersView extends VerticalLayout {
         setSizeFull();
 
         add(new H1("Users"));
-        if (!auth.authEnabled()) {
-            add(new StatusBanner("Passkey sign-in is off. Turn it on with "
-                    + "starter.auth.enabled=true; you can already prepare accounts here."));
-        } else if (auth.bootstrapMode()) {
+        if (auth.bootstrapMode()) {
             add(new StatusBanner("No passkey has been registered yet. The first person to sign in "
                     + "becomes the administrator."));
         }
