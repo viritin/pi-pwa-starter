@@ -25,11 +25,13 @@ public class SimulatedLedService extends LedService implements Simulated {
         if (this.pin == pin) return;
         if (on) throw new IllegalStateException("Turn the LED off before changing GPIO.");
         this.pin = pin;
+        changed();
     }
 
     @Override
     public synchronized void setOn(int expectedPin, boolean on) {
         if (expectedPin != pin) throw new IllegalStateException("GPIO selection changed. Please try again.");
         this.on = on;
+        changed();
     }
 }

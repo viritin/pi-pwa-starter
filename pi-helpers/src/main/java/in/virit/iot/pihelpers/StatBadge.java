@@ -6,7 +6,8 @@ import com.vaadin.flow.component.html.Span;
 
 /** A label and a separately updated value; shared by the system metrics. */
 class StatBadge extends Div {
-    private final Span value = new Span("N/A");
+    // An ellipsis until the first reading arrives
+    private final Span value = new Span("…");
     private final String format;
 
     StatBadge(String title) {

@@ -25,16 +25,13 @@ import java.util.Optional;
  */
 @Route(value = "register", autoLayout = false)
 @PageTitle("Register a passkey")
-public class RegisterView extends VerticalLayout implements BeforeEnterObserver {
+public class RegisterView extends StandalonePage implements BeforeEnterObserver {
 
     private final UserStore users;
 
     @Inject
     public RegisterView(UserStore users) {
         this.users = users;
-        setSizeFull();
-        setAlignItems(Alignment.CENTER);
-        setJustifyContentMode(JustifyContentMode.CENTER);
     }
 
     @Override

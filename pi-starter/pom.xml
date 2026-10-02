@@ -12,7 +12,7 @@
         <quarkus.version>3.37.2</quarkus.version>
         <vaadin.version>25.3.0</vaadin.version>
         <pi4j.version>4.0.2</pi4j.version>
-        <viritin.version>3.9.0</viritin.version>
+        <viritin.version>3.9.1</viritin.version>
         <pi-helpers.version>1.0.0-SNAPSHOT</pi-helpers.version>
         <simulation.skipTestSources>false</simulation.skipTestSources>
     </properties>
@@ -71,7 +71,7 @@
         <dependency>
             <groupId>in.virit</groupId>
             <artifactId>gauge</artifactId>
-            <version>1.3.0</version>
+            <version>1.3.1</version>
         </dependency>
         <dependency>
             <groupId>in.virit</groupId>

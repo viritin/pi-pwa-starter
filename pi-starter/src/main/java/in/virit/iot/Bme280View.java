@@ -22,6 +22,7 @@ import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouterLink;
 import in.virit.iot.pihelpers.tools.I2cView;
 import com.vaadin.flow.shared.Registration;
+import in.virit.Gauge;
 import in.virit.TemperatureGauge;
 import in.virit.iot.pihelpers.PiSetup;
 import in.virit.iot.pihelpers.SimulationBanner;
@@ -142,6 +143,10 @@ public class Bme280View extends VerticalLayout {
         SensorCard() {
             super("Climate sensor");
             setSubtitle(subtitle);
+            // A new reading every few seconds: the dial jumps to it instead of sweeping,
+            // which would keep the page changing most of the time (and on iOS turns taps
+            // elsewhere into hovers)
+            gauge.setPointer(new Gauge.GaugePointer().setAnimate(false));
             gauge.setMaxWidth("20rem");
             gauge.getStyle().setMargin("0 auto");
             setMedia(gauge);

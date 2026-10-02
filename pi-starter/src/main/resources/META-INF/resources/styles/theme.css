@@ -31,21 +31,6 @@ body::before {
 /* The view's layout gap already spaces its children; a paragraph's own margins would double it. */
 .mobile-content > :not(.mobile-content-header) > p { margin-block: 0; }
 .mobile-content > :not(.mobile-content-header) h1 { font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1.15; margin: 0; }
-/* WORKAROUND for Viritin 3.9.0 MobileMainLayout — remove when bumping to a Viritin
-   release that contains the fix (branch fix/mobile-header-safe-area), or the
-   heading gets the inset twice.
-   On a phone MobileMainLayout collapses its in-content header with display:none
-   when the view title is disabled (TopLayout does that; each view carries its own
-   heading). The collapsed header then no longer insets the content below the
-   status bar / dynamic island, so re-add that top safe-area inset to the content
-   here (env() is 0 off a notched, edge-to-edge PWA). CSS forbids nesting :has(), so
-   this keys on the disabled title under the bottom bar rather than the full
-   collapse condition; this app's views add no header helpers, so the header is
-   collapsed. */
-vaadin-app-layout:has(.mobile-bottom-nav[slot="navbar-bottom"])
-  .mobile-content:has(> .mobile-content-header.no-view-title) {
-  padding-top: env(safe-area-inset-top);
-}
 /* A card's title is its level 2 heading, so the subheadings inside are h3. Aura sizes h3 above the
    title and gives headings no margins; set them at body size, spaced from what comes before like a
    paragraph and close to the text they introduce. */
@@ -63,6 +48,21 @@ vaadin-card h3 + :is(p, ul, ol) { margin-top: .25em; }
   :root vaadin-app-layout::part(content) {
     background: transparent !important;
   }
+}
+
+/* WORKAROUND for Vaadin 25.3 Switch on iOS: only the left end of the switch took a tap.
+   The tap goes to an invisible native checkbox in the switch's grid cell, but WebKit keeps
+   that checkbox at its natural 16 × 16 px instead of stretching it over the track, so a tap
+   on the right half, where the marker of a switched-on switch is, hit the marker instead and
+   did nothing. Size the input to its cell, and lift it above the marker, which paints on top
+   because it is transformed. Light-DOM rules beat the component's ::slotted(input) ones; only
+   its margins are !important. Fixed in Vaadin (vaadin/web-components#12957): remove this
+   with the release that contains the fix. */
+vaadin-switch > input[slot="input"] {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 /* Sparklines draw in the text colour; their curves take accent colours instead, and each
