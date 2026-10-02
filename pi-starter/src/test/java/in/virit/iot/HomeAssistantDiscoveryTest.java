@@ -1,7 +1,10 @@
-package in.virit.iot.pihelpers;
+package in.virit.iot;
 
+import in.virit.iot.pihelpers.HomeAssistantDiscovery;
 import in.virit.iot.pihelpers.HomeAssistantDiscovery.Device;
 import in.virit.iot.pihelpers.HomeAssistantDiscovery.Sensor;
+import in.virit.iot.pihelpers.Json;
+import in.virit.iot.pihelpers.MqttSettings;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
 

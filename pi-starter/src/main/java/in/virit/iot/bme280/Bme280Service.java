@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * Samples a climate sensor, keeps the last day in memory and notifies the UI.
- * The injected {@link Bme280Sensor} owns hardware access; the same sampling and
- * history logic runs with any measurement source.
+ * Samples a climate sensor, keeps the last day in memory and notifies the UI
+ * and MQTT publisher. The injected {@link Bme280Sensor} owns hardware access;
+ * the same sampling and history logic runs with any measurement source.
  */
 @ApplicationScoped
 public class Bme280Service {

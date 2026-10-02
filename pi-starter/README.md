@@ -237,20 +237,21 @@ does not include that source; tests use it as an alternative.
 
 ## Temperature alerts with Web Push
 
-Also kept out of `main`: the `example/web-push-notifications` branch adds a card to
+Kept out of `main`: the `example/web-push-notifications` branch adds a card to
 the Climate view where each phone or desktop sets a minimum and/or maximum
 temperature and gets a push notification when the reading leaves that range. It
 uses standard Web Push through Vaadin's `flow-webpush`, keeps the subscriptions and
 the server's VAPID key as plain files (no database), and its `WEB-PUSH.md` covers
 configuration and the HTTPS and iPhone requirements.
 
-## Sharing readings with Home Assistant
+## Sharing readings with Home Assistant (optional)
 
-Kept out of `main` so the starter stays lean: the
-`example/home-assistant-integration-via-mqtt` branch of this repository adds a card to the Climate view that publishes the readings over MQTT, so
-Home Assistant picks them up through MQTT discovery. It builds on pi-helpers'
-reusable `MqttPublisher`, `HomeAssistantDiscovery` and `HomeAssistantFinder`, and
-its `HOME-ASSISTANT.md` covers configuration and a Docker setup to test against.
+The Climate view can publish its readings over MQTT so that Home Assistant
+picks them up through MQTT discovery. `bme280/ClimatePublisher` and the
+reusable `MqttPublisher`, `HomeAssistantDiscovery` and `HomeAssistantFinder` in
+pi-helpers are the example of pushing data to another system. How it works, how
+to configure it and how to run a Home Assistant in Docker to test against are in
+[HOME-ASSISTANT.md](HOME-ASSISTANT.md). Nothing else depends on it.
 
 ## Device and PWA notes
 
@@ -291,8 +292,9 @@ References: MDN's [Making PWAs installable](https://developer.mozilla.org/en-US/
 and [Secure contexts](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts),
 Chrome's [installability criteria](https://web.dev/articles/install-criteria).
 
-The GPIO, I²C and PWM screens can drive pins and write to devices; like the
-power actions below, they are meant for a trusted network.
+The GPIO, I²C and PWM screens can drive pins and write to devices, and the
+Home Assistant card stores a broker password in plain text; like the power
+actions below, they are meant for a trusted network.
 
 Host reboot/shutdown are enabled by default. The explicit setting
 `starter.power-actions.enabled=true` is in `application.properties`; set it to
