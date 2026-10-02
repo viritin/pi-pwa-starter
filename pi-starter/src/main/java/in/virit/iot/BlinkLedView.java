@@ -38,36 +38,17 @@ public class BlinkLedView extends VerticalLayout {
     private static final Logger LOG = Logger.getLogger(BlinkLedView.class);
     private final LedService service;
     private final GpioField gpio = new GpioField();
-    private final Switch led = new Switch("LED on");
+    private final LedSwitch led = new LedSwitch();
     private final Paragraph status = new Paragraph();
     private final SimulationBanner simulation = new SimulationBanner(
             "The LED state is simulated; no GPIO pin changes.");
     private final SetupHint setup = PiSetup.gpio();
-    private boolean editingGpio;
     private Registration listener;
 
     @Inject
     public BlinkLedView(LedService service) {
         this.service = service;
-        gpio.addFocusListener(e -> editingGpio = true);
-        gpio.addBlurListener(e -> editingGpio = false);
         status.setId("led-status");
-
-        gpio.addValueChangeListener(event -> {
-            if (!event.isFromClient()) return;
-            Integer pin = event.getValue();
-            if (pin == null || pin < 0 || pin > 27 || gpio.isInvalid()) {
-                led.setEnabled(false);
-                return;
-            }
-            perform(() -> service.selectPin(pin));
-        });
-        led.addValueChangeListener(event -> {
-            if (event.isFromClient()) {
-                perform(() -> service.setOn(gpio.getValue(), event.getValue()));
-            }
-        });
-
         add(new H1("Blink a LED"), simulation,
                 new Paragraph("Choose a GPIO and switch your LED on or off."),
                 new Paragraph("Connect the GPIO through a current-limiting resistor to the LED, "
@@ -87,8 +68,14 @@ public class BlinkLedView extends VerticalLayout {
         }
     }
 
-    /** A BCM GPIO number, 0–27, with the hint that it is not the header pin. */
-    static class GpioField extends IntegerField {
+    /**
+     * A BCM GPIO number, 0–27, with the hint that it is not the header pin. A
+     * valid number the user enters selects the LED's pin.
+     */
+    class GpioField extends IntegerField {
+        /** True while the user is typing, so a refresh does not overwrite the field. */
+        private boolean editing;
+
         GpioField() {
             super("GPIO number (BCM)");
             setMin(0);
@@ -96,6 +83,33 @@ public class BlinkLedView extends VerticalLayout {
             setStepButtonsVisible(true);
             setHelperText("BCM number, not the physical header pin. GPIO 26 = header pin 37.");
             setErrorMessage("Enter a whole BCM GPIO number from 0 to 27.");
+            addFocusListener(e -> editing = true);
+            addBlurListener(e -> editing = false);
+            addValueChangeListener(event -> {
+                if (!event.isFromClient()) return;
+                Integer pin = event.getValue();
+                if (pin == null || pin < 0 || pin > 27 || isInvalid()) {
+                    led.setEnabled(false);
+                    return;
+                }
+                perform(() -> service.selectPin(pin));
+            });
+        }
+
+        boolean isEditing() {
+            return editing;
+        }
+    }
+
+    /** Switches the LED on the selected pin. */
+    class LedSwitch extends Switch {
+        LedSwitch() {
+            super("LED on");
+            addValueChangeListener(event -> {
+                if (event.isFromClient()) {
+                    perform(() -> service.setOn(gpio.getValue(), event.getValue()));
+                }
+            });
         }
     }
 
@@ -134,7 +148,7 @@ public class BlinkLedView extends VerticalLayout {
         // Keep multiple browsers in sync with the application's single output, over @Push.
         var ui = event.getUI();
         listener = service.addListener(state -> ui.access(() -> {
-            if (!editingGpio && !gpio.isInvalid() && gpio.getValue() != null) refresh();
+            if (!gpio.isEditing() && !gpio.isInvalid() && gpio.getValue() != null) refresh();
         }));
         refresh();
     }

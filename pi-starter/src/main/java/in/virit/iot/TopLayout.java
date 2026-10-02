@@ -45,6 +45,9 @@ public class TopLayout extends MobileMainLayout implements BeforeEnterObserver {
     public TopLayout(IncidentOverlay incidentOverlay, AuthConfig auth, AppInfo appInfo) {
         this.auth = auth;
         this.appName = appInfo.name();
+        setBodyScrolling(true);
+        // Each view carries its own heading
+        setViewTitleVisible(false);
         addNavbarHelper(incidentOverlay);
     }
 
@@ -118,8 +121,6 @@ public class TopLayout extends MobileMainLayout implements BeforeEnterObserver {
 
     @Override
     protected Object getDrawerHeader() {
-        setBodyScrolling(true);
-        setViewTitleVisible(false);
         return new Brand(appName);
     }
 
@@ -127,9 +128,14 @@ public class TopLayout extends MobileMainLayout implements BeforeEnterObserver {
     static class Brand extends Div {
         Brand(String appName) {
             getStyle().setDisplay(Style.Display.GRID).setGap(".4rem").setPadding("2rem 1rem").setTextAlign(Style.TextAlign.CENTER);
-            var name = new Span(appName);
-            name.getStyle().setFontSize("1.5rem").setFontWeight(Style.FontWeight.BOLD);
-            add(name, new Span("Small device. Your ideas."));
+            add(new AppName(appName), new Span("Small device. Your ideas."));
+        }
+
+        static class AppName extends Span {
+            AppName(String name) {
+                super(name);
+                getStyle().setFontSize("1.5rem").setFontWeight(Style.FontWeight.BOLD);
+            }
         }
     }
 }
