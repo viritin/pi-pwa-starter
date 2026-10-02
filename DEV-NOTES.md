@@ -40,17 +40,6 @@ Running the module without Pi4J on the classpath while its Pi4J-backed beans are
 present has not been verified; if Quarkus' build-time bean processing complains,
 add the two Pi4J artifacts anyway.
 
-## Viritin 3.9.0 safe-area workaround
-
-`pi-starter`'s `styles/theme.css` re-adds `env(safe-area-inset-top)` to
-`.mobile-content`, because Viritin 3.9.0's `MobileMainLayout` collapses its
-in-content header with `display: none` when the view title is disabled, and that
-header was the only thing keeping the view heading clear of the status bar /
-dynamic island in an installed PWA. The fix is on Viritin's
-`fix/mobile-header-safe-area` branch (the collapsed header becomes a safe-area
-spacer). **Remove the workaround when bumping `viritin.version` to a release that
-contains it** — with both in place the heading is inset twice.
-
 ## Gauge 1.3.0 animation workaround
 
 The Climate view's dial is a `StillTemperatureGauge` that turns the pointer
