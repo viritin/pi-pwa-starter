@@ -40,18 +40,6 @@ Running the module without Pi4J on the classpath while its Pi4J-backed beans are
 present has not been verified; if Quarkus' build-time bean processing complains,
 add the two Pi4J artifacts anyway.
 
-## Gauge 1.3.0 animation workaround
-
-The Climate view's dial is a `StillTemperatureGauge` that turns the pointer
-animation off through the raw `pointer` state. react-gauge-component animates every
-new value for 3 s, and for the Grafana type it removes and re-adds the arc
-elements on every frame of it. With a reading every five seconds the page changes
-most of the time, and mobile Safari treats a tap during a content change as a
-hover: in the installed iPhone PWA the bottom navigation needed a double tap to
-leave the view. The setter is on [viritin/Gauge](https://github.com/viritin/Gauge)'s
-`feature/pointer-animation-control` branch. **Replace the subclass with
-`new GaugePointer().setAnimate(false)` when bumping to a release that has it.**
-
 ## Vaadin 25.3 Switch workaround (iOS)
 
 `pi-starter`'s `styles/theme.css` sizes `vaadin-switch`'s slotted input to its grid
@@ -60,8 +48,9 @@ checkbox, and WebKit keeps it at its natural 16 × 16 px instead of stretching i
 over the track (measured on an iPhone: input 16×16, track 42×20), so on iOS only
 the left end of a switch toggled it; a tap on the marker of a switched-on switch
 did nothing. It applies to every switch in the app, pi-helpers' panels included.
-**Remove it when a Vaadin release sizes the input itself**; the report is drafted
-in `issues/ios-small-switch-and-settext-churn.md`.
+Fixed in Vaadin ([vaadin/web-components#12957](https://github.com/vaadin/web-components/issues/12957)):
+**remove the rule when bumping to a Vaadin release that contains the fix**, likely
+the next one, and check on an iPhone that the marker end of a switch toggles.
 
 ## Local reference projects
 

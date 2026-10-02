@@ -22,6 +22,7 @@ import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouterLink;
 import in.virit.iot.pihelpers.tools.I2cView;
 import com.vaadin.flow.shared.Registration;
+import in.virit.Gauge;
 import in.virit.TemperatureGauge;
 import in.virit.iot.pihelpers.PiSetup;
 import in.virit.iot.pihelpers.SimulationBanner;
@@ -37,7 +38,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -131,7 +131,7 @@ public class Bme280View extends VerticalLayout {
 
     /** The headline card: gauge on top, the other numbers under it, temperature history as a curve. */
     class SensorCard extends ClimateCard {
-        private final StillTemperatureGauge gauge = new StillTemperatureGauge();
+        private final TemperatureGauge gauge = new TemperatureGauge();
         private final Span subtitle = new Span();
         private final SecondaryText humidity = new SecondaryText();
         private final SecondaryText pressure = new SecondaryText();
@@ -141,6 +141,10 @@ public class Bme280View extends VerticalLayout {
         SensorCard() {
             super("Climate sensor");
             setSubtitle(subtitle);
+            // A new reading every few seconds: the dial jumps to it instead of sweeping,
+            // which would keep the page changing most of the time (and on iOS turns taps
+            // elsewhere into hovers)
+            gauge.setPointer(new Gauge.GaugePointer().setAnimate(false));
             gauge.setMaxWidth("20rem");
             gauge.getStyle().setMargin("0 auto");
             setMedia(gauge);
@@ -157,20 +161,6 @@ public class Bme280View extends VerticalLayout {
             updated.setText(latest == null ? "Waiting for the first reading"
                     : "Updated " + ClimateSparkLine.CLOCK_SECONDS.format(latest.at().atZone(ZoneId.systemDefault())));
             temperature.setHistory(history, Reading::temperature, " °C");
-        }
-    }
-
-    /**
-     * WORKAROUND for gauge 1.3.0: a dial that jumps to a new reading instead of
-     * animating to it. The 3-second animation rebuilds the Grafana dial's arcs on
-     * every frame, and with a reading every five seconds the page is changing most
-     * of the time. Mobile Safari takes a tap during a content change for a hover,
-     * so the bottom navigation needed a double tap to leave this view. GaugePointer
-     * has no setter for this yet, hence the raw pointer state. See DEV-NOTES.md.
-     */
-    static class StillTemperatureGauge extends TemperatureGauge {
-        StillTemperatureGauge() {
-            setState("pointer", Map.of("animate", false));
         }
     }
 

@@ -56,7 +56,8 @@ vaadin-card h3 + :is(p, ul, ol) { margin-top: .25em; }
    on the right half, where the marker of a switched-on switch is, hit the marker instead and
    did nothing. Size the input to its cell, and lift it above the marker, which paints on top
    because it is transformed. Light-DOM rules beat the component's ::slotted(input) ones; only
-   its margins are !important. */
+   its margins are !important. Fixed in Vaadin (vaadin/web-components#12957): remove this
+   with the release that contains the fix. */
 vaadin-switch > input[slot="input"] {
   width: 100%;
   height: 100%;
