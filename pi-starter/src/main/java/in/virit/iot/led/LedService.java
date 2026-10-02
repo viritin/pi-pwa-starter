@@ -2,10 +2,16 @@ package in.virit.iot.led;
 
 import com.pi4j.io.gpio.digital.DigitalOutput;
 import com.pi4j.io.gpio.digital.DigitalState;
+import com.vaadin.flow.shared.Registration;
 import in.virit.iot.pihelpers.Pi4JContext;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 /**
  * One shared LED output for the application, initialized on first use.
@@ -14,6 +20,7 @@ import jakarta.inject.Inject;
  */
 @ApplicationScoped
 public class LedService {
+    private static final Logger LOG = Logger.getLogger(LedService.class);
 
     @Inject
     Pi4JContext pi4j;
@@ -21,8 +28,31 @@ public class LedService {
     private DigitalOutput output;
     private int pin = 26;
     private boolean on;
+    private final List<Consumer<State>> listeners = new CopyOnWriteArrayList<>();
 
     public record State(int pin, boolean on) {}
+
+    /**
+     * Called with the new state after each change, from the thread that made it,
+     * so other browsers follow the one that switched the LED. Wrap UI updates in
+     * ui.access.
+     */
+    public Registration addListener(Consumer<State> listener) {
+        listeners.add(listener);
+        return () -> listeners.remove(listener);
+    }
+
+    /** Tells the listeners; subclasses that keep their own state call this after a change. */
+    protected void changed() {
+        var state = state();
+        for (var listener : listeners) {
+            try {
+                listener.accept(state);
+            } catch (RuntimeException e) {
+                LOG.debug("LED listener failed", e);
+            }
+        }
+    }
 
     public synchronized State state() {
         return new State(pin, on);
@@ -40,6 +70,7 @@ public class LedService {
         }
         release();
         this.pin = pin;
+        changed();
     }
 
     public synchronized void setOn(int expectedPin, boolean on) {
@@ -60,6 +91,7 @@ public class LedService {
         output.state(on ? DigitalState.HIGH : DigitalState.LOW);
         // Publish the new value only after the write succeeds.
         this.on = on;
+        changed();
     }
 
     @PreDestroy
