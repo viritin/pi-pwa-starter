@@ -51,6 +51,18 @@ dynamic island in an installed PWA. The fix is on Viritin's
 spacer). **Remove the workaround when bumping `viritin.version` to a release that
 contains it** — with both in place the heading is inset twice.
 
+## Gauge 1.3.0 animation workaround
+
+The Climate view's dial is a `StillTemperatureGauge` that turns the pointer
+animation off through the raw `pointer` state. react-gauge-component animates every
+new value for 3 s, and for the Grafana type it removes and re-adds the arc
+elements on every frame of it. With a reading every five seconds the page changes
+most of the time, and mobile Safari treats a tap during a content change as a
+hover: in the installed iPhone PWA the bottom navigation needed a double tap to
+leave the view. The setter is on [viritin/Gauge](https://github.com/viritin/Gauge)'s
+`feature/pointer-animation-control` branch. **Replace the subclass with
+`new GaugePointer().setAnimate(false)` when bumping to a release that has it.**
+
 ## Local reference projects
 
 Some sources were adapted from the maintainer's other projects, kept as local

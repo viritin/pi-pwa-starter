@@ -37,6 +37,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -130,7 +131,7 @@ public class Bme280View extends VerticalLayout {
 
     /** The headline card: gauge on top, the other numbers under it, temperature history as a curve. */
     class SensorCard extends ClimateCard {
-        private final TemperatureGauge gauge = new TemperatureGauge();
+        private final StillTemperatureGauge gauge = new StillTemperatureGauge();
         private final Span subtitle = new Span();
         private final SecondaryText humidity = new SecondaryText();
         private final SecondaryText pressure = new SecondaryText();
@@ -156,6 +157,20 @@ public class Bme280View extends VerticalLayout {
             updated.setText(latest == null ? "Waiting for the first reading"
                     : "Updated " + ClimateSparkLine.CLOCK_SECONDS.format(latest.at().atZone(ZoneId.systemDefault())));
             temperature.setHistory(history, Reading::temperature, " °C");
+        }
+    }
+
+    /**
+     * WORKAROUND for gauge 1.3.0: a dial that jumps to a new reading instead of
+     * animating to it. The 3-second animation rebuilds the Grafana dial's arcs on
+     * every frame, and with a reading every five seconds the page is changing most
+     * of the time. Mobile Safari takes a tap during a content change for a hover,
+     * so the bottom navigation needed a double tap to leave this view. GaugePointer
+     * has no setter for this yet, hence the raw pointer state. See DEV-NOTES.md.
+     */
+    static class StillTemperatureGauge extends TemperatureGauge {
+        StillTemperatureGauge() {
+            setState("pointer", Map.of("animate", false));
         }
     }
 
