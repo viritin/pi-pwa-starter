@@ -67,37 +67,42 @@ public class AboutView extends VerticalLayout {
             getStyle().setGap("clamp(1rem, 3vw, 2rem)");
             add(new Logo(), new Heading());
         }
-    }
 
-    static class Logo extends Image {
-        Logo() {
-            super("icons/logo.svg", "Pi Starter logo");
-            // intrinsic size, so the page does not jump while the SVG loads
-            getElement().setAttribute("width", "128").setAttribute("height", "128");
-            getStyle()
-                    .setWidth("clamp(6rem, 20vw, 8rem)")
-                    .setHeight("auto")
-                    .setFlexShrink("0")
-                    .setBorderRadius("22%");
+        static class Logo extends Image {
+            Logo() {
+                super("icons/logo.svg", "Pi Starter logo");
+                // intrinsic size, so the page does not jump while the SVG loads
+                getElement().setAttribute("width", "128").setAttribute("height", "128");
+                getStyle()
+                        .setWidth("clamp(6rem, 20vw, 8rem)")
+                        .setHeight("auto")
+                        .setFlexShrink("0")
+                        .setBorderRadius("22%");
+            }
         }
-    }
 
-    static class Heading extends Div {
-        Heading() {
-            getStyle().setDisplay(Style.Display.GRID).setGap(".75rem").setMinWidth("0").setFlexBasis("20rem")
-                    .setFlexGrow("1");
-            var tagline = new Paragraph("A starting point for the things you want to measure, automate and make your own.");
-            tagline.getStyle().setMargin("0");
-            add(new Eyebrow("YOUR NEXT WEEKEND PROJECT"), new H1("Small device. Big possibilities."), tagline);
-        }
-    }
+        static class Heading extends Div {
+            Heading() {
+                getStyle().setDisplay(Style.Display.GRID).setGap(".75rem").setMinWidth("0").setFlexBasis("20rem")
+                        .setFlexGrow("1");
+                add(new Eyebrow("YOUR NEXT WEEKEND PROJECT"), new H1("Small device. Big possibilities."), new Tagline());
+            }
 
-    /** The small spaced-out caps line above a headline. */
-    static class Eyebrow extends Span {
-        Eyebrow(String text) {
-            super(text);
-            getStyle().setFontSize(".75rem").setFontWeight(Style.FontWeight.BOLD)
-                    .set("letter-spacing", ".12em"); // no Style method for it
+            /** The small spaced-out caps line above the headline. */
+            static class Eyebrow extends Span {
+                Eyebrow(String text) {
+                    super(text);
+                    getStyle().setFontSize(".75rem").setFontWeight(Style.FontWeight.BOLD)
+                            .set("letter-spacing", ".12em"); // no Style method for it
+                }
+            }
+
+            static class Tagline extends Paragraph {
+                Tagline() {
+                    super("A starting point for the things you want to measure, automate and make your own.");
+                    getStyle().setMargin("0");
+                }
+            }
         }
     }
 

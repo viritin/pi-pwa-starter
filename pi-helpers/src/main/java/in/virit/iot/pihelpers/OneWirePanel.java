@@ -9,8 +9,11 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.card.Card;
 import in.virit.iot.pihelpers.OneWireService.Sensor;
 
+import java.time.LocalTime;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,7 +28,7 @@ public class OneWirePanel extends VerticalLayout {
 
     private final OneWireService service;
     private final SensorCard card = new SensorCard();
-    private final Paragraph status = new Paragraph();
+    private final StatusLine status = new StatusLine();
     private final SetupHint setup = PiSetup.oneWire();
     private final SimulationBanner simulation = new SimulationBanner(
             "These two probes are invented and their readings drift on their own.");
@@ -34,7 +37,6 @@ public class OneWirePanel extends VerticalLayout {
     public OneWirePanel(OneWireService service) {
         this.service = service;
         addClassName("onewire-panel");
-        status.setId("onewire-status");
         add(new H1("1-Wire sensors"),
                 new Paragraph("DS18B20 probes and other 1-Wire devices the kernel has found. Data goes to GPIO4 "
                         + "(pin 7) with a 4.7 kΩ resistor between data and 3V3; several probes share the same wire."),
@@ -86,9 +88,20 @@ public class OneWirePanel extends VerticalLayout {
     private void show(List<Sensor> sensors) {
         card.update(sensors);
         if (service.isBusPresent()) {
-            status.setText(Simulated.prefix(service)
-                    + sensors.size() + (sensors.size() == 1 ? " device" : " devices") + " · updated "
-                    + java.time.LocalTime.now().withNano(0)
+            status.show(sensors.size());
+        }
+    }
+
+    /** How many devices answered and when, and the phantom entries a floating data line produces. */
+    class StatusLine extends Paragraph {
+        StatusLine() {
+            setId("onewire-status");
+        }
+
+        void show(int devices) {
+            setText(Simulated.prefix(service)
+                    + devices + (devices == 1 ? " device" : " devices") + " · updated "
+                    + LocalTime.now().withNano(0)
                     + (service.phantoms() > 0 ? " · " + service.phantoms() + " phantom entries (family 0x00) ignored: "
                     + "the kernel reads noise as devices when the data line floats, with nothing attached or no "
                     + "4.7 kΩ pull-up" : ""));
@@ -108,7 +121,7 @@ public class OneWirePanel extends VerticalLayout {
         }
 
         void update(List<Sensor> sensors) {
-            var seen = new java.util.HashSet<String>();
+            var seen = new HashSet<String>();
             for (var sensor : sensors) {
                 seen.add(sensor.id());
                 var badge = badges.computeIfAbsent(sensor.id(), id -> {
@@ -116,7 +129,7 @@ public class OneWirePanel extends VerticalLayout {
                     grid.add(created);
                     return created;
                 });
-                badge.setValue(sensor.celsius() != null ? String.format(java.util.Locale.ROOT, "%.1f °C", sensor.celsius())
+                badge.setValue(sensor.celsius() != null ? String.format(Locale.ROOT, "%.1f °C", sensor.celsius())
                         : sensor.error() != null ? sensor.error() : "present");
             }
             badges.keySet().removeIf(id -> {

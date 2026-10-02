@@ -42,6 +42,8 @@ class I2cViewTest extends ViewTest {
     @Test
     void tellsWhereToWireTheSelectedBus() {
         navigate(I2cView.class);
+        // Worked out off the UI lock (pinctrl is a process), so it arrives over push
+        awaitPush(() -> !paragraph("i2c-wiring").isEmpty(), "the wiring line");
         var wiring = paragraph("i2c-wiring");
         assertTrue(wiring.contains("SDA → GPIO2 (pin 3)"), wiring);
         assertTrue(wiring.contains("SCL → GPIO3 (pin 5)"), wiring);

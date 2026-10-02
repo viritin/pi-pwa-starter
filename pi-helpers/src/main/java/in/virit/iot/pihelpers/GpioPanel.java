@@ -110,18 +110,12 @@ public class GpioPanel extends VerticalLayout {
         this.gpioInputSimulator = service instanceof GpioInputSimulator simulator ? simulator : null;
         addClassName("gpio-panel");
         status.setId("gpio-status");
-        var host = BoardInfo.detect();
-        var boardLine = new Paragraph(host.isRaspberryPi()
-                ? host.model() + " · the 40-pin header below is the same on every Raspberry Pi since the B+"
-                : host.describe() + " · the map shows the 40-pin Raspberry Pi header this application expects");
-        boardLine.setId("gpio-board");
-        boardLine.addClassName("gpio-board");
-        add(new H1("GPIO"), boardLine,
+        add(new H1("GPIO"), new BoardLine(),
                 new Paragraph("Tap a GPIO to read it as an input or drive it as an output. "
                         + "Pins are BCM numbers; the small number is the physical header pin, "
                         + "pin 1 at the top left with the SD card slot facing up."),
                 new Paragraph("Outputs give 3.3 V and a few milliamps at most. Never connect 5 V to a GPIO."),
-                simulation, header, status, new Actions(), setup);
+                simulation, header, status, new ReleaseAllButton(), setup);
         simulation.setVisible(Simulated.is(service));
         refresh();
     }
@@ -170,6 +164,18 @@ public class GpioPanel extends VerticalLayout {
         refresh();
     }
 
+    /** Which board this is, and that the map below is its 40-pin header. */
+    static class BoardLine extends Paragraph {
+        BoardLine() {
+            var host = BoardInfo.detect();
+            setText(host.isRaspberryPi()
+                    ? host.model() + " · the 40-pin header below is the same on every Raspberry Pi since the B+"
+                    : host.describe() + " · the map shows the 40-pin Raspberry Pi header this application expects");
+            setId("gpio-board");
+            addClassName("gpio-board");
+        }
+    }
+
     class HeaderMap extends Div {
         private final Map<Integer, PinCell> cells = new HashMap<>();
 
@@ -195,7 +201,7 @@ public class GpioPanel extends VerticalLayout {
     }
 
     class PinCell extends Div {
-        private final Span state = new Span();
+        private final PinText state = new PinText("", "pin-state");
 
         PinCell(HeaderPin pin) {
             addClassName("pin");
@@ -206,12 +212,8 @@ public class GpioPanel extends VerticalLayout {
                 case GPIO -> "pin-gpio";
             });
             setId("pin-" + pin.physical());
-            var number = new Span(String.valueOf(pin.physical()));
-            number.addClassName("pin-number");
-            var label = new Span(pin.label());
-            label.addClassName("pin-label");
-            state.addClassName("pin-state");
-            add(number, label, state);
+            add(new PinText(String.valueOf(pin.physical()), "pin-number"),
+                    new PinText(pin.label(), "pin-label"), state);
             if (pin.kind() == Kind.GPIO) {
                 getElement().setAttribute("role", "button");
                 getElement().setAttribute("tabindex", "0");
@@ -233,6 +235,14 @@ public class GpioPanel extends VerticalLayout {
                     });
             state.setVisible(!state.getText().isEmpty());
         }
+
+        /** One line of the cell, styled by its class in pi-helpers-gpio.css. */
+        static class PinText extends Span {
+            PinText(String text, String className) {
+                super(text);
+                addClassName(className);
+            }
+        }
     }
 
     private void openPin(int bcm) {
@@ -242,10 +252,10 @@ public class GpioPanel extends VerticalLayout {
 
     class PinDialog extends Dialog {
         final int bcm;
-        private final RadioButtonGroup<Mode> mode = new RadioButtonGroup<>("Mode", List.of(Mode.values()));
-        private final RadioButtonGroup<Pull> pull = new RadioButtonGroup<>("Pull resistor", List.of(Pull.values()));
-        private final Switch drive = new Switch("Drive HIGH (3.3 V)");
-        private final HorizontalLayout simulate = new HorizontalLayout();
+        private final ModeSelect mode = new ModeSelect();
+        private final PullSelect pull = new PullSelect();
+        private final DriveSwitch drive = new DriveSwitch();
+        private final SimulateButtons simulate = new SimulateButtons();
         private final Paragraph level = new Paragraph();
         private final Paragraph external = new Paragraph("This pin is used by another part of the application, "
                 + "for example the LED example. Release it there first.");
@@ -254,41 +264,9 @@ public class GpioPanel extends VerticalLayout {
         PinDialog(int bcm) {
             this.bcm = bcm;
             setHeaderTitle("GPIO" + bcm + " · header pin " + physicalPin(bcm));
-            mode.setItemLabelGenerator(m -> switch (m) {
-                case UNUSED -> "Not used";
-                case INPUT -> "Input";
-                case OUTPUT -> "Output";
-            });
-            pull.setItemLabelGenerator(p -> switch (p) {
-                case OFF -> "None (floating)";
-                case UP -> "Pull-up";
-                case DOWN -> "Pull-down";
-            });
-            pull.setHelperText("With a pull-up, a button between the pin and GND reads LOW when pressed.");
-            mode.addValueChangeListener(e -> {
-                if (!updating && e.isFromClient()) {
-                    perform(() -> service.configure(bcm, e.getValue(), pull.getValue()));
-                }
-            });
-            pull.addValueChangeListener(e -> {
-                if (!updating && e.isFromClient()) {
-                    perform(() -> service.configure(bcm, mode.getValue(), e.getValue()));
-                }
-            });
-            drive.addValueChangeListener(e -> {
-                if (!updating && e.isFromClient()) {
-                    perform(() -> service.write(bcm, e.getValue()));
-                }
-            });
-            var high = new Button("Simulate HIGH", e -> perform(() -> gpioInputSimulator.simulateInput(bcm, true)));
-            var low = new Button("Simulate LOW", e -> perform(() -> gpioInputSimulator.simulateInput(bcm, false)));
-            high.addThemeVariants(ButtonVariant.LUMO_SMALL);
-            low.addThemeVariants(ButtonVariant.LUMO_SMALL);
-            simulate.add(high, low);
             level.setId("pin-level");
             add(new VerticalLayout(external, mode, pull, drive, simulate, level));
-            var close = new Button("Close", e -> close());
-            getFooter().add(close);
+            getFooter().add(new Button("Close", e -> close()));
             update(service.pin(bcm));
         }
 
@@ -309,18 +287,75 @@ public class GpioPanel extends VerticalLayout {
                 updating = false;
             }
         }
+
+        class ModeSelect extends RadioButtonGroup<Mode> {
+            ModeSelect() {
+                super("Mode", List.of(Mode.values()));
+                setItemLabelGenerator(m -> switch (m) {
+                    case UNUSED -> "Not used";
+                    case INPUT -> "Input";
+                    case OUTPUT -> "Output";
+                });
+                addValueChangeListener(e -> {
+                    if (!updating && e.isFromClient()) {
+                        perform(() -> service.configure(bcm, e.getValue(), pull.getValue()));
+                    }
+                });
+            }
+        }
+
+        class PullSelect extends RadioButtonGroup<Pull> {
+            PullSelect() {
+                super("Pull resistor", List.of(Pull.values()));
+                setItemLabelGenerator(p -> switch (p) {
+                    case OFF -> "None (floating)";
+                    case UP -> "Pull-up";
+                    case DOWN -> "Pull-down";
+                });
+                setHelperText("With a pull-up, a button between the pin and GND reads LOW when pressed.");
+                addValueChangeListener(e -> {
+                    if (!updating && e.isFromClient()) {
+                        perform(() -> service.configure(bcm, mode.getValue(), e.getValue()));
+                    }
+                });
+            }
+        }
+
+        class DriveSwitch extends Switch {
+            DriveSwitch() {
+                super("Drive HIGH (3.3 V)");
+                addValueChangeListener(e -> {
+                    if (!updating && e.isFromClient()) {
+                        perform(() -> service.write(bcm, e.getValue()));
+                    }
+                });
+            }
+        }
+
+        /** Forcing a simulated input's level, as a button wired to the pin would. */
+        class SimulateButtons extends HorizontalLayout {
+            SimulateButtons() {
+                add(new SimulateButton("Simulate HIGH", true), new SimulateButton("Simulate LOW", false));
+            }
+
+            class SimulateButton extends Button {
+                SimulateButton(String text, boolean high) {
+                    super(text, e -> perform(() -> gpioInputSimulator.simulateInput(bcm, high)));
+                    addThemeVariants(ButtonVariant.LUMO_SMALL);
+                }
+            }
+        }
     }
 
-    class Actions extends HorizontalLayout {
-        Actions() {
-            var release = new Button("Release all pins", e -> new ConfirmDialog("Release all pins?",
+    class ReleaseAllButton extends Button {
+        ReleaseAllButton() {
+            super("Release all pins", e -> new ConfirmDialog("Release all pins?",
                     "Outputs go LOW and every pin configured on this screen is freed.",
                     "Release", confirm -> perform(service::releaseAll)) {{
                 setCancelable(true);
                 open();
             }});
-            release.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
-            add(release);
+            addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
         }
     }
 }
