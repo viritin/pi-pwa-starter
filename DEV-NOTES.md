@@ -63,6 +63,17 @@ leave the view. The setter is on [viritin/Gauge](https://github.com/viritin/Gaug
 `feature/pointer-animation-control` branch. **Replace the subclass with
 `new GaugePointer().setAnimate(false)` when bumping to a release that has it.**
 
+## Vaadin 25.3 Switch workaround (iOS)
+
+`pi-starter`'s `styles/theme.css` sizes `vaadin-switch`'s slotted input to its grid
+cell and lifts it above the marker. The tap goes to that invisible native
+checkbox, and WebKit keeps it at its natural 16 × 16 px instead of stretching it
+over the track (measured on an iPhone: input 16×16, track 42×20), so on iOS only
+the left end of a switch toggled it; a tap on the marker of a switched-on switch
+did nothing. It applies to every switch in the app, pi-helpers' panels included.
+**Remove it when a Vaadin release sizes the input itself**; the report is drafted
+in `issues/ios-small-switch-and-settext-churn.md`.
+
 ## Local reference projects
 
 Some sources were adapted from the maintainer's other projects, kept as local
