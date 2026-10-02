@@ -1,6 +1,7 @@
 package in.virit.iot.pihelpers;
 
 import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -20,6 +21,7 @@ import in.virit.iot.pihelpers.BleScanService.Device;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Comparator;
 import java.util.Locale;
@@ -36,48 +38,25 @@ import java.util.Map;
 public class BlePanel extends VerticalLayout {
 
     private final BleScanService service;
-    private final Switch scanning = new Switch("Scanning");
-    private final TextField filter = new TextField();
+    private final ScanningSwitch scanning = new ScanningSwitch();
+    private final FilterField filter = new FilterField();
     private final DeviceList list = new DeviceList();
     private final Paragraph status = new Paragraph();
     private final SetupHint setup = PiSetup.bluetooth();
     private final SimulationBanner simulation = new SimulationBanner(
             "These devices are invented; no radio is listening.");
     private Registration listener;
-    private boolean updating;
 
     public BlePanel(BleScanService service) {
         this.service = service;
         addClassName("ble-panel");
         status.setId("ble-status");
-        filter.setId("ble-filter");
-        filter.setPlaceholder("Filter by name, address or maker");
-        filter.setClearButtonVisible(true);
-        filter.setValueChangeMode(ValueChangeMode.LAZY);
-        filter.addValueChangeListener(e -> refresh());
-        filter.setWidth("18em");
-        scanning.addValueChangeListener(e -> {
-            if (!updating && e.isFromClient()) {
-                if (e.getValue()) {
-                    service.start();
-                } else {
-                    service.stop();
-                }
-                refresh();
-            }
-        });
-        var sort = new Button("Sort by signal", e -> list.sortBySignal());
-        sort.setId("ble-sort");
-        sort.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        var toolbar = new HorizontalLayout(scanning, filter, sort);
-        toolbar.setAlignItems(Alignment.BASELINE);
-        toolbar.addClassName("ble-toolbar");
         add(new H1("Bluetooth LE"),
                 new Paragraph("Everything advertising nearby. Nothing is connected to; this only listens, so a tag "
                         + "or a phone shows up as soon as it is switched on. Rows keep their place while their "
                         + "signal updates; Sort by signal puts the strongest first. Devices that fall silent drop "
                         + "off the list after a minute."),
-                simulation, toolbar, status, list, setup);
+                simulation, new Toolbar(), status, list, setup);
         simulation.setVisible(Simulated.is(service));
     }
 
@@ -105,12 +84,7 @@ public class BlePanel extends VerticalLayout {
     }
 
     private void refresh() {
-        updating = true;
-        try {
-            scanning.setValue(service.isScanning());
-        } finally {
-            updating = false;
-        }
+        scanning.setValue(service.isScanning());
         var devices = service.devices().stream().filter(this::matches).toList();
         list.update(devices);
         status.setText(service.status());
@@ -120,13 +94,57 @@ public class BlePanel extends VerticalLayout {
     }
 
     private boolean matches(Device device) {
-        String needle = filter.getValue() == null ? "" : filter.getValue().trim().toLowerCase(Locale.ROOT);
+        String needle = filter.needle();
         if (needle.isEmpty()) {
             return true;
         }
         return device.displayName().toLowerCase(Locale.ROOT).contains(needle)
                 || device.address().toLowerCase(Locale.ROOT).contains(needle)
                 || device.companies().stream().anyMatch(c -> c.toLowerCase(Locale.ROOT).contains(needle));
+    }
+
+    class Toolbar extends HorizontalLayout {
+        Toolbar() {
+            add(scanning, filter, new Button("Sort by signal", e -> list.sortBySignal()) {{
+                setId("ble-sort");
+                addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+            }});
+            setAlignItems(Alignment.BASELINE);
+            addClassName("ble-toolbar");
+        }
+    }
+
+    /** Starts and stops the scan; set from the service's state on every refresh. */
+    class ScanningSwitch extends Switch {
+        ScanningSwitch() {
+            super("Scanning");
+            addValueChangeListener(e -> {
+                if (e.isFromClient()) {
+                    if (e.getValue()) {
+                        service.start();
+                    } else {
+                        service.stop();
+                    }
+                    refresh();
+                }
+            });
+        }
+    }
+
+    class FilterField extends TextField {
+        FilterField() {
+            setId("ble-filter");
+            setPlaceholder("Filter by name, address or maker");
+            setClearButtonVisible(true);
+            setValueChangeMode(ValueChangeMode.LAZY);
+            addValueChangeListener(e -> refresh());
+            setWidth("18em");
+        }
+
+        /** The filter text, trimmed and lower case; empty for none. */
+        String needle() {
+            return getValue() == null ? "" : getValue().trim().toLowerCase(Locale.ROOT);
+        }
     }
 
     /**
@@ -144,7 +162,7 @@ public class BlePanel extends VerticalLayout {
         }
 
         void update(List<Device> devices) {
-            var seen = new java.util.HashSet<String>();
+            var seen = new HashSet<String>();
             for (var device : devices) {
                 seen.add(device.address());
                 rows.computeIfAbsent(device.address(), address -> {
@@ -178,34 +196,22 @@ public class BlePanel extends VerticalLayout {
 
     static class DeviceRow extends Div {
         private Device last;
-        private final Span name = new Span();
-        private final Span address = new Span();
-        private final Span rssi = new Span();
-        private final Span bar = new Span();
-        private final Span connected = new Span("connected");
-        private final Span companies = new Span();
-        private final Span services = new Span();
-        private final Span payload = new Span();
-        private final Span seen = new Span();
+        private final Part name = new Part("ble-name");
+        private final Part address = new Part("ble-address");
+        private final Part rssi = new Part("ble-rssi");
+        private final Part bar = new Part("ble-bar");
+        private final Part connected = new Part("ble-badge");
+        private final Part companies = new Part("ble-detail");
+        private final Part services = new Part("ble-detail");
+        private final Part payload = new Part("ble-detail", "ble-payload");
+        private final Part seen = new Part("ble-detail");
 
         DeviceRow() {
             addClassName("ble-device");
-            name.addClassName("ble-name");
-            address.addClassName("ble-address");
-            rssi.addClassName("ble-rssi");
-            bar.addClassName("ble-bar");
-            connected.addClassName("ble-badge");
-            companies.addClassName("ble-detail");
-            services.addClassName("ble-detail");
-            payload.addClassNames("ble-detail", "ble-payload");
-            seen.addClassName("ble-detail");
-            var head = new Div(name, connected, address);
-            head.addClassName("ble-head");
-            var signal = new Div(bar, rssi);
-            signal.addClassName("ble-signal");
-            var details = new Div(companies, services, payload, seen);
-            details.addClassName("ble-details");
-            add(head, signal, details);
+            connected.setText("connected");
+            add(new Group("ble-head", name, connected, address),
+                    new Group("ble-signal", bar, rssi),
+                    new Group("ble-details", companies, services, payload, seen));
         }
 
         void update(Device device) {
@@ -231,6 +237,21 @@ public class BlePanel extends VerticalLayout {
             String label = first.length() == 36 && first.endsWith("-0000-1000-8000-00805f9b34fb")
                     ? "0x" + first.substring(4, 8).toUpperCase(Locale.ROOT) : first;
             return uuids.size() == 1 ? "Service " + label : "Services " + label + " +" + (uuids.size() - 1);
+        }
+
+        /** A piece of the row, styled by its class names. */
+        static class Part extends Span {
+            Part(String... classNames) {
+                addClassNames(classNames);
+            }
+        }
+
+        /** Pieces of the row laid out together. */
+        static class Group extends Div {
+            Group(String className, Component... parts) {
+                super(parts);
+                addClassName(className);
+            }
         }
 
         /** 0–4 bars: below -90 is barely there, above -60 is next to you. */
