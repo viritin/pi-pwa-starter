@@ -17,10 +17,15 @@ class StatBadge extends Div {
     StatBadge(String title, String format) {
         this.format = format;
         addClassName("stat");
-        var label = new Span(title);
-        label.addClassName("stat-label");
         value.addClassName("stat-value");
-        add(label, value);
+        add(new Label(title), value);
+    }
+
+    static class Label extends Span {
+        Label(String title) {
+            super(title);
+            addClassName("stat-label");
+        }
     }
 
     void setValue(String text) {

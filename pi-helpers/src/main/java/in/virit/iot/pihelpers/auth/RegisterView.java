@@ -7,7 +7,6 @@ import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -50,31 +49,32 @@ public class RegisterView extends StandalonePage implements BeforeEnterObserver 
             setWidth("24rem");
             var who = invite.displayName() == null || invite.displayName().isBlank()
                     ? invite.username() : invite.displayName() + " (" + invite.username() + ")";
-
-            var register = new Button("Create my passkey", e ->
-                    PasskeyClient.register(
-                                    PasskeyRoutes.OPTIONS_PATH + "/" + token,
-                                    PasskeyRoutes.REGISTER_PATH + "/" + token,
-                                    invite.username(), invite.displayName())
-                            .whenComplete((ok, err) -> {
-                                UI ui = UI.getCurrent();
-                                ui.access(() -> {
-                                    if (Boolean.TRUE.equals(ok)) {
-                                        ui.getPage().setLocation("/");
-                                    } else {
-                                        Notification.show("Could not create your passkey. The link may have expired.",
-                                                6000, Notification.Position.MIDDLE);
-                                    }
-                                });
-                            }));
-            register.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-            var content = new VerticalLayout(new H1("You're invited"),
+            add(new ContentColumn(new H1("You're invited"),
                     new Paragraph("Set up a passkey for " + who + "."),
-                    register,
-                    new LoginView.SecureContextHint());
-            content.setPadding(false);
-            add(content);
+                    new RegisterButton(token, invite),
+                    new LoginView.SecureContextHint()));
+        }
+
+        /** Runs the registration ceremony against the invite-gated endpoints, then signs in. */
+        static class RegisterButton extends Button {
+            RegisterButton(String token, InviteToken invite) {
+                super("Create my passkey", e -> PasskeyClient.register(
+                                PasskeyRoutes.OPTIONS_PATH + "/" + token,
+                                PasskeyRoutes.REGISTER_PATH + "/" + token,
+                                invite.username(), invite.displayName())
+                        .whenComplete((ok, err) -> {
+                            UI ui = UI.getCurrent();
+                            ui.access(() -> {
+                                if (Boolean.TRUE.equals(ok)) {
+                                    ui.getPage().setLocation("/");
+                                } else {
+                                    Notification.show("Could not create your passkey. The link may have expired.",
+                                            6000, Notification.Position.MIDDLE);
+                                }
+                            });
+                        }));
+                addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            }
         }
     }
 

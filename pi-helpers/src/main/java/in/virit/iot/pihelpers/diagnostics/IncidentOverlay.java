@@ -23,23 +23,20 @@ public class IncidentOverlay extends Div {
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm:ss")
             .withZone(ZoneId.systemDefault());
     private final IncidentReporter reporter;
+    private final Span status = new Span();
     private Registration registration;
-    private Span status;
     private boolean replaying;
 
     @Inject
     public IncidentOverlay(IncidentReporter reporter) {
         this.reporter = reporter;
-        status = new Span();
         // fixed in the corner, above the page, red so it is not mistaken for content
         getStyle()
                 .setPosition(Style.Position.FIXED).setZIndex(20).setRight("1rem").setBottom("1rem")
                 .setAlignItems(Style.AlignItems.CENTER).setGap(".75rem").setPadding(".7rem .85rem")
                 .setColor("#fff").setBackground("#a32929").setBorderRadius(".75rem")
                 .setBoxShadow("0 .4rem 1.5rem #0004");
-        var details = new Button("Details", event -> openDetails());
-        details.getStyle().setColor("#fff").setBackground("transparent").setBorder("1px solid #fff8");
-        add(status, details);
+        add(status, new DetailsButton());
     }
 
     @Override
@@ -48,7 +45,7 @@ public class IncidentOverlay extends Div {
         replaying = true;
         registration = reporter.addListener(incident -> getUI().ifPresent(ui -> ui.access(() -> {
             refresh();
-            if (!replaying) showToast();
+            if (!replaying) new Toast().open();
         })));
         refresh();
         replaying = false;
@@ -68,35 +65,56 @@ public class IncidentOverlay extends Div {
         status.setText(count + (count == 1 ? " server error" : " server errors"));
     }
 
-    private void showToast() {
-        var notification = new Notification();
-        notification.setPosition(Notification.Position.TOP_END);
-        notification.setDuration(8_000);
-        notification.add(new Span("A server error was captured."),
-                new Button("Details", event -> {
-                    notification.close();
-                    openDetails();
-                }));
-        notification.open();
+    /** The notice's own button, outlined in white on the red. */
+    class DetailsButton extends Button {
+        DetailsButton() {
+            super("Details", event -> new DetailsDialog().open());
+            getStyle().setColor("#fff").setBackground("transparent").setBorder("1px solid #fff8");
+        }
     }
 
-    private void openDetails() {
-        var dialog = new Dialog();
-        dialog.setHeaderTitle("Server errors");
-        var content = new VerticalLayout();
-        content.setPadding(false);
-        for (var incident : reporter.recent()) {
-            var title = new Span(TIME.format(incident.time()) + " · " + incident.source() + " · " + incident.thread());
-            title.getStyle().setFontWeight(600);
-            var text = new TextArea();
-            text.setReadOnly(true);
-            text.setWidthFull();
-            text.setValue(incident.displayText());
-            content.add(title, text);
+    /** A brief heads-up when a new error is captured while the user is here. */
+    class Toast extends Notification {
+        Toast() {
+            setPosition(Position.TOP_END);
+            setDuration(8_000);
+            add(new Span("A server error was captured."), new Button("Details", event -> {
+                close();
+                new DetailsDialog().open();
+            }));
         }
-        dialog.add(content);
-        var close = new Button("Close", event -> dialog.close());
-        dialog.getFooter().add(close);
-        dialog.open();
+    }
+
+    /** The recent errors in full, each under a line saying when and where it happened. */
+    class DetailsDialog extends Dialog {
+        DetailsDialog() {
+            setHeaderTitle("Server errors");
+            add(new IncidentList());
+            getFooter().add(new Button("Close", event -> close()));
+        }
+
+        class IncidentList extends VerticalLayout {
+            IncidentList() {
+                setPadding(false);
+                for (var incident : reporter.recent()) {
+                    add(new IncidentTitle(incident), new IncidentText(incident));
+                }
+            }
+        }
+
+        static class IncidentTitle extends Span {
+            IncidentTitle(Incident incident) {
+                super(TIME.format(incident.time()) + " · " + incident.source() + " · " + incident.thread());
+                getStyle().setFontWeight(600);
+            }
+        }
+
+        static class IncidentText extends TextArea {
+            IncidentText(Incident incident) {
+                setReadOnly(true);
+                setWidthFull();
+                setValue(incident.displayText());
+            }
+        }
     }
 }
