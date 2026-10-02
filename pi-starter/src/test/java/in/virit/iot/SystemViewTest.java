@@ -16,8 +16,10 @@ class SystemViewTest extends ViewTest {
     @Test
     void showsMetricsAndInterfaces() {
         navigate(SystemView.class);
+        // The frame is there at once; the readings follow from a background thread
         assertTrue(cardTitled("Host & process"));
         assertTrue(findSpan().withText("Board").exists(), "the host's model is a badge");
+        awaitPush(() -> findSpan().withTextContaining(System.getProperty("java.vm.name")).exists(), "the readings");
         assertTrue(findSpan().withTextContaining("Raspberry Pi").exists(), "either the model or the note that this is not a Pi");
         assertTrue(findSpan().withText("JDK").exists(), "the running Java is a badge");
         assertTrue(findSpan().withTextContaining(System.getProperty("java.vm.name")).exists(),
