@@ -24,7 +24,7 @@ import com.vaadin.flow.component.notification.Notification;
 @StyleSheet("styles/pi-helpers-setup.css")
 public class SetupHint extends Details {
 
-    private Div links;
+    private LinkRow links;
 
     public SetupHint(String summary) {
         setSummaryText(summary);
@@ -51,8 +51,7 @@ public class SetupHint extends Details {
     /** A link to documentation, opened in a new tab. Several links share one "Read more" row. */
     public SetupHint link(String text, String url) {
         if (links == null) {
-            links = new Div(new Span("Read more:"));
-            links.addClassName("setup-links");
+            links = new LinkRow();
             add(links);
         }
         links.add(new DocLink(text, url));
@@ -85,11 +84,16 @@ public class SetupHint extends Details {
             addClassName("setup-commands");
             String text = String.join("\n", lines);
             if (caption != null && !caption.isBlank()) {
-                var label = new Span(caption);
-                label.addClassName("setup-caption");
-                add(label);
+                add(new Caption(caption));
             }
             add(new Pre(text), new CopyButton(text));
+        }
+
+        static class Caption extends Span {
+            Caption(String text) {
+                super(text);
+                addClassName("setup-caption");
+            }
         }
 
         static class CopyButton extends Button {
@@ -102,6 +106,14 @@ public class SetupHint extends Details {
                         .then(Boolean.class, ok -> Notification.show(Boolean.TRUE.equals(ok)
                                 ? "Copied" : "Could not copy; select the text and copy it by hand"))));
             }
+        }
+    }
+
+    /** The "Read more" row the documentation links gather in. */
+    static class LinkRow extends Div {
+        LinkRow() {
+            super(new Span("Read more:"));
+            addClassName("setup-links");
         }
     }
 

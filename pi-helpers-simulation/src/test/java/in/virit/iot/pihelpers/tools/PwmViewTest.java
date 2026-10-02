@@ -18,6 +18,8 @@ class PwmViewTest extends ViewTest {
     void drivesAServoAndADutyCycle() {
         navigate(PwmView.class);
         var enabled = find(Switch.class).withLabel("Output enabled").first();
+        // The channels are read in the background and arrive over push
+        awaitPush(enabled::isEnabled, "the PWM channels");
         if (Boolean.TRUE.equals(enabled.getValue())) {
             toggle(enabled);
         }

@@ -1,5 +1,6 @@
 package in.virit.iot.pihelpers;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Switch;
@@ -19,6 +20,7 @@ import in.virit.iot.pihelpers.PwmService.Channel;
 import in.virit.iot.pihelpers.PwmService.State;
 import org.jboss.logging.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -35,58 +37,29 @@ public class PwmPanel extends VerticalLayout {
     enum Mode { SERVO, DUTY }
 
     private final PwmService service;
-    private final Select<Channel> channel = new Select<>();
-    private final RadioButtonGroup<Mode> mode = new RadioButtonGroup<>("Signal", List.of(Mode.values()));
+    private final ChannelSelect channel = new ChannelSelect();
+    private final ModeSelect mode = new ModeSelect();
     private final ServoControls servo = new ServoControls();
     private final DutyControls duty = new DutyControls();
-    private final Switch enabled = new Switch("Output enabled");
-    private final Paragraph status = new Paragraph();
+    private final EnabledSwitch enabled = new EnabledSwitch();
+    private final Paragraph status = new Paragraph("Looking for PWM channels…");
     private final SetupHint setup = PiSetup.pwm();
     private final SimulationBanner simulation = new SimulationBanner(
             "This PWM chip is a fake: the numbers below are what a real one would be told, but no pin moves.");
     private final PinReport pins = new PinReport();
     private boolean updating;
 
+    /**
+     * Only the frame is built here. The channels and where they are routed come
+     * from sysfs and pinctrl, a process of its own, so they are read in the
+     * background once the panel is attached and arrive over push.
+     */
     public PwmPanel(PwmService service) {
         this.service = service;
         addClassName("pwm-panel");
         status.setId("pwm-status");
-        channel.setLabel("PWM channel");
-        channel.setItemLabelGenerator(Channel::label);
-        var all = service.channels();
-        // Only channels that reach a pin are offered when the host can tell; the rest would drive nothing
-        var routed = all.stream().filter(c -> c.gpio() != null).toList();
-        var channels = routed.isEmpty() ? all : routed;
-        channel.setItems(channels);
-        if (!channels.isEmpty()) {
-            channel.setValue(channels.get(0));
-        }
-        channel.addValueChangeListener(e -> showState());
-        mode.setValue(Mode.SERVO);
-        mode.setItemLabelGenerator(m -> m == Mode.SERVO ? "Servo pulse" : "Duty cycle");
-        mode.addValueChangeListener(e -> {
-            servo.setVisible(e.getValue() == Mode.SERVO);
-            duty.setVisible(e.getValue() == Mode.DUTY);
-            if (e.isFromClient() && enabled.getValue()) {
-                apply();
-            }
-        });
         duty.setVisible(false);
-        enabled.addValueChangeListener(e -> {
-            if (!updating && e.isFromClient()) {
-                if (e.getValue()) {
-                    apply();
-                } else {
-                    perform(() -> service.disable(channel.getValue()));
-                }
-            }
-        });
-
-        pins.show(service.pins(), all.size() - channels.size());
-        var controls = new Card();
-        controls.setTitle("Output");
-        controls.setWidthFull();
-        controls.add(channel, pins, mode, servo, duty, enabled, status);
+        enabled.setEnabled(false);
         add(new H1("PWM & servo"),
                 new Paragraph("Position a hobby servo or dim an LED with a hardware PWM channel. "
                         + "Servos take the signal wire (orange or yellow) from the PWM pin, red to 5 V and brown or "
@@ -94,15 +67,99 @@ public class PwmPanel extends VerticalLayout {
                         + "wants its own supply with a shared GND. The servo needs no pull-up or resistor, and 3.3 V "
                         + "on the signal wire is fine. A servo uses one channel; the second channel of pwm-2chan is "
                         + "only for a second device."),
-                simulation, controls, setup);
+                simulation, new OutputCard(), setup);
         simulation.setVisible(Simulated.is(service));
+    }
+
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        var ui = attachEvent.getUI();
+        Thread.ofVirtual().name("pwm-panel-probe").start(() -> {
+            List<Channel> all;
+            PwmPins.Report report;
+            try {
+                all = service.channels();
+                report = service.pins();
+            } catch (RuntimeException failure) {
+                LOG.warn("Reading the PWM channels failed", failure);
+                all = List.of();
+                report = null;
+            }
+            var channels = all;
+            var routing = report;
+            ui.access(() -> {
+                if (isAttached()) {
+                    showChannels(channels, routing);
+                }
+            });
+        });
+    }
+
+    private void showChannels(List<Channel> all, PwmPins.Report report) {
+        // Only channels that reach a pin are offered when the host can tell; the rest would drive nothing
+        var routed = all.stream().filter(c -> c.gpio() != null).toList();
+        var channels = routed.isEmpty() ? all : routed;
+        channel.setItems(channels);
+        if (report != null) {
+            pins.show(report, all.size() - channels.size());
+        }
         if (channels.isEmpty()) {
             enabled.setEnabled(false);
             status.setText("No PWM chip found under /sys/class/pwm. Hardware PWM is not enabled on this host; "
                     + "the steps below fix that.");
             setup.setOpened(true);
         } else {
+            enabled.setEnabled(true);
+            channel.setValue(channels.get(0));
             showState();
+        }
+    }
+
+    /** The channel, where it is routed, the signal and the switch that sends it. */
+    class OutputCard extends Card {
+        OutputCard() {
+            setTitle("Output");
+            setWidthFull();
+            add(channel, pins, mode, servo, duty, enabled, status);
+        }
+    }
+
+    class ChannelSelect extends Select<Channel> {
+        ChannelSelect() {
+            setLabel("PWM channel");
+            setItemLabelGenerator(Channel::label);
+            addValueChangeListener(e -> showState());
+        }
+    }
+
+    class ModeSelect extends RadioButtonGroup<Mode> {
+        ModeSelect() {
+            super("Signal", List.of(Mode.values()));
+            setValue(Mode.SERVO);
+            setItemLabelGenerator(m -> m == Mode.SERVO ? "Servo pulse" : "Duty cycle");
+            addValueChangeListener(e -> {
+                servo.setVisible(e.getValue() == Mode.SERVO);
+                duty.setVisible(e.getValue() == Mode.DUTY);
+                if (e.isFromClient() && enabled.getValue()) {
+                    apply();
+                }
+            });
+        }
+    }
+
+    class EnabledSwitch extends Switch {
+        EnabledSwitch() {
+            super("Output enabled");
+            addValueChangeListener(e -> {
+                if (!updating && e.isFromClient()) {
+                    if (e.getValue()) {
+                        apply();
+                    } else {
+                        perform(() -> service.disable(channel.getValue()));
+                    }
+                }
+            });
         }
     }
 
@@ -123,7 +180,7 @@ public class PwmPanel extends VerticalLayout {
                 text.append("Pin functions unknown: neither pinctrl nor raspi-gpio is installed (sudo apt install raspi-utils).");
             } else {
                 text.append("Pins now (").append(report.tool()).append("): ");
-                var parts = new java.util.ArrayList<String>();
+                var parts = new ArrayList<String>();
                 report.functions().forEach((gpio, function) -> parts.add("GPIO" + gpio + " = " + function));
                 text.append(String.join(", ", parts));
                 if (report.nothingRouted()) {
@@ -190,66 +247,15 @@ public class PwmPanel extends VerticalLayout {
     }
 
     class ServoControls extends VerticalLayout {
-        private final IntegerSlider angle = new IntegerSlider("Angle", 0, 180);
-        private final IntegerField pulse = new IntegerField("Pulse width (µs)");
-        private final IntegerField minPulse = new IntegerField("0° pulse (µs)");
-        private final IntegerField maxPulse = new IntegerField("180° pulse (µs)");
+        private final AngleSlider angle = new AngleSlider();
+        private final PulseField pulse = new PulseField();
+        private final EndPointField minPulse = new EndPointField("0° pulse (µs)", 500, "Common: 500–1000");
+        private final EndPointField maxPulse = new EndPointField("180° pulse (µs)", 2500, "Common: 2000–2500");
         private boolean syncing;
 
         ServoControls() {
             setPadding(false);
-            angle.setValue(90);
-            angle.setWidthFull();
-            angle.setId("servo-angle");
-            pulse.setValue(1500);
-            pulse.setMin(0);
-            pulse.setMax(20000);
-            pulse.setStep(10);
-            pulse.setStepButtonsVisible(true);
-            pulse.setWidth("9em");
-            minPulse.setValue(500);
-            maxPulse.setValue(2500);
-            minPulse.setMin(0);
-            maxPulse.setMin(0);
-            minPulse.setMax(20000);
-            maxPulse.setMax(20000);
-            minPulse.setWidth("8em");
-            maxPulse.setWidth("8em");
-            minPulse.setHelperText("Common: 500–1000");
-            maxPulse.setHelperText("Common: 2000–2500");
-            angle.addValueChangeListener(e -> {
-                if (!syncing) {
-                    syncing = true;
-                    pulse.setValue(pulseFor(e.getValue()));
-                    syncing = false;
-                    changed(e.isFromClient());
-                }
-            });
-            pulse.addValueChangeListener(e -> {
-                if (!syncing && e.getValue() != null) {
-                    syncing = true;
-                    angle.setValue(angleFor(e.getValue()));
-                    syncing = false;
-                    changed(e.isFromClient());
-                }
-            });
-            minPulse.addValueChangeListener(e -> changed(e.isFromClient()));
-            maxPulse.addValueChangeListener(e -> changed(e.isFromClient()));
-
-            var presets = new HorizontalLayout();
-            presets.addClassName("pwm-presets");
-            for (int preset : new int[]{0, 45, 90, 135, 180}) {
-                var button = new Button(preset + "°", e -> {
-                    angle.setValue(preset);
-                    changed(true);
-                });
-                button.setId("servo-" + preset);
-                button.addThemeVariants(ButtonVariant.LUMO_SMALL);
-                presets.add(button);
-            }
-            var calibration = new FlexLayout(pulse, minPulse, maxPulse);
-            calibration.addClassName("pwm-fields");
-            add(angle, presets, calibration,
+            add(angle, new Presets(), new Calibration(),
                     new Paragraph("Servos expect a 50 Hz signal and a pulse of roughly 1–2 ms; the end points vary "
                             + "per servo, so adjust them if it buzzes at the extremes."));
         }
@@ -278,24 +284,93 @@ public class PwmPanel extends VerticalLayout {
                 apply();
             }
         }
+
+        /** The angle, kept in step with the pulse width it stands for. */
+        class AngleSlider extends IntegerSlider {
+            AngleSlider() {
+                super("Angle", 0, 180);
+                setValue(90);
+                setWidthFull();
+                setId("servo-angle");
+                addValueChangeListener(e -> {
+                    if (!syncing) {
+                        syncing = true;
+                        pulse.setValue(pulseFor(e.getValue()));
+                        syncing = false;
+                        changed(e.isFromClient());
+                    }
+                });
+            }
+        }
+
+        /** The pulse width itself, kept in step with the angle. */
+        class PulseField extends IntegerField {
+            PulseField() {
+                super("Pulse width (µs)");
+                setValue(1500);
+                setMin(0);
+                setMax(20000);
+                setStep(10);
+                setStepButtonsVisible(true);
+                setWidth("9em");
+                addValueChangeListener(e -> {
+                    if (!syncing && e.getValue() != null) {
+                        syncing = true;
+                        angle.setValue(angleFor(e.getValue()));
+                        syncing = false;
+                        changed(e.isFromClient());
+                    }
+                });
+            }
+        }
+
+        /** The pulse width the servo takes for one end of its travel. */
+        class EndPointField extends IntegerField {
+            EndPointField(String label, int value, String helperText) {
+                super(label);
+                setValue(value);
+                setMin(0);
+                setMax(20000);
+                setWidth("8em");
+                setHelperText(helperText);
+                addValueChangeListener(e -> changed(e.isFromClient()));
+            }
+        }
+
+        class Presets extends HorizontalLayout {
+            Presets() {
+                addClassName("pwm-presets");
+                for (int preset : new int[]{0, 45, 90, 135, 180}) {
+                    add(new PresetButton(preset));
+                }
+            }
+
+            class PresetButton extends Button {
+                PresetButton(int preset) {
+                    super(preset + "°", e -> {
+                        angle.setValue(preset);
+                        changed(true);
+                    });
+                    setId("servo-" + preset);
+                    addThemeVariants(ButtonVariant.LUMO_SMALL);
+                }
+            }
+        }
+
+        class Calibration extends FlexLayout {
+            Calibration() {
+                super(pulse, minPulse, maxPulse);
+                addClassName("pwm-fields");
+            }
+        }
     }
 
     class DutyControls extends VerticalLayout {
-        private final IntegerSlider percent = new IntegerSlider("Duty cycle (%)", 0, 100);
-        private final IntegerField frequency = new IntegerField("Frequency (Hz)");
+        private final DutySlider percent = new DutySlider();
+        private final FrequencyField frequency = new FrequencyField();
 
         DutyControls() {
             setPadding(false);
-            percent.setValue(50);
-            percent.setWidthFull();
-            percent.setId("pwm-duty");
-            frequency.setValue(1000);
-            frequency.setMin(1);
-            frequency.setMax(10_000_000);
-            frequency.setWidth("9em");
-            frequency.setHelperText("LED dimming: 1 kHz or more; DC motor drivers: see their datasheet.");
-            percent.addValueChangeListener(e -> changed(e.isFromClient()));
-            frequency.addValueChangeListener(e -> changed(e.isFromClient()));
             add(percent, frequency);
         }
 
@@ -310,6 +385,28 @@ public class PwmPanel extends VerticalLayout {
         private void changed(boolean fromClient) {
             if (fromClient && enabled.getValue()) {
                 apply();
+            }
+        }
+
+        class DutySlider extends IntegerSlider {
+            DutySlider() {
+                super("Duty cycle (%)", 0, 100);
+                setValue(50);
+                setWidthFull();
+                setId("pwm-duty");
+                addValueChangeListener(e -> changed(e.isFromClient()));
+            }
+        }
+
+        class FrequencyField extends IntegerField {
+            FrequencyField() {
+                super("Frequency (Hz)");
+                setValue(1000);
+                setMin(1);
+                setMax(10_000_000);
+                setWidth("9em");
+                setHelperText("LED dimming: 1 kHz or more; DC motor drivers: see their datasheet.");
+                addValueChangeListener(e -> changed(e.isFromClient()));
             }
         }
     }

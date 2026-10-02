@@ -6,7 +6,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.webshare.ShareContent;
 import com.vaadin.flow.component.webshare.WebShare;
@@ -48,30 +47,38 @@ public class InviteButton extends Button {
     private static class InviteDialog extends Dialog {
         InviteDialog(String username, String link, Duration validity, String appName) {
             setHeaderTitle("Registration link for " + username);
-            var field = new TextField();
-            field.setValue(link);
-            field.setReadOnly(true);
-            field.setWidthFull();
-
-            // Web Share opens the native share sheet and must fire within the click's
-            // user-gesture window, so the button is armed here at construction.
-            var share = new Button("Share", VaadinIcon.SHARE.create());
-            share.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            WebShare.onClick(share).share(ShareContent.create()
-                    .title(appName + " registration")
-                    .text("You've been invited to " + appName + ". Set up your passkey:")
-                    .url(link));
-
-            var copy = new Button("Copy", e ->
-                    field.getElement().executeJs("navigator.clipboard && navigator.clipboard.writeText($0)", link));
-
-            var content = new VerticalLayout(
+            var field = new LinkField(link);
+            add(new ContentColumn(
                     new Paragraph("Send this single-use link to " + username
                             + ". It expires in " + validity.toDays() + " days."),
-                    field);
-            content.setPadding(false);
-            add(content);
-            getFooter().add(copy, share, new Button("Close", e -> close()));
+                    field));
+            getFooter().add(new Button("Copy", e ->
+                            field.getElement().executeJs("navigator.clipboard && navigator.clipboard.writeText($0)", link)),
+                    new ShareButton(link, appName),
+                    new Button("Close", e -> close()));
+        }
+
+        static class LinkField extends TextField {
+            LinkField(String link) {
+                setValue(link);
+                setReadOnly(true);
+                setWidthFull();
+            }
+        }
+
+        /**
+         * Opens the native share sheet. Web Share must fire within the click's
+         * user-gesture window, so the button is armed here at construction.
+         */
+        static class ShareButton extends Button {
+            ShareButton(String link, String appName) {
+                super("Share", VaadinIcon.SHARE.create());
+                addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                WebShare.onClick(this).share(ShareContent.create()
+                        .title(appName + " registration")
+                        .text("You've been invited to " + appName + ". Set up your passkey:")
+                        .url(link));
+            }
         }
     }
 }

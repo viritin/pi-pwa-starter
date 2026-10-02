@@ -131,15 +131,20 @@ public class SystemPanel extends VerticalLayout {
             osMemory.withVisual(memoryBar);
             diskUsage.withVisual(diskBar);
 
-            var gcButton = new Button("Run GC", e -> {
-                System.gc();
-                show(Reading.now(wifi));
-            });
-            gcButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
-
             add(new StatGrid(board, os, jdk, uptime, version, heapUsage, processMemory,
                     osMemory, cpuUsage, cpuTemp, diskUsage,
-                    network, wifiLink, wifiSignal, wifiBitrate), gcButton);
+                    network, wifiLink, wifiSignal, wifiBitrate), new GcButton());
+        }
+
+        /** Asks the JVM to collect garbage and shows the heap right after. */
+        class GcButton extends Button {
+            GcButton() {
+                super("Run GC", e -> {
+                    System.gc();
+                    show(Reading.now(wifi));
+                });
+                addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
+            }
         }
 
         /**
@@ -411,6 +416,13 @@ public class SystemPanel extends VerticalLayout {
 
     static class SystemActions extends Card {
 
+        SystemActions(SystemControl systemControl) {
+            setTitle("Power");
+            setWidthFull();
+            add(new HorizontalLayout(new RebootButton(systemControl), new ShutdownButton(systemControl)));
+            add(systemControl.isEnabled() ? PiSetup.powerActions() : new Paragraph("Host power actions are disabled."));
+        }
+
         private static void requestPowerAction(Runnable action, String successMessage) {
             try {
                 action.run();
@@ -421,43 +433,34 @@ public class SystemPanel extends VerticalLayout {
             }
         }
 
-
-        SystemActions(SystemControl systemControl) {
-            setTitle("Power");
-            setWidthFull();
-
-            var rebootButton = new Button("Reboot", VaadinIcon.REFRESH.create(), e -> {
-                var dialog = new ConfirmDialog(
+        /** Restarts the host, once confirmed. */
+        static class RebootButton extends Button {
+            RebootButton(SystemControl systemControl) {
+                super("Reboot", VaadinIcon.REFRESH.create(), e -> new ConfirmDialog(
                         "Reboot system?",
                         "The Raspberry Pi will restart. This takes about a minute.",
-                        "Reboot", confirm -> {
-                    requestPowerAction(systemControl::reboot, "Reboot requested.");
-                });
-                dialog.setCancelable(true);
-                dialog.open();
-            });
-            rebootButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
+                        "Reboot", confirm -> requestPowerAction(systemControl::reboot, "Reboot requested.")) {{
+                    setCancelable(true);
+                    open();
+                }});
+                addThemeVariants(ButtonVariant.LUMO_SMALL);
+                setEnabled(systemControl.isEnabled());
+            }
+        }
 
-            var shutdownButton = new Button("Shutdown", VaadinIcon.POWER_OFF.create(), e -> {
-                var dialog = new ConfirmDialog(
+        /** Powers the host off, once confirmed; restarting it then takes physical access. */
+        static class ShutdownButton extends Button {
+            ShutdownButton(SystemControl systemControl) {
+                super("Shutdown", VaadinIcon.POWER_OFF.create(), e -> new ConfirmDialog(
                         "Shut down system?",
                         "The Raspberry Pi will power off. You will need physical access to restart it!",
-                        "Shut down", confirm -> {
-                    requestPowerAction(systemControl::shutdown, "Shutdown requested.");
-                });
-                dialog.setCancelable(true);
-                dialog.setConfirmButtonTheme("error primary");
-                dialog.open();
-            });
-            shutdownButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ERROR);
-
-            rebootButton.setEnabled(systemControl.isEnabled());
-            shutdownButton.setEnabled(systemControl.isEnabled());
-            add(new HorizontalLayout(rebootButton, shutdownButton));
-            if (systemControl.isEnabled()) {
-                add(PiSetup.powerActions());
-            } else {
-                add(new Paragraph("Host power actions are disabled."));
+                        "Shut down", confirm -> requestPowerAction(systemControl::shutdown, "Shutdown requested.")) {{
+                    setCancelable(true);
+                    setConfirmButtonTheme("error primary");
+                    open();
+                }});
+                addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ERROR);
+                setEnabled(systemControl.isEnabled());
             }
         }
     }

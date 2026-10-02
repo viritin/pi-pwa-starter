@@ -22,7 +22,6 @@ import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.router.RouterLink;
 import in.virit.iot.pihelpers.tools.I2cView;
 import com.vaadin.flow.shared.Registration;
-import in.virit.Gauge;
 import in.virit.TemperatureGauge;
 import in.virit.iot.pihelpers.HomeAssistantFinder;
 import in.virit.iot.pihelpers.PiSetup;
@@ -72,9 +71,7 @@ public class Bme280View extends VerticalLayout {
     }
 
     private final Bme280Service service;
-    private final RadioButtonGroup<Range> range = new RadioButtonGroup<>("History", List.of(Range.values())){{
-        addThemeVariants(RadioGroupVariant.AURA_HORIZONTAL);
-    }};
+    private final RangeSelect range = new RangeSelect();
     private final SensorCard card = new SensorCard();
     private final DetailsCard details = new DetailsCard();
     private final Paragraph status = new Paragraph();
@@ -86,15 +83,11 @@ public class Bme280View extends VerticalLayout {
     public Bme280View(Bme280Service service, ClimatePublisher publisher, HomeAssistantFinder finder) {
         this.service = service;
         status.setId("bme280-status");
-        range.setValue(Range.HOUR);
-        range.setItemLabelGenerator(r -> r.label);
-        range.addValueChangeListener(e -> refresh());
-        var cards = new ClimateCards(card, details);
         simulation.setVisible(service.isSimulated());
         add(new H1("Climate"), simulation,
                 new Paragraph("Temperature, humidity and air pressure from a BME280 on the I²C bus, "
                         + "sampled every few seconds since the application started."),
-                range, cards, status, new ClimateSharingCard(publisher, finder), new WiringPanel());
+                range, new ClimateCards(card, details), status, new ClimateSharingCard(publisher, finder), new WiringPanel());
         refresh();
     }
 
@@ -132,9 +125,20 @@ public class Bme280View extends VerticalLayout {
         return value == null ? "–" : String.format(Locale.ROOT, pattern, value);
     }
 
+    /** How much history the charts show; changing it redraws them. */
+    class RangeSelect extends RadioButtonGroup<Range> {
+        RangeSelect() {
+            super("History", List.of(Range.values()));
+            addThemeVariants(RadioGroupVariant.AURA_HORIZONTAL);
+            setItemLabelGenerator(r -> r.label);
+            setValue(Range.HOUR);
+            addValueChangeListener(e -> refresh());
+        }
+    }
+
     /** The headline card: gauge on top, the other numbers under it, temperature history as a curve. */
     class SensorCard extends ClimateCard {
-        private final TemperatureGauge gauge = new TemperatureGauge();
+        private final ClimateGauge gauge = new ClimateGauge();
         private final Span subtitle = new Span();
         private final SecondaryText humidity = new SecondaryText();
         private final SecondaryText pressure = new SecondaryText();
@@ -144,14 +148,20 @@ public class Bme280View extends VerticalLayout {
         SensorCard() {
             super("Climate sensor");
             setSubtitle(subtitle);
-            // A new reading every few seconds: the dial jumps to it instead of sweeping,
-            // which would keep the page changing most of the time (and on iOS turns taps
-            // elsewhere into hovers)
-            gauge.setPointer(new Gauge.GaugePointer().setAnimate(false));
-            gauge.setMaxWidth("20rem");
-            gauge.getStyle().setMargin("0 auto");
             setMedia(gauge);
             add(humidity, pressure, updated, temperature);
+        }
+
+        /** The temperature dial, centred over the card. */
+        static class ClimateGauge extends TemperatureGauge {
+            ClimateGauge() {
+                // A new reading every few seconds: the dial jumps to it instead of sweeping,
+                // which would keep the page changing most of the time (and on iOS turns taps
+                // elsewhere into hovers)
+                setPointer(new GaugePointer().setAnimate(false));
+                setMaxWidth("20rem");
+                getStyle().setMargin("0 auto");
+            }
         }
 
         void update(Reading latest, List<Reading> history) {
