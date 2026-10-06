@@ -28,7 +28,7 @@ class PwaSmokeIT {
     /** The view's own heading: MobileMainLayout puts the view next to its header row in .mobile-content. */
     private static final String VIEW_HEADING = ".mobile-content > :not(.mobile-content-header) h1";
 
-    private static final String[] ROUTES = {"about", "system", "blinkled", "bme280", "gpio", "i2c", "pwm", "onewire", "ble"};
+    private static final String[] ROUTES = {"about", "system", "blinkled", "climate", "gpio", "i2c", "pwm", "onewire", "ble"};
 
     @TestHTTPResource
     URI baseUri;

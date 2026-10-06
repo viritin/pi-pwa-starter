@@ -13,11 +13,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The climate card: gauge, secondary lines and curves for the selectable period. */
 @QuarkusTest
-class Bme280ViewTest extends ViewTest {
+class ClimateViewTest extends ViewTest {
 
     @Test
     void drawsTheSensorCardWithHistory() {
-        navigate(Bme280View.class);
+        navigate(ClimateView.class);
         assertTrue(find(SimulationBanner.class).first().isVisible());
         assertEquals("Simulation · BME280", paragraph("bme280-status"));
         var cards = find(Card.class).all().stream().filter(c -> !(c instanceof SimulationBanner)).toList();

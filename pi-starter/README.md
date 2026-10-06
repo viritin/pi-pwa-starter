@@ -213,7 +213,7 @@ References: [Vaadin Switch example](https://github.com/vaadin/docs/blob/main/src
 
 ## Climate sensor and pi4j-drivers
 
-`Bme280View` is the second example view, for a sensor that produces a stream of
+`ClimateView` is the second example view, for a sensor that produces a stream of
 numbers rather than a switch. `bme280/Bme280Service` starts sampling at
 application startup, keeps the last 24 hours in memory and pushes each reading
 to open views; its `Bme280Sensor` CDI dependency supplies measurements, while

@@ -23,7 +23,7 @@ class NavigationTest extends ViewTest {
         assertHeading(AboutView.class, "Small device. Big possibilities.");
         assertHeading(SystemView.class, "System Monitor");
         assertHeading(BlinkLedView.class, "Blink a LED");
-        assertHeading(Bme280View.class, "Climate");
+        assertHeading(ClimateView.class, "Climate");
         assertHeading(GpioView.class, "GPIO");
         assertHeading(I2cView.class, "I²C");
         assertHeading(PwmView.class, "PWM & servo");

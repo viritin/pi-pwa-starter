@@ -50,7 +50,7 @@ import java.util.function.Function;
 @Route
 @Menu(title = "Climate", icon = "vaadin:cloud-o", order = 4)
 @PageTitle("Climate | Pi Starter")
-public class Bme280View extends VerticalLayout {
+public class ClimateView extends VerticalLayout {
 
     enum Range {
         MINUTES_15("15 min", Duration.ofMinutes(15)),
@@ -77,14 +77,19 @@ public class Bme280View extends VerticalLayout {
     private Registration listener;
 
     @Inject
-    public Bme280View(Bme280Service service) {
+    public ClimateView(Bme280Service service) {
         this.service = service;
         status.setId("bme280-status");
         simulation.setVisible(service.isSimulated());
-        add(new H1("Climate"), simulation,
+        add(
+                new H1("Climate"),
+                simulation,
                 new Paragraph("Temperature, humidity and air pressure from a BME280 on the I²C bus, "
                         + "sampled every few seconds since the application started."),
-                range, new ClimateCards(card, details), status, new WiringPanel());
+                range,
+                new ClimateCards(card, details),
+                status,
+                new WiringPanel());
         refresh();
     }
 
