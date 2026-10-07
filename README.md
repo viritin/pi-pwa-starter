@@ -20,10 +20,11 @@ Maven projects:
 sign-in, adding the app to the home screen and a Web Push temperature alert from the
 `example/web-push-notifications` branch.
 
-Requires JDK 25. Build both modules, run the browserless view tests and the Playwright smoke test:
+Requires JDK 25. Build both modules, run the browserless view tests and the Playwright 
+smoke test and installs the pi-helpers library to local Maven repository:
 
 ```sh
-./mvnw verify
+./mvnw install
 ```
 
 Start the example directly from its own directory with simulated BME280 data
