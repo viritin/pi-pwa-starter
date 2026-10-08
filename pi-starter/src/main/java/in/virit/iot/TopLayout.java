@@ -66,7 +66,7 @@ public class TopLayout extends MobileMainLayout implements BeforeEnterObserver {
         }
         Optional<AuthUser> user = CurrentUser.get();
         if (user.isEmpty()) {
-            event.rerouteTo(LoginView.class);
+            LoginView.rerouteToSignIn(event);
         } else if (target == UsersView.class && !user.get().isAdmin()) {
             event.rerouteTo(AboutView.class);
         }

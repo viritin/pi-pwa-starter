@@ -1,5 +1,6 @@
 package in.virit.iot.pihelpers.auth;
 
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -8,11 +9,16 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
 import jakarta.inject.Inject;
 import org.vaadin.firitin.util.style.LumoProps;
+
+import java.util.regex.Pattern;
 
 /**
  * Passwordless sign-in. Normally a single "Sign in with a passkey" button that
@@ -23,23 +29,59 @@ import org.vaadin.firitin.util.style.LumoProps;
 @Route(value = "login", autoLayout = false)
 @Menu(title = "Sign in", icon = "vaadin:sign-in", order = 90)
 @PageTitle("Sign in")
-public class LoginView extends StandalonePage {
+public class LoginView extends StandalonePage implements BeforeEnterObserver {
+
+    /** Where to go once signed in: a path in this app, without the leading slash. */
+    private static final Pattern RETURN_PATH = Pattern.compile("[A-Za-z0-9._~/-]*");
+    private static final String RETURN_KEY = LoginView.class.getName() + ".return";
+    /** The query parameter naming the view to return to, set by {@link #rerouteToSignIn}. */
+    private static final String CONTINUE = "continue";
 
     @Inject
     public LoginView(AuthConfig auth) {
         add(auth.bootstrapMode() ? new FirstAdminCard() : new SignInCard());
     }
 
-    /** Reload from the server so the WebAuthn cookie set by the ceremony is picked up. */
-    private static void goHome() {
-        UI.getCurrent().getPage().setLocation("/");
+    /**
+     * For an application's gate: sends a visitor who needs to sign in to this page,
+     * and back to the view they asked for once signed in.
+     */
+    public static void rerouteToSignIn(BeforeEnterEvent event) {
+        event.forwardTo("login", QueryParameters.of(CONTINUE, event.getLocation().getPath()));
+    }
+
+    /**
+     * Remembers where the visitor came from, to return there once signed in: the
+     * view named by {@link #rerouteToSignIn}, or else the view they were on when
+     * they opened this page (a sign-in link or the menu). A page loaded directly,
+     * or the sign-in pages themselves, return to the front page.
+     */
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        String target = event.getLocation().getQueryParameters().getSingleParameter(CONTINUE)
+                .orElseGet(() -> event.getUI().getInternals().getActiveViewLocation().getPath());
+        if (target.equals("login") || target.equals("logout") || target.equals("register")
+                || !RETURN_PATH.matcher(target).matches()) {
+            target = "";
+        }
+        ComponentUtil.setData(event.getUI(), RETURN_KEY, target.replaceFirst("^/+", ""));
+    }
+
+    /**
+     * Reloads from the server, so the WebAuthn cookie set by the ceremony is picked
+     * up, at the view the visitor came from. Only a path of this app: a leading
+     * slash and the pattern above keep it on this origin.
+     */
+    private static void returnFromSignIn(UI ui) {
+        Object target = ComponentUtil.getData(ui, RETURN_KEY);
+        ui.getPage().setLocation("/" + (target == null ? "" : target));
     }
 
     private static void afterCeremony(boolean ok, String failureMessage) {
         UI ui = UI.getCurrent();
         ui.access(() -> {
             if (ok) {
-                goHome();
+                returnFromSignIn(ui);
             } else {
                 Notification.show(failureMessage, 6000, Notification.Position.MIDDLE);
             }
