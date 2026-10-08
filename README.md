@@ -20,6 +20,11 @@ Maven projects:
 sign-in, adding the app to the home screen and a Web Push temperature alert from the
 `example/web-push-notifications` branch.
 
+▶ [Try the live demo](https://pipwa.virit.in): create an account with a passkey, switch
+the LED, set a temperature alert. It runs on a Raspberry Pi sized server in the cloud
+(1 GB of memory), so the pins and sensors are simulated; demo accounts are removed
+after a week. Its setup is the `demo/pipwa.virit.in` branch.
+
 Requires JDK 25. Build both modules, run the browserless view tests and the Playwright 
 smoke test and installs the pi-helpers library to local Maven repository:
 
