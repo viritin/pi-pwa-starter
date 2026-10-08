@@ -1,5 +1,7 @@
 package in.virit.iot;
 
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
@@ -14,6 +16,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.Component;
+import org.vaadin.firitin.util.style.VaadinCssProps;
 
 @Route("")
 @RouteAlias("about")
@@ -56,6 +59,25 @@ public class AboutView extends VerticalLayout {
         add(new Section("Keep it close",
                 new Paragraph("Add this app to your home screen using your browser’s install or share menu. "
                         + "Live views need a connection to this device.")));
+        add(new CreatedWith());
+    }
+
+    /** Credit, and the way to the source, at the foot of the page. */
+    static class CreatedWith extends Paragraph {
+        static final String SOURCE = "https://github.com/viritin/pi-pwa-starter";
+
+        CreatedWith() {
+            add(new Span("Created with "), new SourceLink(),
+                    new Span(", an open-source starter for Raspberry Pi projects in Java."));
+            getStyle().setFontSize(".875rem").setColor(VaadinCssProps.TEXT_COLOR_SECONDARY.var());
+        }
+
+        static class SourceLink extends Anchor {
+            SourceLink() {
+                super(SOURCE, "Pi PWA Starter");
+                setTarget(AnchorTarget.BLANK);
+            }
+        }
     }
 
     /** Logo next to the headline; on a narrow screen the headline wraps below it. */
